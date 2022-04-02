@@ -5,7 +5,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.0, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.0.1, RusJJ)
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
@@ -119,14 +119,36 @@ DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D) // AimingRifleWalkFix
     ControlGunMove(self, vec2D);
     *ms_fTimeStep = save;
 }
+
+uintptr_t SwimmingResistanceBack_BackTo;
+float saveStep;
 DECL_HOOKv(ProcessSwimmingResistance, void* self, CPed* ped) // SwimSpeedFix
 {
-    float save = *ms_fTimeStep;
-    if(ped->m_nPedType == PED_TYPE_PLAYER1) *ms_fTimeStep = 0.7854f/fMagic;
-    else *ms_fTimeStep = 1.0f/fMagic;
+    saveStep = *ms_fTimeStep;
+    if(ped->m_nPedType == PED_TYPE_PLAYER1) *ms_fTimeStep *= 0.7854f/fMagic;
+    else *ms_fTimeStep *= 1.0f/fMagic;
     ProcessSwimmingResistance(self, ped);
-    *ms_fTimeStep = save;
+    *ms_fTimeStep = saveStep;
 }
+extern "C" void SwimmingResistanceBack(void)
+{
+    *ms_fTimeStep = saveStep;
+}
+__attribute__((optnone)) __attribute__((naked)) void SwimmingResistanceBack_inject(void)
+{
+    asm volatile(
+        "push {r0-r11}\n"
+        "bl SwimmingResistanceBack\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r11}\n"
+        "vldr s4, [r0]\n"
+        "ldr r0, [r4]\n"
+        "vmul.f32 s0, s4, s0\n"
+        "bx r12\n"
+    :: "r" (SwimmingResistanceBack_BackTo));
+}
+
 DECL_HOOKv(ProcessBuoyancy, void* self, CPhysical* phy, float unk, CVector* vec1, CVector* vec2) // BuoyancySpeedFix
 {
     if(phy->m_nType == ENTITY_TYPE_PED && ((CPed*)phy)->m_nPedType == PED_TYPE_PLAYER1)
@@ -231,7 +253,9 @@ extern "C" void OnModLoad()
     // Fix slow swimming speed
     if(cfg->Bind("SwimmingSpeedFix", true, "Gameplay")->GetBool())
     {
+        SwimmingResistanceBack_BackTo = pGTASA + 0x53BD3A + 0x1;
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
+        Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
     }
 
     // Buoyancy speed fix (not working)
