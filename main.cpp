@@ -270,7 +270,7 @@ __attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
 DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
     fEmergencyVehiclesFix = 70.0f / factor;
-    SetFOV(factor, unused);
+    SetFOV_Emergency(factor, unused);
 }
 
 /////////////////////////////////////////////////////////////////////////////
