@@ -1,7 +1,9 @@
 # What am i?
  I am a little mod that wants to fix your game!
  Currently i can fix those things:
+ 
  **GTA:SA**
+ 
  **Since v1.0**
  - Animated textures (UVAnim)
  - Vertex Weights
@@ -11,6 +13,7 @@
  - CJ instantly leaving the car
  - CJ no more drops JetPack while he's in air
  - Weapon penalty clean-up when CJ dies
+ 
  **Since v1.1**
  - Fixed emergency vehicles
  - Moved save pickup in Madd Dogg's Mansion
