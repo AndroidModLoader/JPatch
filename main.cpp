@@ -2,10 +2,11 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 #include <dlfcn.h>
+#include <time.h>
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.0.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1, RusJJ)
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
@@ -13,12 +14,18 @@ MYMODCFG(net.rusjj.jpatch, JPatch, 1.0.1, RusJJ)
 uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
+float fEmergencyVehiclesFix;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-float *ms_fTimeStep;
+float *ms_fTimeStep, *NearScreenZ, *ms_fFOV;
 CPlayerInfo* WorldPlayers;
+CCamera* TheCamera;
+RsGlobalType* RsGlobal;
+void *g_surfaceInfos;
+unsigned int *m_snTimeInMilliseconds;
+MobileMenu *gMobileMenu;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -26,6 +33,7 @@ CPlayerInfo* WorldPlayers;
 void Redirect(uintptr_t addr, uintptr_t to)
 {
     if(!addr) return;
+    uint32_t hook[2] = {0xE51FF004, to};
     if(addr & 1)
     {
         addr &= ~1;
@@ -34,22 +42,15 @@ void Redirect(uintptr_t addr, uintptr_t to)
             aml->PlaceNOP(addr, 1);
             addr += 2;
         }
-        uint32_t hook[2];
         hook[0] = 0xF000F8DF;
-        hook[1] = to;
-        aml->Write(addr, (uintptr_t)hook, sizeof(hook));
     }
-    else
-    {
-        uint32_t hook[2];
-        hook[0] = 0xE51FF004;
-        hook[1] = to;
-        aml->Write(addr, (uintptr_t)hook, sizeof(hook));
-    }
+    aml->Write(addr, (uintptr_t)hook, sizeof(hook));
 }
 void (*_rwOpenGLSetRenderState)(RwRenderState, int);
 void (*_rwOpenGLGetRenderState)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
+eBulletFxType (*GetBulletFx)(void* self, unsigned int surfaceId);
+void (*DoGunFlashForPed)(CPed* ped, int, bool);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -58,25 +59,15 @@ extern "C" void adadad(void)
 {
     asm("VMOV.F32 S0, #0.5");
 }
-DECL_HOOKv(EntityRender, CEntity* ent)
-{
-    if(ent->m_nType == ENTITY_TYPE_VEHICLE)
-    {
-        EntityRender(ent);
-        return;
-    }
 
-    //RwRenderStateSet(rwRENDERSTATECULLMODE, (void*)rwCULLMODECULLNONE);
-    EntityRender(ent);
-    //RwRenderStateSet(rwRENDERSTATECULLMODE, (void*)rwCULLMODECULLBACK);
-}
+// Moon phases
 int moon_alphafunc, moon_vertexblend;
 uintptr_t MoonVisual_1_BackTo;
 extern "C" void MoonVisual_1(void)
 {
     _rwOpenGLGetRenderState(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
     _rwOpenGLGetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
-    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, rwALPHATESTFUNCTIONALWAYS);
+    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, rwALPHATESTFUNCTIONLESS);
     _rwOpenGLSetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, true);
 
     _rwOpenGLSetRenderState(rwRENDERSTATESRCBLEND, rwBLENDSRCALPHA);
@@ -113,20 +104,73 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
         "bx r12\n"
     :: "r" (MoonVisual_2_BackTo));
 }
-DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D) // AimingRifleWalkFix
+
+// FOV
+DECL_HOOKv(SetFOV, float factor, bool unused)
+{
+    if(TheCamera->m_bIsInCutscene)
+    {
+        *ms_fFOV = factor;
+    }
+    else
+    {
+        SetFOV(factor, unused);
+    }
+}
+
+// Limit particles
+uintptr_t AddBulletImpactFx_BackTo;
+unsigned int nextHeavyParticleTick = 0;
+eBulletFxType nLimitWithSparkles = BULLETFX_NOTHING;
+extern "C" eBulletFxType AddBulletImpactFx(unsigned int surfaceId)
+{
+    eBulletFxType nParticlesType = GetBulletFx(g_surfaceInfos, surfaceId);
+    if(nParticlesType == BULLETFX_SAND || nParticlesType == BULLETFX_DUST)
+    {
+        if(nextHeavyParticleTick < *m_snTimeInMilliseconds)
+        {
+            nextHeavyParticleTick = *m_snTimeInMilliseconds + 100;
+        }
+        else
+        {
+            return nLimitWithSparkles;
+        }
+    }
+    return nParticlesType;
+}
+__attribute__((optnone)) __attribute__((naked)) void AddBulletImpactFx_inject(void)
+{
+    asm volatile(
+        "mov r12, r3\n"
+        "push {r0-r7,r9-r11}\n"
+        "mov r0, r12\n"
+        "bl AddBulletImpactFx\n"
+        "mov r8, r0\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r7,r9-r11}\n"
+        "mov r9, r1\n"
+        "mov r4, r2\n"
+        "bx r12\n"
+    :: "r" (AddBulletImpactFx_BackTo));
+}
+
+// AimingRifleWalkFix
+DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D)
 {
     float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
     ControlGunMove(self, vec2D);
     *ms_fTimeStep = save;
 }
 
+// SwimSpeedFix
 uintptr_t SwimmingResistanceBack_BackTo;
 float saveStep;
-DECL_HOOKv(ProcessSwimmingResistance, void* self, CPed* ped) // SwimSpeedFix
+DECL_HOOKv(ProcessSwimmingResistance, void* self, CPed* ped)
 {
     saveStep = *ms_fTimeStep;
-    if(ped->m_nPedType == PED_TYPE_PLAYER1) *ms_fTimeStep *= 0.7854f/fMagic;
-    else *ms_fTimeStep *= 1.0f/fMagic;
+    if(ped->m_nPedType == PED_TYPE_PLAYER1) *ms_fTimeStep *= 0.8954f/fMagic;
+    else *ms_fTimeStep *= 1.14f/fMagic;
     ProcessSwimmingResistance(self, ped);
     *ms_fTimeStep = saveStep;
 }
@@ -149,30 +193,44 @@ __attribute__((optnone)) __attribute__((naked)) void SwimmingResistanceBack_inje
     :: "r" (SwimmingResistanceBack_BackTo));
 }
 
-DECL_HOOKv(ProcessBuoyancy, void* self, CPhysical* phy, float unk, CVector* vec1, CVector* vec2) // BuoyancySpeedFix
-{
-    if(phy->m_nType == ENTITY_TYPE_PED && ((CPed*)phy)->m_nPedType == PED_TYPE_PLAYER1)
-    {
-        float save = *ms_fTimeStep; *ms_fTimeStep = (1.0f + ((save / fMagic) / 1.5f)) * (save / fMagic);
-        ProcessBuoyancy(self, phy, unk, vec1, vec2);
-        *ms_fTimeStep = save;
-        return;
-    }
-    ProcessBuoyancy(self, phy, unk, vec1, vec2);
-}
-DECL_HOOK(ScriptHandle, GenerateNewPickup, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+// Madd Dogg's Mansion Basketball glitch
+DECL_HOOK(ScriptHandle, GenerateNewPickup_MaddDogg, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
 {
     if(modelId == 1277 && x == 1263.05f && y == -773.67f && z == 1091.39f)
     {
-        return GenerateNewPickup(1291.2f, -798.0f, 1089.39f, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+        return GenerateNewPickup_MaddDogg(1291.2f, -798.0f, 1089.39f, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
     }
-    return GenerateNewPickup(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    return GenerateNewPickup_MaddDogg(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
 }
+
+// Fix Star bribe which is missing minus sign in X coordinate and spawns inside the building
+DECL_HOOK(ScriptHandle, GenerateNewPickup_SFBribe, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+{
+    if(modelId == 1247 && (int)x == -2120 && (int)y == 96)
+    {
+        return GenerateNewPickup_SFBribe(2120.0f, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    }
+    return GenerateNewPickup_SFBribe(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+}
+
+// Fix a Rifle weapon pickup that is located inside the stadium wall since beta
+DECL_HOOK(ScriptHandle, GenerateNewPickup_SFRiflePickup, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+{
+    if(modelId == 357 && x == -2094.0f && y == -488.0f)
+    {
+        return GenerateNewPickup_SFRiflePickup(x, -489.5f, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    }
+    return GenerateNewPickup_SFRiflePickup(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+}
+
+// Do not drop-off jetpack in air
 DECL_HOOKv(DropJetPackTask, void* task, CPed* ped)
 {
     if(!ped->m_PedFlags.bIsStanding) return;
     DropJetPackTask(task, ped);
 }
+
+// Died penalty
 uintptr_t DiedPenalty_BackTo;
 extern "C" void DiedPenalty(void)
 {
@@ -194,23 +252,54 @@ __attribute__((optnone)) __attribute__((naked)) void DiedPenalty_inject(void)
     :: "r" (DiedPenalty_BackTo));
 }
 
+// Emergency Vehicles
+uintptr_t EmergencyVeh_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
+{
+    asm volatile(
+        "push {r0}\n");
+    asm volatile(
+        "vmov s0, %0\n"
+    :: "r" (fEmergencyVehiclesFix));
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0}\n"
+        "bx r12\n"
+    :: "r" (EmergencyVeh_BackTo));
+}
+DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
+{
+    fEmergencyVehiclesFix = 70.0f / factor;
+    SetFOV(factor, unused);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void OnModLoad()
 {
+    logger->SetTag("JPatch");
     pGTASA = aml->GetLib("libGTASA.so");
     hGTASA = dlopen("libGTASA.so", RTLD_LAZY);
 
     // Functions Start //
     SET_TO(_rwOpenGLSetRenderState, aml->GetSym(hGTASA, "_Z23_rwOpenGLSetRenderState13RwRenderStatePv"));
     SET_TO(_rwOpenGLGetRenderState, aml->GetSym(hGTASA, "_Z23_rwOpenGLGetRenderState13RwRenderStatePv"));
-    SET_TO(ClearPedWeapons, aml->GetSym(hGTASA, "_ZN4CPed12ClearWeaponsEv"));
+    SET_TO(ClearPedWeapons,         aml->GetSym(hGTASA, "_ZN4CPed12ClearWeaponsEv"));
+    SET_TO(GetBulletFx,             aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c11GetBulletFxEj"));
+    SET_TO(DoGunFlashForPed,        aml->GetSym(hGTASA, "_ZN4CPed10DoGunFlashEib"));
     // Functions End   //
     
     // Variables Start //
-    SET_TO(ms_fTimeStep, aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(WorldPlayers, aml->GetSym(hGTASA, "_ZN6CWorld7PlayersE"));
+    SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
+    SET_TO(NearScreenZ,             aml->GetSym(hGTASA, "_ZN9CSprite2d11NearScreenZE"));
+    SET_TO(WorldPlayers,            aml->GetSym(hGTASA, "_ZN6CWorld7PlayersE"));
+    SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
+    SET_TO(TheCamera,               aml->GetSym(hGTASA, "TheCamera"));
+    SET_TO(RsGlobal,                aml->GetSym(hGTASA, "RsGlobal"));
+    SET_TO(g_surfaceInfos,          aml->GetSym(hGTASA, "g_surfaceInfos"));
+    SET_TO(m_snTimeInMilliseconds,  aml->GetSym(hGTASA, "_ZN6CTimer22m_snTimeInMillisecondsE"));
+    SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
     // Variables End   //
 
     // Animated textures
@@ -226,23 +315,58 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x1C8082, (uintptr_t)"\x01", 1);
     }
 
-    // Fix vehicle's backface culling that should be disable
-    /*if(cfg->Bind("DisableVehiclesBackfaceCulling", true, "Visual")->GetBool())
-    {
-        HOOKPLT(EntityRender, pGTASA + 0x66F764);
-    }*/
+    // Fix moon! (lack of rendering features)
+    //if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
+    //{
+    //    MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
+    //    MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
+    //    Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
+    //    Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
+    //}
 
-    // Fix moon!
-    /*if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
-    {
-        Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
-        MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
-        Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
-        MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
+    // Fix corona's on wet roads
+    //if(cfg->Bind("FixCoronasReflectionOnWetRoads", true, "Visual")->GetBool())
+    //{
+    //    // Nothing
+    //}
 
-        //Redirect(pGTASA + 0x59ED6E + 0x1, pGTASA + 0x59EE36 + 0x1);
-        //Redirect(pGTASA + 0x59EE36 + 0x1, pGTASA + 0x59EED8 + 0x1);
-    }*/
+    // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
+    if(cfg->Bind("FixCutsceneFOV", false, "Visual")->GetBool())
+    {
+        HOOKPLT(SetFOV, pGTASA + 0x673DDC);
+    }
+
+    // Fix sky multitude
+    if(cfg->Bind("FixSkyMultitude", true, "Visual")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x59FB8C, 2*sizeof(float));
+        *(float*)(pGTASA + 0x59FB8C) = -10.0f;
+        *(float*)(pGTASA + 0x59FB90) =  10.0f;
+    }
+
+    // Fix vehicles backlights light state
+    if(cfg->Bind("FixCarsBacklightLightState", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x591272, (uintptr_t)"\x02", 1);
+        aml->Write(pGTASA + 0x59128E, (uintptr_t)"\x02", 1);
+    }
+
+    // Limit sand/dust particles on bullet impact (they are EXTREMELY dropping FPS)
+    if(cfg->Bind("LimitSandDustBulletParticles", true, "Visual")->GetBool())
+    {
+        AddBulletImpactFx_BackTo = pGTASA + 0x36478E + 0x1;
+        Redirect(pGTASA + 0x36477C + 0x1, (uintptr_t)AddBulletImpactFx_inject);
+        if(cfg->Bind("LimitSandDustBulletParticlesWithSparkles", false, "Visual")->GetBool())
+        {
+            nLimitWithSparkles = BULLETFX_SPARK;
+        }
+    }
+
+    // Do not set primary color to the white on vehicles paintjob
+    if(cfg->Bind("PaintJobDontSetPrimaryToWhite", true, "Visual")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x582328, 2);
+    }
 
     // Fix walking while rifle-aiming
     if(cfg->Bind("FixAimingWalkRifle", true, "Gameplay")->GetBool())
@@ -258,22 +382,28 @@ extern "C" void OnModLoad()
         Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
     }
 
-    // Buoyancy speed fix (not working)
-    /*if(cfg->Bind("BuoyancySpeedFix", true, "Gameplay")->GetBool())
-    {
-        HOOKPLT(ProcessBuoyancy, pGTASA + 0x67130C);
-    }*/
-
     // Fix stealable items sucking
     if(cfg->Bind("ClampObjectToStealDist", true, "Gameplay")->GetBool())
     {
-        aml->Write(pGTASA + 0x40B162, (uintptr_t)"\xB6\xEE\x00\x0A", 4);
+        aml->Write(pGTASA + 0x40B162, (uintptr_t)"\xB7\xEE\x00\x0A", 4);
     }
 
     // Fix broken basketball minigame by placing the save icon away from it
     if(cfg->Bind("MaddDoggMansionSaveFix", true, "Gameplay")->GetBool())
     {
-        HOOKPLT(GenerateNewPickup, pGTASA + 0x674DE4);
+        HOOKPLT(GenerateNewPickup_MaddDogg, pGTASA + 0x674DE4);
+    }
+
+    // Fix broken basketball minigame by placing the save icon away from it
+    if(cfg->Bind("FixStarBribeInSFBuilding", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(GenerateNewPickup_SFBribe, pGTASA + 0x674DE4);
+    }
+
+    // Fix rifle pickup that stuck inside the stadium
+    if(cfg->Bind("FixSFStadiumRiflePickup", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(GenerateNewPickup_SFRiflePickup, pGTASA + 0x674DE4);
     }
 
     // Remove jetpack leaving on widget press while in air?
@@ -289,9 +419,32 @@ extern "C" void OnModLoad()
     }
 
     // Bring back penalty when CJ dies!
-    if(cfg->Bind("BrindBackWeaponPenaltyIfDied", true, "Gameplay")->GetBool())
+    if(cfg->Bind("WeaponPenaltyIfDied", true, "Gameplay")->GetBool())
     {
         DiedPenalty_BackTo = pGTASA + 0x3088E0 + 0x1;
         Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_inject);
     }
+
+    // Fix emergency vehicles
+    if(cfg->Bind("FixEmergencyVehicles", true, "Gameplay")->GetBool())
+    {
+        EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
+        Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
+        HOOKPLT(SetFOV_Emergency, pGTASA + 0x673DDC);
+    }
+
+    // Fix red marker that cannot be placed in a menu on ultrawide screens
+    // Kinda trashy fix...
+    if(cfg->Bind("FixRedMarkerUnplaceable", true, "Gameplay")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x2A9E60, sizeof(float));
+        *(float*)(pGTASA + 0x2A9E60) /= 1.2f;
+        aml->Write(pGTASA + 0x2A9D42, (uintptr_t)"\x83\xEE\x0C\x3A", 4);
+    }
+
+    // Fix those freakin small widgets!
+    //if(cfg->Bind("FixWidgetsSizeDropping", true, "Gameplay")->GetBool())
+    //{
+    //    // Nothing
+    //}
 }
