@@ -6,7 +6,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.1, RusJJ)
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
@@ -19,13 +19,17 @@ float fEmergencyVehiclesFix;
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-float *ms_fTimeStep, *NearScreenZ, *ms_fFOV;
 CPlayerInfo* WorldPlayers;
 CCamera* TheCamera;
 RsGlobalType* RsGlobal;
+MobileMenu *gMobileMenu;
+CWidget** m_pWidgets;
+
+float *ms_fTimeStep, *ms_fFOV;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
-MobileMenu *gMobileMenu;
+int *lastDevice;
+bool *bDidWeProcessAnyCinemaCam;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -50,7 +54,11 @@ void (*_rwOpenGLSetRenderState)(RwRenderState, int);
 void (*_rwOpenGLGetRenderState)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
 eBulletFxType (*GetBulletFx)(void* self, unsigned int surfaceId);
-void (*DoGunFlashForPed)(CPed* ped, int, bool);
+void (*LIB_PointerGetCoordinates)(int, int*, int*, float*);
+bool (*Touch_IsDoubleTapped)(WidgetIDs, bool doTapEffect, int idkButBe1);
+bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
+void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
+void (*RestoreCamera)(CCamera*);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -67,7 +75,7 @@ extern "C" void MoonVisual_1(void)
 {
     _rwOpenGLGetRenderState(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
     _rwOpenGLGetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
-    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, rwALPHATESTFUNCTIONLESS);
+    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, rwALPHATESTFUNCTIONALWAYS);
     _rwOpenGLSetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, true);
 
     _rwOpenGLSetRenderState(rwRENDERSTATESRCBLEND, rwBLENDSRCALPHA);
@@ -218,7 +226,7 @@ DECL_HOOK(ScriptHandle, GenerateNewPickup_SFRiflePickup, float x, float y, float
 {
     if(modelId == 357 && x == -2094.0f && y == -488.0f)
     {
-        return GenerateNewPickup_SFRiflePickup(x, -489.5f, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+        return GenerateNewPickup_SFRiflePickup(x, -490.2f, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
     }
     return GenerateNewPickup_SFRiflePickup(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
 }
@@ -273,6 +281,55 @@ DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
     SetFOV_Emergency(factor, unused);
 }
 
+// Marker fix
+DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
+{
+    if(canPlace)
+    {
+        int x, y;
+        LIB_PointerGetCoordinates(*lastDevice, &x, &y, NULL);
+        if(y > 0.85f * RsGlobal->maximumHeight &&
+           x > ((float)RsGlobal->maximumWidth - 0.7f * RsGlobal->maximumHeight)) return;
+    }
+    PlaceRedMarker_MarkerFix(canPlace);
+}
+
+// Cinematic camera
+int nextTickAllowCinematic = 0;
+bool toggledCinematic = false;
+DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
+{
+    PlayerInfoProcess(info, playerNum);
+
+    // Do it for local player only.
+    if(info == &WorldPlayers[0])
+    {
+        if(info->m_pPed->m_pVehicle != NULL && info->m_pPed->m_nPedState == PEDSTATE_DRIVING)
+        {
+            if(info->m_pPed->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_TRAIN &&
+               nextTickAllowCinematic < *m_snTimeInMilliseconds               &&
+               Touch_IsDoubleTapped(WIDGETID_CAMERAMODE, true, 1))
+            {
+                nextTickAllowCinematic = *m_snTimeInMilliseconds + 500;
+                toggledCinematic = !TheCamera->m_bEnabledCinematicCamera;
+                TheCamera->m_bEnabledCinematicCamera = toggledCinematic;
+            }
+        }
+        else
+        {
+            if(toggledCinematic)
+            {
+                TheCamera->m_bEnabledCinematicCamera = false;
+                RestoreCamera(TheCamera);
+                SetCameraDirectlyBehindForFollowPed(TheCamera);
+                //m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
+                *bDidWeProcessAnyCinemaCam = false;
+                toggledCinematic = false;
+            }
+        }
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -287,19 +344,25 @@ extern "C" void OnModLoad()
     SET_TO(_rwOpenGLGetRenderState, aml->GetSym(hGTASA, "_Z23_rwOpenGLGetRenderState13RwRenderStatePv"));
     SET_TO(ClearPedWeapons,         aml->GetSym(hGTASA, "_ZN4CPed12ClearWeaponsEv"));
     SET_TO(GetBulletFx,             aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c11GetBulletFxEj"));
-    SET_TO(DoGunFlashForPed,        aml->GetSym(hGTASA, "_ZN4CPed10DoGunFlashEib"));
+    SET_TO(LIB_PointerGetCoordinates, aml->GetSym(hGTASA, "_Z25LIB_PointerGetCoordinatesiPiS_Pf"));
+    SET_TO(Touch_IsDoubleTapped,    aml->GetSym(hGTASA, "_ZN15CTouchInterface14IsDoubleTappedENS_9WidgetIDsEbi"));
+    SET_TO(Touch_IsHeldDown,        aml->GetSym(hGTASA, "_ZN15CTouchInterface10IsHeldDownENS_9WidgetIDsEi"));
+    SET_TO(SetCameraDirectlyBehindForFollowPed, aml->GetSym(hGTASA, "_ZN7CCamera48SetCameraDirectlyBehindForFollowPed_CamOnAStringEv"));
+    SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
     // Functions End   //
     
     // Variables Start //
     SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(NearScreenZ,             aml->GetSym(hGTASA, "_ZN9CSprite2d11NearScreenZE"));
-    SET_TO(WorldPlayers,            aml->GetSym(hGTASA, "_ZN6CWorld7PlayersE"));
+    SET_TO(WorldPlayers,            *(void**)(pGTASA + 0x6783C8)); // Patched CWorld::Players will work now!
     SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
     SET_TO(TheCamera,               aml->GetSym(hGTASA, "TheCamera"));
     SET_TO(RsGlobal,                aml->GetSym(hGTASA, "RsGlobal"));
     SET_TO(g_surfaceInfos,          aml->GetSym(hGTASA, "g_surfaceInfos"));
     SET_TO(m_snTimeInMilliseconds,  aml->GetSym(hGTASA, "_ZN6CTimer22m_snTimeInMillisecondsE"));
     SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
+    SET_TO(lastDevice,              aml->GetSym(hGTASA, "lastDevice"));
+    SET_TO(m_pWidgets,              aml->GetSym(hGTASA, "_ZN15CTouchInterface10m_pWidgetsE"));
+    SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
     // Variables End   //
 
     // Animated textures
@@ -329,12 +392,6 @@ extern "C" void OnModLoad()
     //{
     //    // Nothing
     //}
-
-    // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
-    if(cfg->Bind("FixCutsceneFOV", false, "Visual")->GetBool())
-    {
-        HOOKPLT(SetFOV, pGTASA + 0x673DDC);
-    }
 
     // Fix sky multitude
     if(cfg->Bind("FixSkyMultitude", true, "Visual")->GetBool())
@@ -433,6 +490,12 @@ extern "C" void OnModLoad()
         HOOKPLT(SetFOV_Emergency, pGTASA + 0x673DDC);
     }
 
+    // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
+    if(cfg->Bind("FixCutsceneFOV", false, "Visual")->GetBool())
+    {
+        HOOKPLT(SetFOV, pGTASA + 0x673DDC);
+    }
+
     // Fix red marker that cannot be placed in a menu on ultrawide screens
     // Kinda trashy fix...
     if(cfg->Bind("FixRedMarkerUnplaceable", true, "Gameplay")->GetBool())
@@ -440,6 +503,60 @@ extern "C" void OnModLoad()
         aml->Unprot(pGTASA + 0x2A9E60, sizeof(float));
         *(float*)(pGTASA + 0x2A9E60) /= 1.2f;
         aml->Write(pGTASA + 0x2A9D42, (uintptr_t)"\x83\xEE\x0C\x3A", 4);
+        HOOKPLT(PlaceRedMarker_MarkerFix, pGTASA + 0x6702C8);
+    }
+
+    // Dont set player on fire when he's on burning BMX (MTA:SA)
+    if(cfg->Bind("DontBurnPlayerOnBurningBMX", true, "Gameplay")->GetBool())
+    {
+        Redirect(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
+    }
+
+    // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
+    if(cfg->Bind("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
+    {
+        aml->Write(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE"), (uintptr_t)"\x7F\x00\x00\x00", 4);
+    }
+
+    // THROWN projectiles throw more accurately (MTA:SA)
+    if(cfg->Bind("ThrownProjectilesAccuracy", true, "Gameplay")->GetBool())
+    {
+        Redirect(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
+    }
+
+    // Disable call to FxSystem_c::GetCompositeMatrix in CAEFireAudioEntity::UpdateParameters 
+    // that was causing a crash - spent ages debugging, the crash happens if you create 40 or 
+    // so vehicles that catch fire (upside down) then delete them, repeating a few times.
+    // (MTA:SA)
+    if(cfg->Bind("GetCompositeMatrixFixPossibleCrash", true, "Gameplay")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x395E6A, 7);
+    }
+
+    // Default pickup's interiors to 0 instead of 13 (MTA:SA)
+    if(cfg->Bind("DefaultPickupInteriorIs0", true, "Gameplay")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x452E34, 1);
+        *(char*)(pGTASA + 0x452E34) = 0x00;
+    }
+
+    // Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
+    if(cfg->Bind("DontGiveCarHealthFromBurningPed", true, "Gameplay")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x3F1CAC, 0xD);
+    }
+
+    // Increase intensity of vehicle tail light corona (MTA:SA)
+    // Is this even working on Android?
+    if(cfg->Bind("IncreaseTailLightIntensity", true, "Gameplay")->GetBool())
+    {
+        aml->Write(pGTASA + 0x591016, (uintptr_t)"\xF0", 1);
+    }
+
+    // Cinematic vehicle camera on double tap
+    if(cfg->Bind("CinematicCameraOnDoubleTap", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(PlayerInfoProcess, pGTASA + 0x673E84);
     }
 
     // Fix those freakin small widgets!
@@ -448,3 +565,6 @@ extern "C" void OnModLoad()
     //    // Nothing
     //}
 }
+
+// AircraftMax  0x585674
+// -AircraftMax 0x585678

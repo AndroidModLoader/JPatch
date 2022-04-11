@@ -25,3 +25,13 @@
  - Sand/Dust particles from bullets are limited because they are creating a lot of lag
  - Fixed primary color resetting to the white after doing paintjob
  - Fixed red marker cannot be placed on the right side of the screen
+ 
+ **Since v1.1.1**
+ - Dont burn player that are driving burning bmx
+ - Buff num of desired car types to be loaded (MTA:SA, buff a limit a bit)
+ - Thrown projectiles throw more accurately (MTA:SA)
+ - A fix for possible crash from GetCompositeMatrix (may be useless)
+ - Pickups are now created with interior id 0 (may be useless)
+ - Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
+ - Increase intensity of vehicle tail light corona (MTA:SA, probably not useful now)
+ - Cinematic camera when double tapping the camera switch button
