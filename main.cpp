@@ -294,6 +294,35 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
     PlaceRedMarker_MarkerFix(canPlace);
 }
 
+// SkimmerPlaneFix
+uintptr_t jump_addr_00589ADC;
+float FixValue;
+__attribute__((optnone)) __attribute__((naked)) void SkimmerPlaneFix_00589AD4(void)
+{
+    asm volatile(
+        ".thumb\n"
+        ".hidden jump_addr_00589ADC\n"
+        ".hidden FixValue\n"
+        "PUSH {R0,R1}\n"
+        "LDR R0, =(FixValue - 100001f - 2*(100002f-100001f))\n"
+        "100001:\n"
+        "ADD R0, PC\n"
+        "100002:\n"
+        "VLDR S4, [R0]\n"
+        "POP {R0,R1}\n"
+        "VADD.F32 S2, S2, S8\n"
+        "PUSH {R0,R1}\n"
+        "LDR R0, =(jump_addr_00589ADC - 100001f - 2*(100002f-100001f))\n"
+        "100001:\n"
+        "ADD R0, PC\n"
+        "100002:\n"
+        "LDR R0, [R0]\n"
+        "STR R0, [SP, #4]\n"
+        "POP {R0,PC}\n"
+        );
+}
+
+
 // Cinematic camera
 int nextTickAllowCinematic = 0;
 bool toggledCinematic = false;
@@ -557,6 +586,14 @@ extern "C" void OnModLoad()
     if(cfg->Bind("CinematicCameraOnDoubleTap", true, "Gameplay")->GetBool())
     {
         HOOKPLT(PlayerInfoProcess, pGTASA + 0x673E84);
+    }
+    
+    // Fix Skimmer plane
+    if (cfg->Bind("SkimmerPlaneFix", true, "Gameplay")->GetBool())
+    {
+        FixValue = 30.0 * (*ms_fTimeStep / magic);
+        jump_addr_00589ADC = pGTASA + 0x00589ADC + 0x1;
+        Redirect(pGTASA + 0x00589AD4 + 0x1, (uintptr_t)SkimmerPlaneFix_00589AD4);
     }
 
     // Fix those freakin small widgets!
