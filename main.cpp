@@ -596,10 +596,10 @@ extern "C" void OnModLoad()
         HOOKPLT(PlayerInfoProcess, pGTASA + 0x673E84);
     }
     
-    // Fix Skimmer plane
+    // Fix Skimmer plane ( https://github.com/XMDS )
     if (cfg->Bind("SkimmerPlaneFix", true, "Gameplay")->GetBool())
     {
-        FixValue = 30.0 * (*ms_fTimeStep / magic);
+        FixValue = 30.0 * (*ms_fTimeStep / fMagic);
         jump_addr_00589ADC = pGTASA + 0x00589ADC + 0x1;
         Redirect(pGTASA + 0x00589AD4 + 0x1, (uintptr_t)SkimmerPlaneFix_00589AD4);
     }
@@ -636,7 +636,7 @@ extern "C" void OnModLoad()
         *(float*)(pGTASA + 0x5319D0) *= 2.0f;
     }
 
-    // 44100 Hz Audio support (without a mod OpenAL Update)
+    // 44100 Hz Audio support (without a mod OpenAL Update) (is this working?)
     if(cfg->Bind("Allow44100HzAudio", true, "Gameplay")->GetBool())
     {
         aml->Unprot(pGTASA + 0x613E0A, sizeof(int));

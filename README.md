@@ -31,7 +31,14 @@
  - Buff num of desired car types to be loaded (MTA:SA, buff a limit a bit)
  - Thrown projectiles throw more accurately (MTA:SA)
  - A fix for possible crash from GetCompositeMatrix (may be useless)
- - Pickups are now created with interior id 0 (may be useless)
  - Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
  - Increase intensity of vehicle tail light corona (MTA:SA, probably not useful now)
  - Cinematic camera when double tapping the camera switch button
+ 
+ **Since v1.1.2**
+ - Skimmer Plane can be properly get out of water (XMDS)
+ - Streaming memory is buffed now
+ - Helis/Planes can now fly higher
+ - Jetpack can now fly higher
+ - 44100 Hz audio support without OpenAL Update mod
+ - Disable GTA vehicle detachment at rotation (MTA:SA)
