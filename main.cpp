@@ -6,7 +6,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.2, RusJJ)
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
@@ -29,7 +29,7 @@ float *ms_fTimeStep, *ms_fFOV;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
 int *lastDevice;
-bool *bDidWeProcessAnyCinemaCam;
+bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -43,7 +43,7 @@ void Redirect(uintptr_t addr, uintptr_t to)
         addr &= ~1;
         if (addr & 2)
         {
-            aml->PlaceNOP(addr, 1);
+            aml->PlaceNOP(addr, 1); 
             addr += 2;
         }
         hook[0] = 0xF000F8DF;
@@ -278,6 +278,14 @@ __attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
 DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
     fEmergencyVehiclesFix = 70.0f / factor;
+    if(fEmergencyVehiclesFix < 0.0f)
+    {
+        fEmergencyVehiclesFix = 70.0f / 20.0f; // Fix for a users of broken mods
+    }
+    else if(fEmergencyVehiclesFix < 0.38f)
+    {
+        fEmergencyVehiclesFix = 0.38f;
+    }
     SetFOV_Emergency(factor, unused);
 }
 
@@ -295,7 +303,6 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
 }
 
 // Cinematic camera
-int nextTickAllowCinematic = 0;
 bool toggledCinematic = false;
 DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
 {
@@ -304,15 +311,17 @@ DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
     // Do it for local player only.
     if(info == &WorldPlayers[0])
     {
-        if(info->m_pPed->m_pVehicle != NULL && info->m_pPed->m_nPedState == PEDSTATE_DRIVING)
+        if(!*bRunningCutscene &&
+           info->m_pPed->m_pVehicle != NULL &&
+           info->m_pPed->m_nPedState == PEDSTATE_DRIVING)
         {
             if(info->m_pPed->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_TRAIN &&
-               nextTickAllowCinematic < *m_snTimeInMilliseconds               &&
                Touch_IsDoubleTapped(WIDGETID_CAMERAMODE, true, 1))
             {
-                nextTickAllowCinematic = *m_snTimeInMilliseconds + 500;
                 toggledCinematic = !TheCamera->m_bEnabledCinematicCamera;
                 TheCamera->m_bEnabledCinematicCamera = toggledCinematic;
+
+                memset(m_pWidgets[WIDGETID_CAMERAMODE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
             }
         }
         else
@@ -320,10 +329,13 @@ DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
             if(toggledCinematic)
             {
                 TheCamera->m_bEnabledCinematicCamera = false;
-                RestoreCamera(TheCamera);
-                SetCameraDirectlyBehindForFollowPed(TheCamera);
-                //m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
                 *bDidWeProcessAnyCinemaCam = false;
+                if(!*bRunningCutscene)
+                {
+                    RestoreCamera(TheCamera);
+                    SetCameraDirectlyBehindForFollowPed(TheCamera);
+                }
+                m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
                 toggledCinematic = false;
             }
         }
@@ -361,8 +373,9 @@ extern "C" void OnModLoad()
     SET_TO(m_snTimeInMilliseconds,  aml->GetSym(hGTASA, "_ZN6CTimer22m_snTimeInMillisecondsE"));
     SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
     SET_TO(lastDevice,              aml->GetSym(hGTASA, "lastDevice"));
-    SET_TO(m_pWidgets,              aml->GetSym(hGTASA, "_ZN15CTouchInterface10m_pWidgetsE"));
+    SET_TO(m_pWidgets,              *(void**)(pGTASA + 0x67947C)); // Patched CTouchInterface::m_pWidgets will work now!
     SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
+    SET_TO(bRunningCutscene,        aml->GetSym(hGTASA, "_ZN12CCutsceneMgr10ms_runningE"));
     // Variables End   //
 
     // Animated textures
@@ -516,6 +529,8 @@ extern "C" void OnModLoad()
     if(cfg->Bind("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
     {
         aml->Write(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE"), (uintptr_t)"\x7F\x00\x00\x00", 4);
+        aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
+        aml->PlaceNOP(pGTASA + 0x47269C, 2);
     }
 
     // THROWN projectiles throw more accurately (MTA:SA)
@@ -531,13 +546,6 @@ extern "C" void OnModLoad()
     if(cfg->Bind("GetCompositeMatrixFixPossibleCrash", true, "Gameplay")->GetBool())
     {
         aml->PlaceNOP(pGTASA + 0x395E6A, 7);
-    }
-
-    // Default pickup's interiors to 0 instead of 13 (MTA:SA)
-    if(cfg->Bind("DefaultPickupInteriorIs0", true, "Gameplay")->GetBool())
-    {
-        aml->Unprot(pGTASA + 0x452E34, 1);
-        *(char*)(pGTASA + 0x452E34) = 0x00;
     }
 
     // Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
@@ -559,12 +567,54 @@ extern "C" void OnModLoad()
         HOOKPLT(PlayerInfoProcess, pGTASA + 0x673E84);
     }
 
+    // Buff streaming
+    if(cfg->Bind("BuffStreamingMem", true, "Gameplay")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x46BE18, 1);
+        aml->PlaceNOP(pGTASA + 0x47272A, 2);
+        aml->PlaceNOP(pGTASA + 0x472690, 2);
+        int* streamingAvailable = (int*)aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE");
+        if(*streamingAvailable <= 50*1024*1024)
+        {
+            *streamingAvailable = 512 * 1024 * 1024;
+        }
+    }
+
+    // Buff planes max height
+    if(cfg->Bind("BuffPlanesMaxHeight", true, "Gameplay")->GetBool())
+    {
+        float heights[7];
+        aml->Unprot(pGTASA + 0x585674, sizeof(float)*7);
+        SET_TO(heights, pGTASA + 0x585674);
+        for(int i = 0; i < 7; ++i)
+        {
+            heights[i] *= 1.25f;
+        }
+    }
+
+    // Buff jetpack max height
+    if(cfg->Bind("BuffJetpackMaxHeight", true, "Gameplay")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x5319D0, sizeof(float));
+        *(float*)(pGTASA + 0x5319D0) *= 2.0f;
+    }
+
+    // 44100 Hz Audio support (without a mod OpenAL Update)
+    if(cfg->Bind("Allow44100HzAudio", true, "Gameplay")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x613E0A, sizeof(int));
+        *(int*)(pGTASA + 0x613E0A) = 44100;
+    }
+
+    // Disable GTA vehicle detachment at rotation awkwardness
+    if(cfg->Bind("FixVehicleDetachmentAtRot", true, "Visual")->GetBool())
+    {
+        Redirect(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
+    }
+
     // Fix those freakin small widgets!
     //if(cfg->Bind("FixWidgetsSizeDropping", true, "Gameplay")->GetBool())
     //{
     //    // Nothing
     //}
 }
-
-// AircraftMax  0x585674
-// -AircraftMax 0x585678
