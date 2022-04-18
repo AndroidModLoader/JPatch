@@ -6,7 +6,15 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.2, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.3, RusJJ)
+
+union ScriptVariables
+{
+    int      i;
+    float    f;
+    uint32_t u;
+    void*    p;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
@@ -14,6 +22,7 @@ MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.2, RusJJ)
 uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
+static constexpr float fMagic2 = 30.0f / 20.0f;
 float fEmergencyVehiclesFix;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -25,11 +34,12 @@ RsGlobalType* RsGlobal;
 MobileMenu *gMobileMenu;
 CWidget** m_pWidgets;
 
-float *ms_fTimeStep, *ms_fFOV;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
-int *lastDevice;
+int *lastDevice, *NumberOfSearchLights;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
+ScriptVariables* ScriptParams;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -59,6 +69,7 @@ bool (*Touch_IsDoubleTapped)(WidgetIDs, bool doTapEffect, int idkButBe1);
 bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
 void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
+CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -277,14 +288,19 @@ __attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
 }
 DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
-    fEmergencyVehiclesFix = 70.0f / factor;
-    if(fEmergencyVehiclesFix < 0.0f)
+    // Someone is using broken mods
+    // So here is the workaround + a little value clamping
+    if(factor < 20.0f)
     {
-        fEmergencyVehiclesFix = 70.0f / 20.0f; // Fix for a users of broken mods
+        fEmergencyVehiclesFix = 70.0f / 20.0f;
     }
-    else if(fEmergencyVehiclesFix < 0.38f)
+    else if(factor > 160.0f)
     {
-        fEmergencyVehiclesFix = 0.38f;
+        fEmergencyVehiclesFix = 70.0f / 160.0f;
+    }
+    else
+    {
+        fEmergencyVehiclesFix = 70.0f / factor;
     }
     SetFOV_Emergency(factor, unused);
 }
@@ -300,6 +316,22 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
            x > ((float)RsGlobal->maximumWidth - 0.7f * RsGlobal->maximumHeight)) return;
     }
     PlaceRedMarker_MarkerFix(canPlace);
+}
+
+// Desired num of vehicles
+uintptr_t DesiredNum_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void DesiredNum_inject(void)
+{
+    asm volatile(
+        "mov r4, r0\n"
+        "movw r0, #0x92D4\n"
+        "movt r0, #0x1\n"
+        "push {r0}\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0}\n"
+        "bx r12\n"
+    :: "r" (DesiredNum_BackTo));
 }
 
 // SkimmerPlaneFix
@@ -333,9 +365,9 @@ __attribute__((optnone)) __attribute__((naked)) void SkimmerPlaneFix_00589AD4(vo
 
 // Cinematic camera
 bool toggledCinematic = false;
-DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
+DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
 {
-    PlayerInfoProcess(info, playerNum);
+    PlayerInfoProcess_Cinematic(info, playerNum);
 
     // Do it for local player only.
     if(info == &WorldPlayers[0])
@@ -359,7 +391,8 @@ DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
             {
                 TheCamera->m_bEnabledCinematicCamera = false;
                 *bDidWeProcessAnyCinemaCam = false;
-                if(!*bRunningCutscene)
+                if(!*bRunningCutscene &&
+                   TheCamera->m_pTargetEntity == NULL)
                 {
                     RestoreCamera(TheCamera);
                     SetCameraDirectlyBehindForFollowPed(TheCamera);
@@ -369,6 +402,92 @@ DECL_HOOKv(PlayerInfoProcess, CPlayerInfo* info, int playerNum)
             }
         }
     }
+}
+
+// SWAT
+uintptr_t GetCarGunFired_BackTo; // For our usage only
+uintptr_t GetCarGunFired_BackTo1, GetCarGunFired_BackTo2; // For optimization?
+extern "C" void GetCarGunFired_patch(void)
+{
+    CVehicle* veh = FindPlayerVehicle(-1, false);
+    if(veh != NULL && (veh->m_nModelIndex == 407 || veh->m_nModelIndex == 601))
+    {
+        GetCarGunFired_BackTo = GetCarGunFired_BackTo1;
+    }
+    else
+    {
+        GetCarGunFired_BackTo = GetCarGunFired_BackTo2;
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_inject(void)
+{
+    asm volatile(
+        "push {r0-r11}\n"
+        "bl GetCarGunFired_patch\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r11}\n"
+        "bx r12\n"
+    :: "r" (GetCarGunFired_BackTo));
+}
+
+// Fuzzy seek (im lazy to patch so lets just do this instead (because we need to inject the code))
+DECL_HOOK(int, mpg123_param, void* mh, int key, long val, int ZERO, double fval)
+{
+    // 0x2000 = MPG123_SKIP_ID3V2
+    // 0x200  = MPG123_FUZZY
+    // 0x100  = MPG123_SEEKBUFFER
+    // 0x40   = MPG123_GAPLESS
+    return mpg123_param(mh, key, val | (0x2000 | 0x200 | 0x100 | 0x40), ZERO, fval);
+}
+
+// Fix water cannon
+DECL_HOOKv(WaterCannonRender, void* self)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
+    WaterCannonRender(self);
+    *ms_fTimeStep = save;
+}
+DECL_HOOKv(WaterCannonUpdate, void* self, int frames)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
+    WaterCannonUpdate(self, frames);
+    *ms_fTimeStep = save;
+}
+
+// Garage doors
+DECL_HOOKv(GarageSlideDoorOpen, void* self)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic2;
+    GarageSlideDoorOpen(self);
+    *ms_fTimeStep = save;
+}
+DECL_HOOKv(GarageSlideDoorClose, void* self)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic2;
+    GarageSlideDoorClose(self);
+    *ms_fTimeStep = save;
+}
+
+// Moving objs (opcode 034E)
+uintptr_t ProcessCommands800To899_BackTo;
+extern "C" void ProcessCommands800To899_patch(void)
+{
+    float scale = 30.0f / *game_FPS;
+    ScriptParams[4].f *= scale;
+    ScriptParams[5].f *= scale;
+    ScriptParams[6].f *= scale;
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessCommands800To899_inject(void)
+{
+    asm volatile(
+        "push {r0-r11}\n"
+        "bl ProcessCommands800To899_patch\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r11}\n"
+        "bx r12\n"
+    :: "r" (ProcessCommands800To899_BackTo));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -390,21 +509,25 @@ extern "C" void OnModLoad()
     SET_TO(Touch_IsHeldDown,        aml->GetSym(hGTASA, "_ZN15CTouchInterface10IsHeldDownENS_9WidgetIDsEi"));
     SET_TO(SetCameraDirectlyBehindForFollowPed, aml->GetSym(hGTASA, "_ZN7CCamera48SetCameraDirectlyBehindForFollowPed_CamOnAStringEv"));
     SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
+    SET_TO(FindPlayerVehicle,       aml->GetSym(hGTASA, "_Z17FindPlayerVehicleib"));
     // Functions End   //
     
     // Variables Start //
     SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
     SET_TO(WorldPlayers,            *(void**)(pGTASA + 0x6783C8)); // Patched CWorld::Players will work now!
     SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
+    SET_TO(game_FPS,                aml->GetSym(hGTASA, "_ZN6CTimer8game_FPSE"));
     SET_TO(TheCamera,               aml->GetSym(hGTASA, "TheCamera"));
     SET_TO(RsGlobal,                aml->GetSym(hGTASA, "RsGlobal"));
     SET_TO(g_surfaceInfos,          aml->GetSym(hGTASA, "g_surfaceInfos"));
     SET_TO(m_snTimeInMilliseconds,  aml->GetSym(hGTASA, "_ZN6CTimer22m_snTimeInMillisecondsE"));
     SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
+    SET_TO(NumberOfSearchLights,    aml->GetSym(hGTASA, "_ZN5CHeli20NumberOfSearchLightsE"));
     SET_TO(lastDevice,              aml->GetSym(hGTASA, "lastDevice"));
     SET_TO(m_pWidgets,              *(void**)(pGTASA + 0x67947C)); // Patched CTouchInterface::m_pWidgets will work now!
     SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
     SET_TO(bRunningCutscene,        aml->GetSym(hGTASA, "_ZN12CCutsceneMgr10ms_runningE"));
+    SET_TO(ScriptParams,            *(void**)(pGTASA + 0x676F7C)); // Patched ScriptParams will work now!
     // Variables End   //
 
     // Animated textures
@@ -557,9 +680,14 @@ extern "C" void OnModLoad()
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
     if(cfg->Bind("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
     {
-        aml->Write(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE"), (uintptr_t)"\x7F\x00\x00\x00", 4);
+        *(int*)(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE")) = 0x7F;
         aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
         aml->PlaceNOP(pGTASA + 0x47269C, 2);
+        //aml->Write(pGTASA + 0x468B88, (uintptr_t)"\x33", 1);
+        //aml->Write(pGTASA + 0x468B8A, (uintptr_t)"\x33", 1);
+        //aml->Write(pGTASA + 0x468BCC, (uintptr_t)"\x33", 1);
+        //DesiredNum_BackTo = pGTASA + 0x468B82 + 0x1;
+        //Redirect(pGTASA + 0x468B7C + 0x1, (uintptr_t)DesiredNum_inject);
     }
 
     // THROWN projectiles throw more accurately (MTA:SA)
@@ -593,7 +721,7 @@ extern "C" void OnModLoad()
     // Cinematic vehicle camera on double tap
     if(cfg->Bind("CinematicCameraOnDoubleTap", true, "Gameplay")->GetBool())
     {
-        HOOKPLT(PlayerInfoProcess, pGTASA + 0x673E84);
+        HOOKPLT(PlayerInfoProcess_Cinematic, pGTASA + 0x673E84);
     }
     
     // Fix Skimmer plane ( https://github.com/XMDS )
@@ -647,6 +775,41 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixVehicleDetachmentAtRot", true, "Visual")->GetBool())
     {
         Redirect(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
+    }
+
+    // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
+    if(cfg->Bind("FixMissingShootBtnForSWAT", true, "Gameplay")->GetBool())
+    {
+        GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
+        GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
+        Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_inject);
+    }
+
+    // Just a fuzzy seek. Tell MPG123 to not load useless data.
+    if(cfg->Bind("FuzzySeek", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(mpg123_param, pGTASA + 0x66F3D4);
+    }
+
+    // Fix water cannon on a high fps
+    if(cfg->Bind("FixHighFPSWaterCannons", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(WaterCannonRender, pGTASA + 0x67432C);
+        HOOKPLT(WaterCannonUpdate, pGTASA + 0x6702EC);
+    }
+
+    // Fix garages on a high fps
+    if(cfg->Bind("FixHighFPSGarage", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(GarageSlideDoorOpen, pGTASA + 0x674D48);
+        HOOKPLT(GarageSlideDoorClose, pGTASA + 0x674FF4);
+    }
+
+    // Fix moving objects on a high fps (through the scripts)
+    if(cfg->Bind("FixHighFPSOpcode034E", true, "Gameplay")->GetBool())
+    {
+        ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
+        Redirect(pGTASA + 0x346E88 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
     }
 
     // Fix those freakin small widgets!
