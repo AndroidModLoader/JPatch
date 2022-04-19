@@ -28,7 +28,6 @@
  
  **Since v1.1.1**
  - Dont burn player that are driving burning bmx
- - Buff num of desired car types to be loaded (MTA:SA, buff a limit a bit)
  - Thrown projectiles throw more accurately (MTA:SA)
  - A fix for possible crash from GetCompositeMatrix (may be useless)
  - Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
@@ -42,3 +41,9 @@
  - Jetpack can now fly higher
  - 44100 Hz audio support without OpenAL Update mod
  - Disable GTA vehicle detachment at rotation (MTA:SA)
+ 
+ **Since v1.1.3**
+ - Bring back a missing shoot button on S.W.A.T.
+ - Fuzzy Seek (without a mod)
+ - Fixed water cannons (firetruck/S.W.A.T.) on high FPS
+ - An experimental fix of 034E opcode (move object) on high FPS

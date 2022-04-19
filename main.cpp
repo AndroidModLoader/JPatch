@@ -22,7 +22,6 @@ union ScriptVariables
 uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
-static constexpr float fMagic2 = 30.0f / 20.0f;
 float fEmergencyVehiclesFix;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -318,48 +317,26 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
     PlaceRedMarker_MarkerFix(canPlace);
 }
 
-// Desired num of vehicles
-uintptr_t DesiredNum_BackTo;
-__attribute__((optnone)) __attribute__((naked)) void DesiredNum_inject(void)
+// SkimmerPlaneFix
+// Changed the way it works, because ms_fTimeStep cannot be the same at the mod start (it is 0 at the mod start anyway)
+float fSkimmerValue;
+uintptr_t SkimmerWaterResistance_BackTo;
+extern "C" void SkimmerWaterResistance_patch(void)
+{
+    fSkimmerValue = 30.0f * (*ms_fTimeStep / fMagic);
+}
+__attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_inject(void)
 {
     asm volatile(
-        "mov r4, r0\n"
-        "movw r0, #0x92D4\n"
-        "movt r0, #0x1\n"
-        "push {r0}\n");
+        "bl SkimmerWaterResistance_patch\n");
+    asm volatile(
+        "vmov.f32 s4, %0\n"
+        "vadd.f32 s2, s2, s8\n"
+    :: "r" (fSkimmerValue));
     asm volatile(
         "mov r12, %0\n"
-        "pop {r0}\n"
         "bx r12\n"
-    :: "r" (DesiredNum_BackTo));
-}
-
-// SkimmerPlaneFix
-uintptr_t jump_addr_00589ADC;
-float FixValue;
-__attribute__((optnone)) __attribute__((naked)) void SkimmerPlaneFix_00589AD4(void)
-{
-    asm volatile(
-        ".thumb\n"
-        ".hidden jump_addr_00589ADC\n"
-        ".hidden FixValue\n"
-        "PUSH {R0,R1}\n"
-        "LDR R0, =(FixValue - 100001f - 2*(100002f-100001f))\n"
-        "100001:\n"
-        "ADD R0, PC\n"
-        "100002:\n"
-        "VLDR S4, [R0]\n"
-        "POP {R0,R1}\n"
-        "VADD.F32 S2, S2, S8\n"
-        "PUSH {R0,R1}\n"
-        "LDR R0, =(jump_addr_00589ADC - 100001f - 2*(100002f-100001f))\n"
-        "100001:\n"
-        "ADD R0, PC\n"
-        "100002:\n"
-        "LDR R0, [R0]\n"
-        "STR R0, [SP, #4]\n"
-        "POP {R0,PC}\n"
-        );
+    :: "r" (SkimmerWaterResistance_BackTo));
 }
 
 
@@ -452,20 +429,6 @@ DECL_HOOKv(WaterCannonUpdate, void* self, int frames)
 {
     float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
     WaterCannonUpdate(self, frames);
-    *ms_fTimeStep = save;
-}
-
-// Garage doors
-DECL_HOOKv(GarageSlideDoorOpen, void* self)
-{
-    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic2;
-    GarageSlideDoorOpen(self);
-    *ms_fTimeStep = save;
-}
-DECL_HOOKv(GarageSlideDoorClose, void* self)
-{
-    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic2;
-    GarageSlideDoorClose(self);
     *ms_fTimeStep = save;
 }
 
@@ -678,17 +641,13 @@ extern "C" void OnModLoad()
     }
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
-    if(cfg->Bind("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
-    {
-        *(int*)(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE")) = 0x7F;
-        aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
-        aml->PlaceNOP(pGTASA + 0x47269C, 2);
-        //aml->Write(pGTASA + 0x468B88, (uintptr_t)"\x33", 1);
-        //aml->Write(pGTASA + 0x468B8A, (uintptr_t)"\x33", 1);
-        //aml->Write(pGTASA + 0x468BCC, (uintptr_t)"\x33", 1);
-        //DesiredNum_BackTo = pGTASA + 0x468B82 + 0x1;
-        //Redirect(pGTASA + 0x468B7C + 0x1, (uintptr_t)DesiredNum_inject);
-    }
+    // Causes crash and completely useless
+    //if(cfg->Bind("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
+    //{
+    //    *(unsigned char*)(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE")) = 50; // Game hardcoded to 50 max (lazy to fix crashes for patches below)
+    //    aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
+    //    aml->PlaceNOP(pGTASA + 0x47269C, 2);
+    //}
 
     // THROWN projectiles throw more accurately (MTA:SA)
     if(cfg->Bind("ThrownProjectilesAccuracy", true, "Gameplay")->GetBool())
@@ -727,9 +686,8 @@ extern "C" void OnModLoad()
     // Fix Skimmer plane ( https://github.com/XMDS )
     if (cfg->Bind("SkimmerPlaneFix", true, "Gameplay")->GetBool())
     {
-        FixValue = 30.0 * (*ms_fTimeStep / fMagic);
-        jump_addr_00589ADC = pGTASA + 0x00589ADC + 0x1;
-        Redirect(pGTASA + 0x00589AD4 + 0x1, (uintptr_t)SkimmerPlaneFix_00589AD4);
+        SkimmerWaterResistance_BackTo = pGTASA + 0x589ADC + 0x1;
+        Redirect(pGTASA + 0x589AD4 + 0x1, (uintptr_t)SkimmerWaterResistance_inject);
     }
 
     // Buff streaming
@@ -748,7 +706,7 @@ extern "C" void OnModLoad()
     // Buff planes max height
     if(cfg->Bind("BuffPlanesMaxHeight", true, "Gameplay")->GetBool())
     {
-        float heights[7];
+        float* heights;
         aml->Unprot(pGTASA + 0x585674, sizeof(float)*7);
         SET_TO(heights, pGTASA + 0x585674);
         for(int i = 0; i < 7; ++i)
@@ -796,13 +754,6 @@ extern "C" void OnModLoad()
     {
         HOOKPLT(WaterCannonRender, pGTASA + 0x67432C);
         HOOKPLT(WaterCannonUpdate, pGTASA + 0x6702EC);
-    }
-
-    // Fix garages on a high fps
-    if(cfg->Bind("FixHighFPSGarage", true, "Gameplay")->GetBool())
-    {
-        HOOKPLT(GarageSlideDoorOpen, pGTASA + 0x674D48);
-        HOOKPLT(GarageSlideDoorClose, pGTASA + 0x674FF4);
     }
 
     // Fix moving objects on a high fps (through the scripts)
