@@ -39,11 +39,13 @@
  - Streaming memory is buffed now
  - Helis/Planes can now fly higher
  - Jetpack can now fly higher
- - 44100 Hz audio support without OpenAL Update mod
+ - 44100 Hz audio support without a mod "OpenAL Update"
  - Disable GTA vehicle detachment at rotation (MTA:SA)
  
  **Since v1.1.3**
  - Bring back a missing shoot button on S.W.A.T.
- - Fuzzy Seek (without a mod)
+ - Fuzzy seek (without a mod)
  - Fixed water cannons (firetruck/S.W.A.T.) on high FPS
  - An experimental fix of 034E opcode (move object) on high FPS
+ - Fixed physical objects push force (named as PedPushCarForce in FramerateVigilante)
+ - Fixed Heli/Plane camera (taken from Vita port of GTA:SA)

@@ -69,6 +69,7 @@ bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
 void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
+void (*PhysicalApplyForce)(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -453,6 +454,25 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessCommands800To899_inj
     :: "r" (ProcessCommands800To899_BackTo));
 }
 
+// PhysicalApplyCollision
+uintptr_t PhysicalApplyCollision_BackTo;
+extern "C" void PhysicalApplyCollision_patch(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed)
+{
+    force *= *ms_fTimeStep / fMagic;
+    PhysicalApplyForce(self, force, point, updateTurnSpeed);
+}
+__attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_inject(void)
+{
+    asm volatile(
+        "mov r0, r9\n"
+        "ldr.w r11, [sp,#0xE0+0xAC]\n"
+        "bl PhysicalApplyCollision_patch\n");
+    asm volatile(
+        "mov r0, %0\n"
+        "bx r0\n"
+    :: "r" (PhysicalApplyCollision_BackTo));
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -473,6 +493,7 @@ extern "C" void OnModLoad()
     SET_TO(SetCameraDirectlyBehindForFollowPed, aml->GetSym(hGTASA, "_ZN7CCamera48SetCameraDirectlyBehindForFollowPed_CamOnAStringEv"));
     SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
     SET_TO(FindPlayerVehicle,       aml->GetSym(hGTASA, "_Z17FindPlayerVehicleib"));
+    SET_TO(PhysicalApplyForce,      aml->GetSym(hGTASA, "_ZN9CPhysical10ApplyForceE7CVectorS0_b"));
     // Functions End   //
     
     // Variables Start //
@@ -761,6 +782,24 @@ extern "C" void OnModLoad()
     {
         ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
         Redirect(pGTASA + 0x346E88 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
+    }
+
+    // Fix pushing force
+    if(cfg->Bind("FixPhysicalPushForce", true, "Gameplay")->GetBool())
+    {
+        PhysicalApplyCollision_BackTo = pGTASA + 0x402B72 + 0x1;
+        Redirect(pGTASA + 0x402B68 + 0x1, (uintptr_t)PhysicalApplyCollision_inject);
+    }
+
+    // Can now rotate the camera inside the heli/plane?
+    // https://github.com/TheOfficialFloW/gtasa_vita/blob/6417775e182b0c8b789cc9a0c1161e6f1b43814f/loader/main.c#L736
+    if(cfg->Bind("UnstuckHeliCamera", true, "Gameplay")->GetBool())
+    {
+        aml->Write(pGTASA + 0x3C0866, (uintptr_t)"\x00\x20\x00\xBF", 4);
+        aml->Write(pGTASA + 0x3C1518, (uintptr_t)"\x00\x20\x00\xBF", 4);
+        aml->Write(pGTASA + 0x3C198A, (uintptr_t)"\x00\x20\x00\xBF", 4);
+        aml->Write(pGTASA + 0x3FC462, (uintptr_t)"\x00\x20\x00\xBF", 4);
+        aml->Write(pGTASA + 0x3FC754, (uintptr_t)"\x00\x20\x00\xBF", 4);
     }
 
     // Fix those freakin small widgets!
