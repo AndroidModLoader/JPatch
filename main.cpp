@@ -6,7 +6,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.3, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.4, RusJJ)
 
 union ScriptVariables
 {
@@ -320,26 +320,24 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
 
 // SkimmerPlaneFix
 // Changed the way it works, because ms_fTimeStep cannot be the same at the mod start (it is 0 at the mod start anyway)
-float fSkimmerValue;
 uintptr_t SkimmerWaterResistance_BackTo;
-extern "C" void SkimmerWaterResistance_patch(void)
+extern "C" float SkimmerWaterResistance_patch(void)
 {
-    fSkimmerValue = 30.0f * (*ms_fTimeStep / fMagic);
+    return 30.0f * (*ms_fTimeStep / fMagic);
 }
 __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_inject(void)
 {
     asm volatile(
-        "bl SkimmerWaterResistance_patch\n");
-    asm volatile(
-        "vmov.f32 s4, %0\n"
-        "vadd.f32 s2, s2, s8\n"
-    :: "r" (fSkimmerValue));
+        "vpush {s0-s2}\n"
+        "bl SkimmerWaterResistance_patch\n"
+        "vpop {s0-s2}\n"
+        "vmov.f32 s4, r0\n");
     asm volatile(
         "mov r12, %0\n"
+        "vadd.f32 s2, s2, s8\n"
         "bx r12\n"
     :: "r" (SkimmerWaterResistance_BackTo));
 }
-
 
 // Cinematic camera
 bool toggledCinematic = false;

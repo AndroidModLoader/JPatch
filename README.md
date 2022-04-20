@@ -49,3 +49,6 @@
  - An experimental fix of 034E opcode (move object) on high FPS
  - Fixed physical objects push force (named as PedPushCarForce in FramerateVigilante)
  - Fixed Heli/Plane camera (taken from Vita port of GTA:SA)
+ 
+ **Since v1.1.4**
+ - Hotfix of Skimmer plane
