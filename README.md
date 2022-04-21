@@ -52,3 +52,9 @@
  
  **Since v1.1.4**
  - Hotfix of Skimmer plane
+ 
+ **Since v1.1.5**
+ - Hotfix of experimental fix of 034E opcode
+ - Classic CJ's shadow
+ - CarSlowDownSpeedFix from FramerateVigilante
+ - HeliRotorIncreaseSpeed from FramerateVigilante

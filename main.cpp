@@ -2,11 +2,10 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 #include <dlfcn.h>
-#include <time.h>
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.4, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.5, RusJJ)
 
 union ScriptVariables
 {
@@ -443,10 +442,13 @@ extern "C" void ProcessCommands800To899_patch(void)
 __attribute__((optnone)) __attribute__((naked)) void ProcessCommands800To899_inject(void)
 {
     asm volatile(
+        "mla r9, r1, r2, r0\n"
         "push {r0-r11}\n"
+        "vpush {s0-s6}\n"
         "bl ProcessCommands800To899_patch\n");
     asm volatile(
         "mov r12, %0\n"
+        "vpop {s0-s6}\n"
         "pop {r0-r11}\n"
         "bx r12\n"
     :: "r" (ProcessCommands800To899_BackTo));
@@ -471,11 +473,36 @@ __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_inje
     :: "r" (PhysicalApplyCollision_BackTo));
 }
 
+// Car Slowdown Fix
+float *mod_HandlingManager_off4;
+DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint,
+        int32_t wheelsOnGround, float thrust, float brake, float adhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, uint16_t wheelStatus)
+{
+    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 = 0.9f * (*ms_fTimeStep / fMagic);
+    ProcessVehicleWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, wheelId, wheelSpeed, wheelState, wheelStatus);
+    *mod_HandlingManager_off4 = save;
+}
+
+// Heli rotor
+float *fRotorFinalSpeed, *fRotor1Speed, *fRotor2Speed;
+DECL_HOOKv(Heli_ProcessFlyingStuff, CHeli* self)
+{
+    *fRotor1Speed = 0.00454545454f * *fRotorFinalSpeed * (*ms_fTimeStep / fMagic);
+    *fRotor2Speed *= 3.0f * *fRotor1Speed;
+    Heli_ProcessFlyingStuff(self);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void OnModLoad()
 {
+    cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]");
+    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS");
+    cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg");
+    cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch");
+    cfg->Save();
+
     logger->SetTag("JPatch");
     pGTASA = aml->GetLib("libGTASA.so");
     hGTASA = dlopen("libGTASA.so", RTLD_LAZY);
@@ -779,7 +806,7 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixHighFPSOpcode034E", true, "Gameplay")->GetBool())
     {
         ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
-        Redirect(pGTASA + 0x346E88 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
+        Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
     }
 
     // Fix pushing force
@@ -798,6 +825,29 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x3C198A, (uintptr_t)"\x00\x20\x00\xBF", 4);
         aml->Write(pGTASA + 0x3FC462, (uintptr_t)"\x00\x20\x00\xBF", 4);
         aml->Write(pGTASA + 0x3FC754, (uintptr_t)"\x00\x20\x00\xBF", 4);
+    }
+
+    // Classic CJ shadow
+    if(cfg->Bind("FixClassicCJShadow", true, "Gameplay")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x5B86C4, 7);
+    }
+
+    // Car Slowdown Fix
+    if(cfg->Bind("FixCarSlowdownHighFPS", true, "Gameplay")->GetBool())
+    {
+        SET_TO(mod_HandlingManager_off4, pGTASA + 0xA066BC);
+        HOOKPLT(ProcessVehicleWheel, pGTASA + 0x66FC7C);
+    }
+
+    // Heli rotor speed fix
+    if(cfg->Bind("FixHeliRotorSpeedHighFPS", true, "Visual")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x572604, sizeof(float)*5);
+        SET_TO(fRotorFinalSpeed, pGTASA + 0x572604);
+        SET_TO(fRotor1Speed, pGTASA + 0x572610);
+        SET_TO(fRotor2Speed, pGTASA + 0x572608);
+        HOOK(Heli_ProcessFlyingStuff, aml->GetSym(hGTASA, "_ZN5CHeli21ProcessFlyingCarStuffEv"));
     }
 
     // Fix those freakin small widgets!
