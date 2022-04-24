@@ -102,7 +102,7 @@ int moon_alphafunc, moon_vertexblend, moon_alphaval;
 uintptr_t MoonVisual_1_BackTo;
 extern "C" void MoonVisual_1(void)
 {
-    glEnable(GL_ALPHA_TEST);
+    //glEnable(GL_ALPHA_TEST);
 
     RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
     RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
@@ -113,7 +113,7 @@ extern "C" void MoonVisual_1(void)
     RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDZERO);
 
-    glAlphaFuncQCOM(GL_GREATER, 0.5f);
+    //glAlphaFuncQCOM(GL_GREATER, 0.5f);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 {
@@ -137,7 +137,7 @@ extern "C" void MoonVisual_2(void)
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDONE);
     RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
 
-    glDisable(GL_ALPHA_TEST);
+    //glDisable(GL_ALPHA_TEST);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
 {
@@ -1129,12 +1129,35 @@ extern "C" void OnModLoad()
         Redirect(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
     }
 
-    // Dont kill peds when jacking their car, monster!
+    // Colored zone names are back
     if(cfg->Bind("ColoredZoneNames", true, "Visual")->GetBool())
     {
         ColoredZoneNames_BackTo = pGTASA + 0x438404 + 0x1;
         Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
     }
+
+    // Bigger max count of peds
+    if(cfg->Bind("BuffMaxPedsCount", true, "Gameplay")->GetBool())
+    {
+        *(int*)aml->GetSym(hGTASA, "_ZN11CPopulation20MaxNumberOfPedsInUseE") = 0x23;
+        aml->Write(pGTASA + 0x3F4DE0, (uintptr_t)"\x23", 1);
+        aml->Write(pGTASA + 0x4CC284, (uintptr_t)"\x23", 1);
+        aml->Write(pGTASA + 0x4CCBE0, (uintptr_t)"\x23", 1);
+        aml->Write(pGTASA + 0x4CCBEA, (uintptr_t)"\x1C", 1);
+    }
+
+    // Bigger max count of cars
+    if(cfg->Bind("BuffMaxCarsCount", true, "Gameplay")->GetBool())
+    {
+        *(int*)aml->GetSym(hGTASA, "_ZN8CCarCtrl20MaxNumberOfCarsInUseE") = 0x14;
+        aml->Write(pGTASA + 0x3F4DD2, (uintptr_t)"\x14", 1);
+    }
+
+    // Spawn vehicles in front (cannot figure out what's wrong with that)
+    //if(cfg->Bind("SpawnCarsInFront", true, "Gameplay")->GetBool())
+    //{
+    //    Redirect(pGTASA + 0x2E864E + 0x1, pGTASA + 0x2E8686 + 0x1);
+    //}
 
     // RE3: 
     //if(cfg->Bind("Re3_WetRoadsReflections", true, "Visual")->GetBool())

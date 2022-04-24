@@ -64,6 +64,8 @@
  - Lower threads sleeping timer
  - Dont kill peds when jacking their car, monster!
  - Colored zone names are back
+ - Tell the game we allow it to create more peds
+ - Tell the game we allow it to create more cars
  - re3: Fix R\* optimization that prevents peds to spawn
  - re3: Make cars and peds to not despawn when you look away
  - re3: Do not remove locked cars
