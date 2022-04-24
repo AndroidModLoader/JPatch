@@ -3,9 +3,16 @@
 #include <mod/config.h>
 #include <dlfcn.h>
 
+#define GL_GLEXT_PROTOTYPES
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <GLES2/gl2platform.h>
+
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.1.5, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.2, RusJJ)
 
 union ScriptVariables
 {
@@ -21,7 +28,10 @@ union ScriptVariables
 uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
+static constexpr int nMaxScriptSprites = 384;
 float fEmergencyVehiclesFix;
+CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600
+void* pNewIntroRectangles = new void*[15*nMaxScriptSprites] {NULL}; // 384*60=23040 0x5A00
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
@@ -31,13 +41,17 @@ CCamera* TheCamera;
 RsGlobalType* RsGlobal;
 MobileMenu *gMobileMenu;
 CWidget** m_pWidgets;
+ScriptVariables* ScriptParams;
+CLinkList<AlphaObjectInfo>* m_alphaList;
+CPool<CObject>** pObjectPool;
+CZoneInfo** m_pCurrZoneInfo;
 
-float *ms_fTimeStep, *ms_fFOV, *game_FPS;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
 int *lastDevice, *NumberOfSearchLights;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
-ScriptVariables* ScriptParams;
+uint32_t *CloudsIndividualRotation;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -58,8 +72,8 @@ void Redirect(uintptr_t addr, uintptr_t to)
     }
     aml->Write(addr, (uintptr_t)hook, sizeof(hook));
 }
-void (*_rwOpenGLSetRenderState)(RwRenderState, int);
-void (*_rwOpenGLGetRenderState)(RwRenderState, void*);
+void (*RwRenderStateSet)(RwRenderState, void*);
+void (*RwRenderStateGet)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
 eBulletFxType (*GetBulletFx)(void* self, unsigned int surfaceId);
 void (*LIB_PointerGetCoordinates)(int, int*, int*, float*);
@@ -69,27 +83,37 @@ void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
 void (*PhysicalApplyForce)(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed);
+char* (*GetFrameNodeName)(RwFrame*);
+int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, bool checkMaxVisible, bool checkMinVisible);
+void (*WorldRemoveEntity)(CEntity*);
+void (*SetFontColor)(CRGBA* clr);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void adadad(void)
 {
-    asm("VMOV.F32 S0, #0.5");
+    //asm("VMOV.F32 S0, #0.5");
+    asm("MOV.W R3, #0x0");
 }
 
 // Moon phases
-int moon_alphafunc, moon_vertexblend;
+int moon_alphafunc, moon_vertexblend, moon_alphaval;
 uintptr_t MoonVisual_1_BackTo;
 extern "C" void MoonVisual_1(void)
 {
-    _rwOpenGLGetRenderState(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
-    _rwOpenGLGetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
-    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, rwALPHATESTFUNCTIONALWAYS);
-    _rwOpenGLSetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, true);
+    glEnable(GL_ALPHA_TEST);
 
-    _rwOpenGLSetRenderState(rwRENDERSTATESRCBLEND, rwBLENDSRCALPHA);
-    _rwOpenGLSetRenderState(rwRENDERSTATEDESTBLEND, rwBLENDZERO);
+    RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
+    RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
+    RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTIONREF, &moon_alphaval);
+    
+    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONALWAYS);
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
+    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDZERO);
+
+    glAlphaFuncQCOM(GL_GREATER, 0.5f);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 {
@@ -105,11 +129,15 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 uintptr_t MoonVisual_2_BackTo;
 extern "C" void MoonVisual_2(void)
 {
-    _rwOpenGLSetRenderState(rwRENDERSTATEALPHATESTFUNCTION, moon_alphafunc);
-    _rwOpenGLSetRenderState(rwRENDERSTATEVERTEXALPHAENABLE, moon_vertexblend);
-    _rwOpenGLSetRenderState(rwRENDERSTATESRCBLEND, rwBLENDONE);
-    _rwOpenGLSetRenderState(rwRENDERSTATESRCBLEND, rwBLENDDESTALPHA);
-    _rwOpenGLSetRenderState(rwRENDERSTATEZWRITEENABLE, false);
+    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)moon_alphafunc);
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)moon_vertexblend);
+    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)moon_alphaval);
+
+    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDDESTALPHA);
+    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDONE);
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
+
+    glDisable(GL_ALPHA_TEST);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
 {
@@ -492,13 +520,178 @@ DECL_HOOKv(Heli_ProcessFlyingStuff, CHeli* self)
     Heli_ProcessFlyingStuff(self);
 }
 
+DECL_HOOKv(PossiblyRemoveVehicle_Re3, CVehicle* veh)
+{
+    if(veh->vehicleFlags.bIsLocked) return;
+    PossiblyRemoveVehicle_Re3(veh);
+}
+
+DECL_HOOKv(CloudsUpdate_Re3)
+{
+    float s = sinf(TheCamera->m_fOrientation - 0.85f);
+
+    *CloudsRotation += *WeatherWind * s * 0.0025f * (*ms_fTimeStep / fMagic);
+    *CloudsIndividualRotation += (*WeatherWind * *ms_fTimeStep + 0.3f * (*ms_fTimeStep / fMagic)) * 60.0f;
+}
+
+uint32_t* ThreadLaunch_GagNameSet;
+DECL_HOOK(void*, OS_ThreadLaunch, void* threadFn, void* a1, uint32_t a2, char const* threadName, int a3, int threadPrio)
+{
+    bool noName = threadName == NULL || threadName[0] == 0;
+    if(noName)
+    {
+        *ThreadLaunch_GagNameSet = 0xBF00BF00;
+    }
+    void* ret = OS_ThreadLaunch(threadFn, a1, a2, threadName, a3, threadPrio);
+    if(noName)
+    {
+        *ThreadLaunch_GagNameSet = 0xED86F72A;
+    }
+    return ret;
+}
+
+// Free objects pool
+DECL_HOOK(CObject*, Object_New, uint32_t size)
+{
+    CPool<CObject> *objPool = (*pObjectPool);
+    CObject *obj = objPool->New();
+    if (!obj)
+    {
+        int size = objPool->GetSize();
+        for (int i = 0; i < size; ++i)
+        {
+            CObject *existing = objPool->GetAt(i);
+            if (existing && existing->m_nObjectType == OBJECT_TEMPORARY)
+            {
+                int32_t handle = objPool->GetIndex(existing);
+                WorldRemoveEntity(existing);
+                delete existing;
+                obj = objPool->New(handle);
+                break;
+            }
+        }
+	}
+    return obj;
+}
+
+// Colored zone names
+uintptr_t ColoredZoneNames_BackTo;
+extern "C" void ColoredZoneNames_patch(void)
+{
+    CRGBA fontColor((*m_pCurrZoneInfo)->ZoneColor.red, (*m_pCurrZoneInfo)->ZoneColor.green, (*m_pCurrZoneInfo)->ZoneColor.blue, 255);
+    SetFontColor(&fontColor);
+}
+__attribute__((optnone)) __attribute__((naked)) void ColoredZoneNames_inject(void)
+{
+    asm volatile(
+        "push {r0-r11}\n"
+        "bl ColoredZoneNames_patch\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r11}\n"
+        "bx r12\n"
+    :: "r" (ColoredZoneNames_BackTo));
+}
+
+// Road Reflections
+uintptr_t RoadReflections_BackTo1, RoadReflections_BackTo2;
+float spriteZ = 1.0f;
+bool bRenderReflectionsMode = false;
+DECL_HOOKv(RenderRefl)
+{
+    bRenderReflectionsMode = true;
+    RenderRefl();
+    bRenderReflectionsMode = false;
+}
+DECL_HOOK(int, CalcSpriteCoords, RwV3d *in, RwV3d *out, float *outw, float *outh, bool farclip, bool smth)
+{
+    if(!bRenderReflectionsMode) return CalcSpriteCoords(in, out, outw, outh, farclip, smth);
+
+    int ret = CalcSpriteCoords(in, out, outw, outh, farclip, smth);
+    spriteZ = out->z;
+    return ret;
+}
+extern "C" int RoadReflections_patch1(const RwV3d& posn, RwV3d* out, float* w, float* h)
+{
+    int ret = SpriteCalcScreenCoors(posn, out, w, h, true, true);
+    spriteZ = out->z;
+    return ret;
+}
+__attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject1(void)
+{
+    asm volatile(
+        "VSTR S0, [SP,#0x128+0xC0]\n"
+        "STRD R0, R0, [SP,#0x128+0x128]\n"
+        "ADD R0, SP, #0x128+0xC8\n"
+        "push {r4-r12}\n"
+        "bl RoadReflections_patch1\n"
+        "pop {r4-r12}\n");
+    asm volatile(
+        "push {r0}\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0}\n"
+        "bx r12\n"
+    :: "r" (RoadReflections_BackTo1));
+}
+__attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject2(void)
+{
+    asm volatile(
+        "VDIV.F32 S2, S17, S16\n"
+        "push {r0}\n");
+    asm volatile(
+        "mov r7, %0\n"
+    :: "r" (spriteZ));
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0}\n"
+        "bx r12\n"
+    :: "r" (RoadReflections_BackTo2));
+}
+DECL_HOOK(void*, RenderBufferedOneXLUSprite, float x, float y, float z, float w, float h, uint8_t r, uint8_t g, uint8_t b, int16_t intensity, float recipNearZ, uint8_t a11)
+{
+    if(bRenderReflectionsMode) logger->Info("RenderBufferedOneXLUSprite(%f,%f,%f,%f,%f,%d,%d,%d,%d,%f,%d",x, y, z, w, h, r, g, b, intensity, recipNearZ, a11);
+    return RenderBufferedOneXLUSprite(x, y, z, w, h, r, g, b, intensity, recipNearZ, a11);
+}
+
+// Heli rotor blur
+// https://gtaforums.com/topic/703439-san-andreas-moon-and-rotor-blades-fix-for-pc/
+// Doesnt work :)
+DECL_HOOKv(RenderAlphaAtomics)
+{
+    char *nodeName;
+    for(CLink<AlphaObjectInfo> *entry = m_alphaList->usedListTail.prev; entry != &m_alphaList->usedListHead; entry = entry->prev)
+    {
+        //entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
+        nodeName = GetFrameNodeName((RwFrame*)entry->data.m_pAtomic->object.object.parent);
+        if(!strncmp(nodeName, "moving_rotor", 12) && (nodeName[12] == '\0' || (nodeName[12] == '2' && nodeName[13] == '\0')))
+        {
+            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONEQUAL);
+            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)255);
+            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
+            RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
+            RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
+            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONLESS);
+            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
+            RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
+            RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)false);
+            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONGREATER);
+            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)100);
+        }
+        else
+        {
+            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
+        }
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void OnModLoad()
 {
     cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]");
-    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS");
+    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS");
     cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg");
     cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch");
     cfg->Save();
@@ -508,8 +701,8 @@ extern "C" void OnModLoad()
     hGTASA = dlopen("libGTASA.so", RTLD_LAZY);
 
     // Functions Start //
-    SET_TO(_rwOpenGLSetRenderState, aml->GetSym(hGTASA, "_Z23_rwOpenGLSetRenderState13RwRenderStatePv"));
-    SET_TO(_rwOpenGLGetRenderState, aml->GetSym(hGTASA, "_Z23_rwOpenGLGetRenderState13RwRenderStatePv"));
+    SET_TO(RwRenderStateSet,        aml->GetSym(hGTASA, "_Z16RwRenderStateSet13RwRenderStatePv"));
+    SET_TO(RwRenderStateGet,        aml->GetSym(hGTASA, "_Z16RwRenderStateGet13RwRenderStatePv"));
     SET_TO(ClearPedWeapons,         aml->GetSym(hGTASA, "_ZN4CPed12ClearWeaponsEv"));
     SET_TO(GetBulletFx,             aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c11GetBulletFxEj"));
     SET_TO(LIB_PointerGetCoordinates, aml->GetSym(hGTASA, "_Z25LIB_PointerGetCoordinatesiPiS_Pf"));
@@ -519,6 +712,10 @@ extern "C" void OnModLoad()
     SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
     SET_TO(FindPlayerVehicle,       aml->GetSym(hGTASA, "_Z17FindPlayerVehicleib"));
     SET_TO(PhysicalApplyForce,      aml->GetSym(hGTASA, "_ZN9CPhysical10ApplyForceE7CVectorS0_b"));
+    SET_TO(GetFrameNodeName,        aml->GetSym(hGTASA, "_Z16GetFrameNodeNameP7RwFrame"));
+    SET_TO(SpriteCalcScreenCoors,   aml->GetSym(hGTASA, "_ZN7CSprite15CalcScreenCoorsERK5RwV3dPS0_PfS4_bb"));
+    SET_TO(WorldRemoveEntity,       aml->GetSym(hGTASA, "_ZN6CWorld6RemoveEP7CEntity"));
+    SET_TO(SetFontColor,            aml->GetSym(hGTASA, "_ZN5CFont8SetColorE5CRGBA"));
     // Functions End   //
     
     // Variables Start //
@@ -537,6 +734,12 @@ extern "C" void OnModLoad()
     SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
     SET_TO(bRunningCutscene,        aml->GetSym(hGTASA, "_ZN12CCutsceneMgr10ms_runningE"));
     SET_TO(ScriptParams,            *(void**)(pGTASA + 0x676F7C)); // Patched ScriptParams will work now!
+    SET_TO(m_alphaList,             aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins11m_alphaListE"));
+    SET_TO(CloudsRotation,          aml->GetSym(hGTASA, "_ZN7CClouds13CloudRotationE"));
+    SET_TO(CloudsIndividualRotation, aml->GetSym(hGTASA, "_ZN7CClouds18IndividualRotationE"));
+    SET_TO(WeatherWind,             aml->GetSym(hGTASA, "_ZN8CWeather4WindE"));
+    SET_TO(pObjectPool,             *(void**)(pGTASA + 0x676BBC));
+    SET_TO(m_pCurrZoneInfo,         aml->GetSym(hGTASA, "_ZN9CPopCycle15m_pCurrZoneInfoE"));
     // Variables End   //
 
     // Animated textures
@@ -552,19 +755,15 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x1C8082, (uintptr_t)"\x01", 1);
     }
 
-    // Fix moon! (lack of rendering features)
+    // Fix moon!
+    // War Drum moment: cannot get Alpha testing to work
     //if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
     //{
+    //    //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
     //    MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
     //    MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
     //    Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
     //    Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
-    //}
-
-    // Fix corona's on wet roads
-    //if(cfg->Bind("FixCoronasReflectionOnWetRoads", true, "Visual")->GetBool())
-    //{
-    //    // Nothing
     //}
 
     // Fix sky multitude
@@ -620,19 +819,19 @@ extern "C" void OnModLoad()
     }
 
     // Fix broken basketball minigame by placing the save icon away from it
-    if(cfg->Bind("MaddDoggMansionSaveFix", true, "Gameplay")->GetBool())
+    if(cfg->Bind("MaddDoggMansionSaveFix", true, "SCMFixes")->GetBool())
     {
         HOOKPLT(GenerateNewPickup_MaddDogg, pGTASA + 0x674DE4);
     }
 
     // Fix broken basketball minigame by placing the save icon away from it
-    if(cfg->Bind("FixStarBribeInSFBuilding", true, "Gameplay")->GetBool())
+    if(cfg->Bind("FixStarBribeInSFBuilding", true, "SCMFixes")->GetBool())
     {
         HOOKPLT(GenerateNewPickup_SFBribe, pGTASA + 0x674DE4);
     }
 
     // Fix rifle pickup that stuck inside the stadium
-    if(cfg->Bind("FixSFStadiumRiflePickup", true, "Gameplay")->GetBool())
+    if(cfg->Bind("FixSFStadiumRiflePickup", true, "SCMFixes")->GetBool())
     {
         HOOKPLT(GenerateNewPickup_SFRiflePickup, pGTASA + 0x674DE4);
     }
@@ -803,7 +1002,7 @@ extern "C" void OnModLoad()
     }
 
     // Fix moving objects on a high fps (through the scripts)
-    if(cfg->Bind("FixHighFPSOpcode034E", true, "Gameplay")->GetBool())
+    if(cfg->Bind("FixHighFPSOpcode034E", true, "SCMFixes")->GetBool())
     {
         ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
         Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
@@ -836,7 +1035,7 @@ extern "C" void OnModLoad()
     // Car Slowdown Fix
     if(cfg->Bind("FixCarSlowdownHighFPS", true, "Gameplay")->GetBool())
     {
-        SET_TO(mod_HandlingManager_off4, pGTASA + 0xA066BC);
+        SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + 0x6777C8)) + 4); // FLA
         HOOKPLT(ProcessVehicleWheel, pGTASA + 0x66FC7C);
     }
 
@@ -850,9 +1049,119 @@ extern "C" void OnModLoad()
         HOOK(Heli_ProcessFlyingStuff, aml->GetSym(hGTASA, "_ZN5CHeli21ProcessFlyingCarStuffEv"));
     }
 
+    // Give more space for opcodes 038D+038F
+    if(cfg->Bind("FixOpcodes038D/F", true, "SCMFixes")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x678EAC, sizeof(void*));
+        *(uintptr_t*)(pGTASA + 0x678EAC) = (uintptr_t)pNewScriptSprites;
+        aml->Unprot(pGTASA + 0x67915C, sizeof(void*));
+        *(uintptr_t*)(pGTASA + 0x67915C) = (uintptr_t)pNewIntroRectangles;
+
+        aml->Write(pGTASA + 0x327E6E, (uintptr_t)"\xB6\xF5\xC0\x6F", 4); // CMissionCleanup::Process
+        aml->Write(pGTASA + 0x328298, (uintptr_t)"\xB4\xF5\xC0\x6F", 4); // CTheScripts::RemoveScriptTextureDictionary
+        aml->Write(pGTASA + 0x32A638, (uintptr_t)"\xB4\xF5\xC0\x6F", 4); // CTheScripts::Init
+        aml->Write(pGTASA + 0x1A3736, (uintptr_t)"\x40\xF2\xFC\x54", 4); // sub_1A3730
+        aml->Write(pGTASA + 0x1A37F4, (uintptr_t)"\xB5\xF5\xC0\x6F", 4); // sub_1A3750
+        
+        aml->Write(pGTASA + 0x329E6C, (uintptr_t)"\xB8\xF5\xB4\x4F", 4); // CTheScripts::DrawScriptSpritesAndRectangles
+        aml->Write(pGTASA + 0x32A5FC, (uintptr_t)"\xB6\xF5\xB4\x4F", 4); // CTheScripts::Init
+        aml->Write(pGTASA + 0x32B040, (uintptr_t)"\xB2\xF5\xB4\x4F", 4); // CTheScripts::Process
+    }
+
+    // RE3: Fix R* optimization that prevents peds to spawn
+    if(cfg->Bind("Re3_PedSpawnDeoptimize", true, "Gameplay")->GetBool())
+    {
+        aml->Write(pGTASA + 0x3F40E8, (uintptr_t)"\x03", 1);
+    }
+
+    // RE3: Make cars and peds to not despawn when you look away
+    if(cfg->Bind("Re3_ExtOffscreenDespRange", true, "Gameplay")->GetBool())
+    {
+        Redirect(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
+        Redirect(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
+    }
+
+    // RE3: Do not remove locked cars
+    if(cfg->Bind("Re3_DontRemoveLockedCars", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(PossiblyRemoveVehicle_Re3, pGTASA + 0x6736E4);
+    }
+
+    // RE3: Correct clouds rotating speed
+    if(cfg->Bind("Re3_CloudsRotationHighFPS", true, "Visual")->GetBool())
+    {
+        HOOKPLT(CloudsUpdate_Re3, pGTASA + 0x670358);
+    }
+
+    // RE3: multiple instances of semaphore fix
+    if(cfg->Bind("Re3_CdStreamMultipleInst", true, "Visual")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x26C0DA, 4);
+        aml->Write(pGTASA + 0x2C97DC, (uintptr_t)"\x00\x23", 2);
+        SET_TO(ThreadLaunch_GagNameSet, pGTASA + 0x26C0DA);
+        HOOKPLT(OS_ThreadLaunch, pGTASA + 0x66E8A0);
+    }
+
+    // RE3: Fix a lil mistake in AskForObjectToBeRenderedInGlass
+    if(cfg->Bind("Re3_InGlassRenderedPlus1", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x5AC61C, (uintptr_t)"\x1F", 1);
+    }
+
+    // RE3: Free the space for an object in a pool by deleting temp objects if there is no space
+    if(cfg->Bind("Re3_FreePlaceInObjectPool", true, "Visual")->GetBool())
+    {
+        HOOKPLT(Object_New, pGTASA + 0x6726EC);
+    }
+
+    // Lower threads sleeping timer
+    if(cfg->Bind("LowerThreadsSleeping", true, "Gameplay")->GetBool())
+    {
+        aml->Write(pGTASA + 0x1D248E, (uintptr_t)"\x08", 1);
+        aml->Write(pGTASA + 0x266D3A, (uintptr_t)"\x08", 1);
+        aml->Write(pGTASA + 0x26706E, (uintptr_t)"\x08", 1);
+        aml->Write(pGTASA + 0x26FDCC, (uintptr_t)"\x08", 1);
+    }
+
+    // Dont kill peds when jacking their car, monster!
+    if(cfg->Bind("DontKillPedsOnCarJacking", true, "Gameplay")->GetBool())
+    {
+        Redirect(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
+    }
+
+    // Dont kill peds when jacking their car, monster!
+    if(cfg->Bind("ColoredZoneNames", true, "Visual")->GetBool())
+    {
+        ColoredZoneNames_BackTo = pGTASA + 0x438404 + 0x1;
+        Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
+    }
+
+    // RE3: 
+    //if(cfg->Bind("Re3_WetRoadsReflections", true, "Visual")->GetBool())
+    //{
+    //    //RoadReflections_BackTo1 = pGTASA + 0x5A2E30 + 0x1;
+    //    //RoadReflections_BackTo2 = pGTASA + 0x5A2EA6 + 0x1;
+    //    //Redirect(pGTASA + 0x5A2E22 + 0x1, (uintptr_t)RoadReflections_inject1);
+    //    //Redirect(pGTASA + 0x5A2E9C + 0x1, (uintptr_t)RoadReflections_inject2);
+    //    //aml->Write(pGTASA + 0x5A2F18, (uintptr_t)"\x3A\x46", 2);
+    //    //aml->Write(pGTASA + 0x5A2EF6, (uintptr_t)"\xFF", 1);
+    //    //HOOKPLT(RenderRefl, pGTASA + 0x6738D4);
+    //    //HOOKPLT(CalcSpriteCoords, pGTASA + 0x674B3C);
+    //    //HOOKPLT(RenderBufferedOneXLUSprite, pGTASA + 0x673890);
+    // None of those are working.
+    //}
+
+    // Helicopter's rotor blur
+    //if(cfg->Bind("HeliRotorBlur", true, "Visual")->GetBool())
+    //{
+    //    HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
+    //}
+
     // Fix those freakin small widgets!
     //if(cfg->Bind("FixWidgetsSizeDropping", true, "Gameplay")->GetBool())
     //{
     //    // Nothing
     //}
+
+    // CWidgetRegionColorPicker::GetWidgetValue
 }

@@ -58,3 +58,16 @@
  - Classic CJ's shadow
  - CarSlowDownSpeedFix from FramerateVigilante
  - HeliRotorIncreaseSpeed from FramerateVigilante
+ 
+ **Since v1.2**
+ - Give more space for opcodes 038D+038F
+ - Lower threads sleeping timer
+ - Dont kill peds when jacking their car, monster!
+ - Colored zone names are back
+ - re3: Fix R\* optimization that prevents peds to spawn
+ - re3: Make cars and peds to not despawn when you look away
+ - re3: Do not remove locked cars
+ - re3: Correct clouds rotating speed
+ - re3: Multiple instances of semaphore fix (may be not working or useless)
+ - re3: Fix a little mistake by R\* in AskForObjectToBeRenderedInGlass
+ - re3: Free the space for an object in a pool by deleting temp objects if there is no space (may be not working or useless)
