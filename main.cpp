@@ -12,7 +12,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.2, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.1, RusJJ)
 
 union ScriptVariables
 {
@@ -51,7 +51,7 @@ void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
 int *lastDevice, *NumberOfSearchLights;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
-uint32_t *CloudsIndividualRotation;
+uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -87,6 +87,7 @@ char* (*GetFrameNodeName)(RwFrame*);
 int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, bool checkMaxVisible, bool checkMinVisible);
 void (*WorldRemoveEntity)(CEntity*);
 void (*SetFontColor)(CRGBA* clr);
+bool (*ProcessVerticalLine)(const CVector& origin, float distance, CColPoint& outColPoint, CEntity*& outEntity, bool buildings, bool vehicles, bool peds, bool objects, bool dummies, bool doSeeThroughCheck, CStoredCollPoly* outCollPoly);
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -94,7 +95,8 @@ void (*SetFontColor)(CRGBA* clr);
 extern "C" void adadad(void)
 {
     //asm("VMOV.F32 S0, #0.5");
-    asm("MOV.W R3, #0x0");
+    asm("MOV R0, R11");
+    asm("NOP");
 }
 
 // Moon phases
@@ -578,7 +580,7 @@ DECL_HOOK(CObject*, Object_New, uint32_t size)
 uintptr_t ColoredZoneNames_BackTo;
 extern "C" void ColoredZoneNames_patch(void)
 {
-    CRGBA fontColor((*m_pCurrZoneInfo)->ZoneColor.red, (*m_pCurrZoneInfo)->ZoneColor.green, (*m_pCurrZoneInfo)->ZoneColor.blue, 255);
+    CRGBA fontColor((*m_pCurrZoneInfo)->ZoneColor.red, (*m_pCurrZoneInfo)->ZoneColor.green, (*m_pCurrZoneInfo)->ZoneColor.blue, (unsigned char)(*m_ZoneFadeTimer * 0.255f));
     SetFontColor(&fontColor);
 }
 __attribute__((optnone)) __attribute__((naked)) void ColoredZoneNames_inject(void)
@@ -591,6 +593,39 @@ __attribute__((optnone)) __attribute__((naked)) void ColoredZoneNames_inject(voi
         "pop {r0-r11}\n"
         "bx r12\n"
     :: "r" (ColoredZoneNames_BackTo));
+}
+
+// Find Ground Z detects objects
+#define FINDGROUNDZ_DIST 1500
+#define NOTFOUND_RETURN 20.0f
+DECL_HOOK(float, FindGroundZ2D, float x, float y)
+{
+    CColPoint colp;
+    CEntity* hitEnt;
+    return ProcessVerticalLine(CVector(x, y, (float)(FINDGROUNDZ_DIST)), -(float)(FINDGROUNDZ_DIST), colp, hitEnt, true, false, false, true, true, false, NULL) ? colp.m_vecPoint.z : NOTFOUND_RETURN;
+}
+DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity** ent)
+{
+    if(z <= 0)
+    {
+        if(result) *result = false;
+        if(ent) *ent = NULL;
+        return 0.0f;
+    }
+    CColPoint colp;
+    CEntity* hitEnt;
+    if(ProcessVerticalLine(CVector(x, y, z), z > FINDGROUNDZ_DIST ? -(float)(FINDGROUNDZ_DIST) : -z, colp, hitEnt, true, false, false, true, true, false, NULL))
+    {
+        if(result) *result = true;
+        if(ent) *ent = hitEnt;
+        return colp.m_vecPoint.z;
+    }
+    else
+    {
+        if(result) *result = false;
+        if(ent) *ent = NULL;
+        return 0.0f;
+    }
 }
 
 // Road Reflections
@@ -716,6 +751,7 @@ extern "C" void OnModLoad()
     SET_TO(SpriteCalcScreenCoors,   aml->GetSym(hGTASA, "_ZN7CSprite15CalcScreenCoorsERK5RwV3dPS0_PfS4_bb"));
     SET_TO(WorldRemoveEntity,       aml->GetSym(hGTASA, "_ZN6CWorld6RemoveEP7CEntity"));
     SET_TO(SetFontColor,            aml->GetSym(hGTASA, "_ZN5CFont8SetColorE5CRGBA"));
+    SET_TO(ProcessVerticalLine,     aml->GetSym(hGTASA, "_ZN6CWorld19ProcessVerticalLineERK7CVectorfR9CColPointRP7CEntitybbbbbbP15CStoredCollPoly"));
     // Functions End   //
     
     // Variables Start //
@@ -740,6 +776,7 @@ extern "C" void OnModLoad()
     SET_TO(WeatherWind,             aml->GetSym(hGTASA, "_ZN8CWeather4WindE"));
     SET_TO(pObjectPool,             *(void**)(pGTASA + 0x676BBC));
     SET_TO(m_pCurrZoneInfo,         aml->GetSym(hGTASA, "_ZN9CPopCycle15m_pCurrZoneInfoE"));
+    SET_TO(m_ZoneFadeTimer,         aml->GetSym(hGTASA, "_ZN4CHud15m_ZoneFadeTimerE"));
     // Variables End   //
 
     // Animated textures
@@ -1094,7 +1131,7 @@ extern "C" void OnModLoad()
     }
 
     // RE3: multiple instances of semaphore fix
-    if(cfg->Bind("Re3_CdStreamMultipleInst", true, "Visual")->GetBool())
+    if(cfg->Bind("Re3_CdStreamMultipleInst", true, "Gameplay")->GetBool())
     {
         aml->Unprot(pGTASA + 0x26C0DA, 4);
         aml->Write(pGTASA + 0x2C97DC, (uintptr_t)"\x00\x23", 2);
@@ -1109,7 +1146,7 @@ extern "C" void OnModLoad()
     }
 
     // RE3: Free the space for an object in a pool by deleting temp objects if there is no space
-    if(cfg->Bind("Re3_FreePlaceInObjectPool", true, "Visual")->GetBool())
+    if(cfg->Bind("Re3_FreePlaceInObjectPool", true, "Gameplay")->GetBool())
     {
         HOOKPLT(Object_New, pGTASA + 0x6726EC);
     }
@@ -1158,6 +1195,22 @@ extern "C" void OnModLoad()
     //{
     //    Redirect(pGTASA + 0x2E864E + 0x1, pGTASA + 0x2E8686 + 0x1);
     //}
+
+    // Frick your "improved characters models", War Dumb
+    if(cfg->Bind("FixPedSpecInShaders", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x1CE2F0, (uintptr_t)"\x40\x46\x00\xBF", 4);
+        aml->Write(pGTASA + 0x1CEDC4, (uintptr_t)"\x40\xF2\x40\x60", 4);
+        aml->Write(pGTASA + 0x1CEF1A, (uintptr_t)"\x58\x46\x00\xBF", 4);
+        Redirect(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
+    }
+
+    // Tells "FindGroundZ" functions that we need can teleport on objects too
+    if(cfg->Bind("IncludeObjectsForFindZ", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(FindGroundZ2D, pGTASA + 0x66EDB8);
+        HOOKPLT(FindGroundZ3D, pGTASA + 0x67022C);
+    }
 
     // RE3: 
     //if(cfg->Bind("Re3_WetRoadsReflections", true, "Visual")->GetBool())
