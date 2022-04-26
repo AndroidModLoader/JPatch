@@ -2,6 +2,7 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 #include <dlfcn.h>
+#include <vector>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GLES/gl.h>
@@ -49,9 +50,9 @@ CZoneInfo** m_pCurrZoneInfo;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
-int *lastDevice, *NumberOfSearchLights;
+int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
-uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer;
+uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -88,6 +89,13 @@ int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, 
 void (*WorldRemoveEntity)(CEntity*);
 void (*SetFontColor)(CRGBA* clr);
 bool (*ProcessVerticalLine)(const CVector& origin, float distance, CColPoint& outColPoint, CEntity*& outEntity, bool buildings, bool vehicles, bool peds, bool objects, bool dummies, bool doSeeThroughCheck, CStoredCollPoly* outCollPoly);
+void (*CreateEntityRwObject)(CEntity*);
+void (*RequestModel)(int id, int prio);
+bool (*RemoveLeastUsedModel)(unsigned int streamingFlags);
+void (*LoadAllRequestedModels)(bool bOnlyPriorityRequests);
+void (*AddAnimBlockRef)(int animBlock);
+void (*TimerStop)();
+void (*TimerUpdate)();
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -95,7 +103,7 @@ bool (*ProcessVerticalLine)(const CVector& origin, float distance, CColPoint& ou
 extern "C" void adadad(void)
 {
     //asm("VMOV.F32 S0, #0.5");
-    asm("MOV R0, R11");
+    asm("LDR.W R11, [R9,R2,LSL#2]");
     asm("NOP");
 }
 
@@ -720,6 +728,112 @@ DECL_HOOKv(RenderAlphaAtomics)
     }
 }
 
+// LODs
+#define SKIP_START_FRAMES 5
+#define ANIMBLOCK_OFFSET  25575
+
+uintptr_t LoadScene_BackTo;
+std::vector<CEntity*> g_aLODs;
+std::vector<int> g_aPeds;
+bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
+bool bUnloadUnusedModels;
+float fRemoveUnusedStreamMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
+DECL_HOOKv(GameProcess_LODs)
+{
+    GameProcess_LODs();
+
+    static char nLoadChecks = SKIP_START_FRAMES+1;
+    if(nLoadChecks != 0) // Ignore first SKIP_START_FRAMES frames
+    {
+        --nLoadChecks;
+        if(nLoadChecks == 1)
+        {
+            // Dont break some engine calculations because of that
+            TimerStop();
+
+            if(bPreloadLOD)
+            {
+                int size = g_aLODs.size();
+                CEntity* ent = NULL;
+                RwObject* obj = NULL;
+                for(int i = 0; i < size; ++i)
+                {
+                    ent = g_aLODs[i];
+                    obj = ent->m_pRwObject;
+
+                    RequestModel(ent->m_nModelIndex, STREAMING_MISSION_REQUIRED);
+                    if(obj == NULL) CreateEntityRwObject(g_aLODs[i]);
+                }
+                LoadAllRequestedModels(false);
+            }
+            if(bPreloadAnim)
+            {
+                for(int i = 1; i < *ms_numAnimBlocks; ++i)
+                {
+                    RequestModel(i + ANIMBLOCK_OFFSET, STREAMING_MISSION_REQUIRED);
+                    AddAnimBlockRef(i);
+                }
+                LoadAllRequestedModels(false);
+            }
+            if(bPreloadPed) // Crashing, maybe in the future sometime
+            {
+                int size = g_aPeds.size();
+                for(int i = 0; i < size; ++i)
+                {
+                    RequestModel(g_aPeds[i], STREAMING_MISSION_REQUIRED);
+                }
+                LoadAllRequestedModels(false);
+            }
+
+            // Resume all game timers
+            TimerUpdate();
+            nLoadChecks = 0;
+        }
+        return;
+    }
+    else if(bUnloadUnusedModels)
+    {
+        float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
+        if(memUsedPercent >= fRemoveUnusedStreamMemPercentage)
+        {
+            int removeUnusedIntervalMsTweaked;
+            if (memUsedPercent >= 0.95f) removeUnusedIntervalMsTweaked = (int)(nRemoveUnusedInterval * 0.5f);
+            else removeUnusedIntervalMsTweaked = nRemoveUnusedInterval;
+
+            if ((*m_snTimeInMilliseconds - lastTimeRemoveUnused) > removeUnusedIntervalMsTweaked)
+            {
+                RemoveLeastUsedModel(STREAMING_NONE);
+                lastTimeRemoveUnused = *m_snTimeInMilliseconds;
+            }
+        }
+    }
+}
+DECL_HOOK(CBaseModelInfo*, AddPedModel, int id)
+{
+    g_aPeds.push_back(id);
+    return AddPedModel(id);
+}
+extern "C" void LoadScene_patch(CEntity* ent)
+{
+    g_aLODs.push_back(ent);
+}
+__attribute__((optnone)) __attribute__((naked)) void LoadScene_inject(void)
+{
+    asm volatile(
+        "LDRSH.W R2, [R6,#0x26]\n"
+        "LDRB.W R1, [R0,#0x38]\n"
+        "MOV R12, R6\n"
+        "push {r0-r10}\n"
+        "MOV R0, R12\n"
+        "bl LoadScene_patch\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r10}\n"
+        "LDR.W R11, [R9,R2,LSL#2]\n"
+        "bx r12\n"
+    :: "r" (LoadScene_BackTo));
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -752,6 +866,13 @@ extern "C" void OnModLoad()
     SET_TO(WorldRemoveEntity,       aml->GetSym(hGTASA, "_ZN6CWorld6RemoveEP7CEntity"));
     SET_TO(SetFontColor,            aml->GetSym(hGTASA, "_ZN5CFont8SetColorE5CRGBA"));
     SET_TO(ProcessVerticalLine,     aml->GetSym(hGTASA, "_ZN6CWorld19ProcessVerticalLineERK7CVectorfR9CColPointRP7CEntitybbbbbbP15CStoredCollPoly"));
+    SET_TO(CreateEntityRwObject,    aml->GetSym(hGTASA, "_ZN7CEntity14CreateRwObjectEv"));
+    SET_TO(RequestModel,            aml->GetSym(hGTASA, "_ZN10CStreaming12RequestModelEii"));
+    SET_TO(LoadAllRequestedModels,  aml->GetSym(hGTASA, "_ZN10CStreaming22LoadAllRequestedModelsEb"));
+    SET_TO(AddAnimBlockRef,         aml->GetSym(hGTASA, "_ZN12CAnimManager15AddAnimBlockRefEi"));
+    SET_TO(TimerStop,               aml->GetSym(hGTASA, "_ZN6CTimer4StopEv"));
+    SET_TO(TimerUpdate,             aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
+    SET_TO(RemoveLeastUsedModel,    aml->GetSym(hGTASA, "_ZN10CStreaming20RemoveLeastUsedModelEj"));
     // Functions End   //
     
     // Variables Start //
@@ -777,6 +898,9 @@ extern "C" void OnModLoad()
     SET_TO(pObjectPool,             *(void**)(pGTASA + 0x676BBC));
     SET_TO(m_pCurrZoneInfo,         aml->GetSym(hGTASA, "_ZN9CPopCycle15m_pCurrZoneInfoE"));
     SET_TO(m_ZoneFadeTimer,         aml->GetSym(hGTASA, "_ZN4CHud15m_ZoneFadeTimerE"));
+    SET_TO(ms_numAnimBlocks,        aml->GetSym(hGTASA, "_ZN12CAnimManager16ms_numAnimBlocksE"));
+    SET_TO(ms_memoryUsed,           aml->GetSym(hGTASA, "_ZN10CStreaming13ms_memoryUsedE"));
+    SET_TO(ms_memoryAvailable,      aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE"));
     // Variables End   //
 
     // Animated textures
@@ -978,10 +1102,9 @@ extern "C" void OnModLoad()
         aml->PlaceNOP(pGTASA + 0x46BE18, 1);
         aml->PlaceNOP(pGTASA + 0x47272A, 2);
         aml->PlaceNOP(pGTASA + 0x472690, 2);
-        int* streamingAvailable = (int*)aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE");
-        if(*streamingAvailable <= 50*1024*1024)
+        if(*ms_memoryAvailable <= 50*1024*1024)
         {
-            *streamingAvailable = 512 * 1024 * 1024;
+            *ms_memoryAvailable = cfg->Bind("BuffStreamingMem_CountMB", 512, "Gameplay")->GetInt() * 1024 * 1024;
         }
     }
 
@@ -1233,11 +1356,40 @@ extern "C" void OnModLoad()
     //    HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
     //}
 
-    // Fix those freakin small widgets!
-    //if(cfg->Bind("FixWidgetsSizeDropping", true, "Gameplay")->GetBool())
-    //{
-    //    // Nothing
-    //}
+    /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
+    /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
+    /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
+    
+    // Preload LOD models
+    bPreloadLOD = cfg->Bind("IS_PreloadLODs", true, "Gameplay")->GetBool();
+    bPreloadAnim = cfg->Bind("IS_PreloadAnims", false, "Gameplay")->GetBool();
+    //bPreloadPed = cfg->Bind("PreloadPeds", true, "Gameplay")->GetBool();
+    if(bPreloadLOD || bPreloadAnim || bPreloadPed)
+    {
+        HOOKPLT(GameProcess_LODs, pGTASA + 0x66FE58);
+        if(bPreloadLOD)
+        {
+            LoadScene_BackTo = pGTASA + 0x4691E2 + 0x1;
+            Redirect(pGTASA + 0x4691D6 + 0x1, (uintptr_t)LoadScene_inject);
+        }
+        if(bPreloadPed)
+        {
+            HOOKPLT(AddPedModel, pGTASA + 0x675D98);
+        }
+    }
+    bUnloadUnusedModels = cfg->Bind("IS_UnloadUnusedModels", true, "Gameplay")->GetBool();
+    if(bUnloadUnusedModels)
+    {
+        fRemoveUnusedStreamMemPercentage = 0.001f * cfg->Bind("IS_UnloadUnusedModels_Percentage", 80, "Gameplay")->GetInt();
+        nRemoveUnusedInterval = cfg->Bind("IS_UnloadUnusedModels_Interval", 60, "Gameplay")->GetInt();
+
+        if(fRemoveUnusedStreamMemPercentage < 0.001f ||
+           fRemoveUnusedStreamMemPercentage > 0.99f  ||
+           nRemoveUnusedInterval < 0)
+        {
+            bUnloadUnusedModels = false;
+        }
+    }
 
     // CWidgetRegionColorPicker::GetWidgetValue
 }
