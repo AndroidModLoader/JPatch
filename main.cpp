@@ -1405,7 +1405,7 @@ extern "C" void OnModLoad()
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
     
     // Preload LOD models
-    bPreloadLOD = cfg->Bind("IS_PreloadLODs", true, "Gameplay")->GetBool();
+    bPreloadLOD = cfg->Bind("IS_PreloadLODs", false, "Gameplay")->GetBool();
     bPreloadAnim = cfg->Bind("IS_PreloadAnims", false, "Gameplay")->GetBool();
     //bPreloadPed = cfg->Bind("PreloadPeds", true, "Gameplay")->GetBool();
     if(bPreloadLOD || bPreloadAnim || bPreloadPed || bDynStreamingMem)
