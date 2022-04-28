@@ -332,13 +332,13 @@ DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
     // Someone is using broken mods
     // So here is the workaround + a little value clamping
-    if(factor < 20.0f)
+    if(factor < 5.0f)
     {
-        fEmergencyVehiclesFix = 70.0f / 20.0f;
+        fEmergencyVehiclesFix = 70.0f / 5.0f;
     }
-    else if(factor > 160.0f)
+    else if(factor > 170.0f)
     {
-        fEmergencyVehiclesFix = 70.0f / 160.0f;
+        fEmergencyVehiclesFix = 70.0f / 170.0f;
     }
     else
     {
