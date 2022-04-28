@@ -96,6 +96,11 @@ void (*LoadAllRequestedModels)(bool bOnlyPriorityRequests);
 void (*AddAnimBlockRef)(int animBlock);
 void (*TimerStop)();
 void (*TimerUpdate)();
+void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
+void BumpStreamingMemory(int megabytes)
+{
+    *ms_memoryAvailable += megabytes * 1024 * 1024;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Hooks     ///////////////////////////////
@@ -736,11 +741,11 @@ uintptr_t LoadScene_BackTo;
 std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
-bool bUnloadUnusedModels;
+bool bUnloadUnusedModels, bDynStreamingMem;
 float fRemoveUnusedStreamMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
-DECL_HOOKv(GameProcess_LODs)
+DECL_HOOKv(GameProcess)
 {
-    GameProcess_LODs();
+    GameProcess();
 
     static char nLoadChecks = SKIP_START_FRAMES+1;
     if(nLoadChecks != 0) // Ignore first SKIP_START_FRAMES frames
@@ -791,10 +796,10 @@ DECL_HOOKv(GameProcess_LODs)
         }
         return;
     }
-    else if(bUnloadUnusedModels)
+    else if(bUnloadUnusedModels || bDynStreamingMem)
     {
         float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
-        if(memUsedPercent >= fRemoveUnusedStreamMemPercentage)
+        if(bUnloadUnusedModels && memUsedPercent >= fRemoveUnusedStreamMemPercentage)
         {
             int removeUnusedIntervalMsTweaked;
             if (memUsedPercent >= 0.95f) removeUnusedIntervalMsTweaked = (int)(nRemoveUnusedInterval * 0.5f);
@@ -805,6 +810,10 @@ DECL_HOOKv(GameProcess_LODs)
                 RemoveLeastUsedModel(STREAMING_NONE);
                 lastTimeRemoveUnused = *m_snTimeInMilliseconds;
             }
+        }
+        if(bDynStreamingMem && memUsedPercent >= 0.95f)
+        {
+            BumpStreamingMemory(32);
         }
     }
 }
@@ -832,6 +841,33 @@ __attribute__((optnone)) __attribute__((naked)) void LoadScene_inject(void)
         "LDR.W R11, [R9,R2,LSL#2]\n"
         "bx r12\n"
     :: "r" (LoadScene_BackTo));
+}
+
+// Colorpicker
+typedef bool (*IsWTouched)(CWidget*);
+DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
+{
+    static float prevVal = 0.0f;
+    if((*(IsWTouched*)(self->vtable + 80))(self) != false) // IsTouched
+    {
+        CVector2D v; GetTouchPosition(&v, self->cachedPosNum);
+        
+        float left = self->screenRect.left * 0.7f;
+        float right = self->screenRect.right * 0.7f;
+
+        float bottom = self->screenRect.bottom * 0.8f;
+        float top = self->screenRect.top * 0.8f;
+
+        if(v.x < left || v.x > right || v.y < top || v.y > bottom) return prevVal;
+
+        float ret = (int)(
+            8.0f * ((v.x - left) / (right - left)) + 8 * (int)(
+            8.0f * ((v.y - top) / (bottom - top))) );
+        prevVal = ret;
+
+        return ret;
+    }
+    return 0.0f;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -873,6 +909,7 @@ extern "C" void OnModLoad()
     SET_TO(TimerStop,               aml->GetSym(hGTASA, "_ZN6CTimer4StopEv"));
     SET_TO(TimerUpdate,             aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
     SET_TO(RemoveLeastUsedModel,    aml->GetSym(hGTASA, "_ZN10CStreaming20RemoveLeastUsedModelEj"));
+    SET_TO(GetTouchPosition,        aml->GetSym(hGTASA, "_ZN15CTouchInterface16GetTouchPositionEi"));
     // Functions End   //
     
     // Variables Start //
@@ -1099,14 +1136,21 @@ extern "C" void OnModLoad()
     // Buff streaming
     if(cfg->Bind("BuffStreamingMem", true, "Gameplay")->GetBool())
     {
-        aml->PlaceNOP(pGTASA + 0x46BE18, 1);
-        aml->PlaceNOP(pGTASA + 0x47272A, 2);
-        aml->PlaceNOP(pGTASA + 0x472690, 2);
-        if(*ms_memoryAvailable <= 50*1024*1024)
+        int wantsMB = cfg->Bind("BuffStreamingMem_CountMB", 512, "Gameplay")->GetInt();
+        if(wantsMB >= 20)
         {
-            *ms_memoryAvailable = cfg->Bind("BuffStreamingMem_CountMB", 512, "Gameplay")->GetInt() * 1024 * 1024;
+            aml->PlaceNOP(pGTASA + 0x46BE18, 1);
+            aml->PlaceNOP(pGTASA + 0x47272A, 2);
+            aml->PlaceNOP(pGTASA + 0x472690, 2);
+            if(*ms_memoryAvailable < wantsMB*1024*1024)
+            {
+                *ms_memoryAvailable = wantsMB * 1024 * 1024;
+            }
         }
     }
+
+    // Buff streaming (dynamic)
+    bDynStreamingMem = cfg->Bind("DynamicStreamingMem", true, "Gameplay")->GetBool();
 
     // Buff planes max height
     if(cfg->Bind("BuffPlanesMaxHeight", true, "Gameplay")->GetBool())
@@ -1364,9 +1408,9 @@ extern "C" void OnModLoad()
     bPreloadLOD = cfg->Bind("IS_PreloadLODs", true, "Gameplay")->GetBool();
     bPreloadAnim = cfg->Bind("IS_PreloadAnims", false, "Gameplay")->GetBool();
     //bPreloadPed = cfg->Bind("PreloadPeds", true, "Gameplay")->GetBool();
-    if(bPreloadLOD || bPreloadAnim || bPreloadPed)
+    if(bPreloadLOD || bPreloadAnim || bPreloadPed || bDynStreamingMem)
     {
-        HOOKPLT(GameProcess_LODs, pGTASA + 0x66FE58);
+        HOOKPLT(GameProcess, pGTASA + 0x66FE58);
         if(bPreloadLOD)
         {
             LoadScene_BackTo = pGTASA + 0x4691E2 + 0x1;
@@ -1391,5 +1435,9 @@ extern "C" void OnModLoad()
         }
     }
 
-    // CWidgetRegionColorPicker::GetWidgetValue
+    // Fix color picker widget
+    if(cfg->Bind("FixColorPicker", true, "Visual")->GetBool())
+    {
+        HOOKPLT(GetColorPickerValue, pGTASA + 0x6645C4);
+    }
 }

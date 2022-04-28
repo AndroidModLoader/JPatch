@@ -36,7 +36,7 @@
  
  **Since v1.1.2**
  - Skimmer Plane can be properly get out of water (XMDS)
- - Streaming memory is buffed now
+ - Streaming memory is buffed now (not sure if it even works)
  - Helis/Planes can now fly higher
  - Jetpack can now fly higher
  - 44100 Hz audio support without a mod "OpenAL Update"
@@ -73,3 +73,12 @@
  - re3: Multiple instances of semaphore fix (may be not working or useless)
  - re3: Fix a little mistake by R\* in AskForObjectToBeRenderedInGlass
  - re3: Free the space for an object in a pool by deleting temp objects if there is no space (may be not working or useless)
+ 
+ **Since v1.2.1**
+ - Remove stupid specular from peds
+ - Include object in checks of FindGroundZ functions (may fix opcode 02CE after using 0107)
+ - Automatical streaming memory buff if not enough for the game
+ - Fixed (probably?) an annoying glitch with colorpicker in Tenderfender
+ - ImprovedStreaming: Preload LODs (causes the game to freeze for a few seconds)
+ - ImprovedStreaming: Preload animations (disabled by default)
+ - ImprovedStreaming: Unloading of unused entities
