@@ -13,7 +13,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.2, RusJJ)
 
 union ScriptVariables
 {
@@ -531,7 +531,7 @@ float *fRotorFinalSpeed, *fRotor1Speed, *fRotor2Speed;
 DECL_HOOKv(Heli_ProcessFlyingStuff, CHeli* self)
 {
     *fRotor1Speed = 0.00454545454f * *fRotorFinalSpeed * (*ms_fTimeStep / fMagic);
-    *fRotor2Speed *= 3.0f * *fRotor1Speed;
+    *fRotor2Speed = 3.0f * *fRotor1Speed;
     Heli_ProcessFlyingStuff(self);
 }
 
@@ -615,7 +615,8 @@ DECL_HOOK(float, FindGroundZ2D, float x, float y)
 {
     CColPoint colp;
     CEntity* hitEnt;
-    return ProcessVerticalLine(CVector(x, y, (float)(FINDGROUNDZ_DIST)), -(float)(FINDGROUNDZ_DIST), colp, hitEnt, true, false, false, true, true, false, NULL) ? colp.m_vecPoint.z : NOTFOUND_RETURN;
+    return ProcessVerticalLine(CVector(x, y, (float)(FINDGROUNDZ_DIST)), -(float)(FINDGROUNDZ_DIST), colp, hitEnt, true, false, false,
+           (*bRunningCutscene || TheCamera->m_bIsInCutscene || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL) ? colp.m_vecPoint.z : NOTFOUND_RETURN;
 }
 DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity** ent)
 {
@@ -627,7 +628,8 @@ DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity
     }
     CColPoint colp;
     CEntity* hitEnt;
-    if(ProcessVerticalLine(CVector(x, y, z), z > FINDGROUNDZ_DIST ? -(float)(FINDGROUNDZ_DIST) : -z, colp, hitEnt, true, false, false, true, true, false, NULL))
+    if(ProcessVerticalLine(CVector(x, y, z), z > FINDGROUNDZ_DIST ? -(float)(FINDGROUNDZ_DIST) : -z, colp, hitEnt, true, false, false, 
+      (*bRunningCutscene || TheCamera->m_bIsInCutscene || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL))
     {
         if(result) *result = true;
         if(ent) *ent = hitEnt;
@@ -734,15 +736,15 @@ DECL_HOOKv(RenderAlphaAtomics)
 }
 
 // LODs
-#define SKIP_START_FRAMES 5
+#define SKIP_START_FRAMES 3
 #define ANIMBLOCK_OFFSET  25575
 
 uintptr_t LoadScene_BackTo;
 std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
-bool bUnloadUnusedModels, bDynStreamingMem;
-float fRemoveUnusedStreamMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
+bool bUnloadUnusedModels, bDynStreamingMem, bDontUnloadInCutscenes;
+float fRemoveUnusedStreamMemPercentage, fDynamicStreamingMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
 DECL_HOOKv(GameProcess)
 {
     GameProcess();
@@ -799,19 +801,22 @@ DECL_HOOKv(GameProcess)
     else if(bUnloadUnusedModels || bDynStreamingMem)
     {
         float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
-        if(bUnloadUnusedModels && memUsedPercent >= fRemoveUnusedStreamMemPercentage)
+        if(!bDontUnloadInCutscenes || !*bRunningCutscene)
         {
-            int removeUnusedIntervalMsTweaked;
-            if (memUsedPercent >= 0.95f) removeUnusedIntervalMsTweaked = (int)(nRemoveUnusedInterval * 0.5f);
-            else removeUnusedIntervalMsTweaked = nRemoveUnusedInterval;
-
-            if ((*m_snTimeInMilliseconds - lastTimeRemoveUnused) > removeUnusedIntervalMsTweaked)
+            if(bUnloadUnusedModels && memUsedPercent >= fRemoveUnusedStreamMemPercentage)
             {
-                RemoveLeastUsedModel(STREAMING_NONE);
-                lastTimeRemoveUnused = *m_snTimeInMilliseconds;
+                int removeUnusedIntervalMsTweaked;
+                if (memUsedPercent >= 0.95f) removeUnusedIntervalMsTweaked = (int)(nRemoveUnusedInterval * 0.5f);
+                else removeUnusedIntervalMsTweaked = nRemoveUnusedInterval;
+
+                if ((*m_snTimeInMilliseconds - lastTimeRemoveUnused) > removeUnusedIntervalMsTweaked)
+                {
+                    RemoveLeastUsedModel(STREAMING_NONE);
+                    lastTimeRemoveUnused = *m_snTimeInMilliseconds;
+                }
             }
         }
-        if(bDynStreamingMem && memUsedPercent >= 0.95f)
+        if(bDynStreamingMem && memUsedPercent >= fDynamicStreamingMemPercentage)
         {
             BumpStreamingMemory(32);
         }
@@ -1151,6 +1156,7 @@ extern "C" void OnModLoad()
 
     // Buff streaming (dynamic)
     bDynStreamingMem = cfg->Bind("DynamicStreamingMem", true, "Gameplay")->GetBool();
+    fDynamicStreamingMemPercentage = 0.001f * cfg->Bind("DynamicStreamingMem_Percentage", 80, "Gameplay")->GetInt();
 
     // Buff planes max height
     if(cfg->Bind("BuffPlanesMaxHeight", true, "Gameplay")->GetBool())
@@ -1424,6 +1430,7 @@ extern "C" void OnModLoad()
     bUnloadUnusedModels = cfg->Bind("IS_UnloadUnusedModels", true, "Gameplay")->GetBool();
     if(bUnloadUnusedModels)
     {
+        bDontUnloadInCutscenes = !cfg->Bind("IS_UnloadUnusedModels_InCutscene", false, "Gameplay")->GetBool();
         fRemoveUnusedStreamMemPercentage = 0.001f * cfg->Bind("IS_UnloadUnusedModels_Percentage", 80, "Gameplay")->GetInt();
         nRemoveUnusedInterval = cfg->Bind("IS_UnloadUnusedModels_Interval", 60, "Gameplay")->GetInt();
 
