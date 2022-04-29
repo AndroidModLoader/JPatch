@@ -29,10 +29,11 @@ union ScriptVariables
 uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
-static constexpr int nMaxScriptSprites = 384;
+static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
 float fEmergencyVehiclesFix;
 CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600
 void* pNewIntroRectangles = new void*[15*nMaxScriptSprites] {NULL}; // 384*60=23040 0x5A00
+CRegisteredShadow* asShadowsStored_NEW;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
@@ -47,10 +48,10 @@ CLinkList<AlphaObjectInfo>* m_alphaList;
 CPool<CObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
 
-float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
-int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks;
+int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene;
 uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable;
 
@@ -97,6 +98,17 @@ void (*AddAnimBlockRef)(int animBlock);
 void (*TimerStop)();
 void (*TimerUpdate)();
 void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
+bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
+void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
+void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
+{
+    if(self->m_matrix)
+    {
+        outPos = *self->m_matrix * offset;
+        return;
+    }
+    TransformPoint((RwV3d&)outPos, self->m_placement, (RwV3d&)offset);
+}
 void BumpStreamingMemory(int megabytes)
 {
     *ms_memoryAvailable += megabytes * 1024 * 1024;
@@ -108,8 +120,7 @@ void BumpStreamingMemory(int megabytes)
 extern "C" void adadad(void)
 {
     //asm("VMOV.F32 S0, #0.5");
-    asm("LDR.W R11, [R9,R2,LSL#2]");
-    asm("NOP");
+    asm("MOVT R1, #0x42F0");
 }
 
 // Moon phases
@@ -875,6 +886,62 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
     return 0.0f;
 }
 
+// Light shadows from poles
+uintptr_t ProcessLightsForEntity_BackTo;
+float fLightDist = 40.0f;
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum)
+{
+    if(eff->light.m_fShadowSize != 0.0f)
+    {
+        CVector a;
+        TransformFromObjectSpace(ent, a, eff->m_vecPosn);
+        float intensity = ((float)eff->light.m_nShadowColorMultiplier / 255.0f) * 0.1f * *fSpriteBrightness;
+        float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
+        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &a, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+                           128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inject(void)
+{
+    asm volatile(
+        "MOV R0, R9\n"
+        "MOV R10, R6\n"
+        "PUSH {R1-R7,R9-R11}\n"
+        "MOV R1, R8\n"
+        "MOV R2, R10\n"
+        "BL ProcessLightsForEntity_patch\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R1-R7,R9-R11}\n"
+        "LDR.W R10, [SP,#0x150+0x98]\n"
+        "BX R12\n"
+    :: "r" (ProcessLightsForEntity_BackTo));
+}
+
+// Green-ish detail texture
+#define GREEN_TEXTURE_ID 14
+inline void* GetDetailTexturePtr(int texId)
+{
+    return *(void**)(**(int**)(*detailTexturesStorage + 4 * (texId-1)) + *RasterExtOffset);
+}
+
+DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
+{
+    if(texture == NULL)
+    {
+        emu_TextureSetDetailTexture(NULL, 0);
+        return;
+    }
+    if(texture == GetDetailTexturePtr(GREEN_TEXTURE_ID))
+    {
+        *textureDetail = 0;
+        emu_TextureSetDetailTexture(NULL, 0);
+        return;
+    }
+    emu_TextureSetDetailTexture(texture, tilingScale);
+    *textureDetail = 1;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -915,6 +982,8 @@ extern "C" void OnModLoad()
     SET_TO(TimerUpdate,             aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
     SET_TO(RemoveLeastUsedModel,    aml->GetSym(hGTASA, "_ZN10CStreaming20RemoveLeastUsedModelEj"));
     SET_TO(GetTouchPosition,        aml->GetSym(hGTASA, "_ZN15CTouchInterface16GetTouchPositionEi"));
+    SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, "_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf"));
+    SET_TO(TransformPoint,          aml->GetSym(hGTASA, "_Z14TransformPointR5RwV3dRK16CSimpleTransformRKS_"));
     // Functions End   //
     
     // Variables Start //
@@ -943,6 +1012,10 @@ extern "C" void OnModLoad()
     SET_TO(ms_numAnimBlocks,        aml->GetSym(hGTASA, "_ZN12CAnimManager16ms_numAnimBlocksE"));
     SET_TO(ms_memoryUsed,           aml->GetSym(hGTASA, "_ZN10CStreaming13ms_memoryUsedE"));
     SET_TO(ms_memoryAvailable,      aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE"));
+    SET_TO(fSpriteBrightness,       pGTASA + 0x966590);
+    SET_TO(detailTexturesStorage,   aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE") + 8); // pGTASA + 0x6BD1D8
+    SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
+    SET_TO(RasterExtOffset,         aml->GetSym(hGTASA, "RasterExtOffset"));
     // Variables End   //
 
     // Animated textures
@@ -1446,5 +1519,54 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixColorPicker", true, "Visual")->GetBool())
     {
         HOOKPLT(GetColorPickerValue, pGTASA + 0x6645C4);
+    }
+
+    // Bigger distance for light shadows
+    if(cfg->Bind("BuffDistForLightShadows", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x36311C, (uintptr_t)"\xC4\xF2\xF0\x21", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write(pGTASA + 0x3F1996, (uintptr_t)"\xC4\xF2\xF0\x21", 4); // CFireManager::Update, 40 -> 120
+        fLightDist = 120.0f; // For thingies below \/
+    }
+
+    // Bring back light shadows from poles!
+    if(cfg->Bind("BackPolesLightShadow", true, "Visual")->GetBool())
+    {
+        ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
+        Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
+    }
+
+    // Fix greenish detail tex
+    if(cfg->Bind("FixGreenTextures", true, "Visual")->GetBool())
+    {
+        aml->PlaceNOP(pGTASA + 0x1B00B0, 5); // Dont set textureDetail variable! We'll handle it by ourselves!
+        HOOK(emu_TextureSetDetailTexture, aml->GetSym(hGTASA, "_Z27emu_TextureSetDetailTexturePvj"));
+    }
+
+    // Bring back light shadows from poles!
+    if(cfg->Bind("BuffStaticShadowsCount", true, "Gameplay")->GetBool())
+    {
+        // Static shadows?
+        asShadowsStored_NEW = new CRegisteredShadow[0xFF];
+        aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
+        // CShadows::StoreShadowToBeRendered
+        aml->Write(pGTASA + 0x5B929A, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B92C0, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B92E6, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B930A, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B932E, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B9358, (uintptr_t)"\xFE", 1);
+        // CShadows::StoreShadowToBeRendered (2nd arg is RwTexture*)
+        aml->Write(pGTASA + 0x5B9444, (uintptr_t)"\xFE", 1);
+        // CShadows::StoreShadowForVehicle
+        aml->Write(pGTASA + 0x5B9BD4, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5B9B2A, (uintptr_t)"\xFE", 1);
+        // CShadows::StoreShadowForPedObject
+        aml->Write(pGTASA + 0x5B9F62, (uintptr_t)"\xFE", 1);
+        // CShadows::StoreRealTimeShadow
+        aml->Write(pGTASA + 0x5BA29E, (uintptr_t)"\xFE", 1);
+        // CShadows::RenderExtraPlayerShadows
+        aml->Write(pGTASA + 0x5BDDBA, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTASA + 0x5BDD5A, (uintptr_t)"\xFE", 1);
     }
 }
