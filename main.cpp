@@ -13,7 +13,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.3, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.4, RusJJ)
 
 union ScriptVariables
 {
@@ -34,6 +34,7 @@ float fEmergencyVehiclesFix;
 CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600
 void* pNewIntroRectangles = new void*[15*nMaxScriptSprites] {NULL}; // 384*60=23040 0x5A00
 CRegisteredShadow* asShadowsStored_NEW;
+CStaticShadow* aStaticShadows_NEW;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
@@ -942,6 +943,15 @@ DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
     *textureDetail = 1;
 }
 
+// ClimbDie
+DECL_HOOK(bool, ClimbProcessPed, CTask* self, CPed* target)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
+    bool ret = ClimbProcessPed(self, target);
+    *ms_fTimeStep = save;
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1137,6 +1147,8 @@ extern "C" void OnModLoad()
         EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
         Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
         HOOKPLT(SetFOV_Emergency, pGTASA + 0x673DDC);
+        aml->Write(pGTASA + 0x3DD8A0, (uintptr_t)"\xB0\xEE\x42\x1A", 4); // WarDumbs are multiplying it by 0.8? Reasonable for 2013 but why didnt they remove that in 2.00?
+        aml->Write(pGTASA + 0x3DD8A4, (uintptr_t)"\xB0\xEE\x40\x2A", 4); // Same thing but by 0.875... Cringe.
     }
 
     // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
@@ -1521,6 +1533,17 @@ extern "C" void OnModLoad()
         HOOKPLT(GetColorPickerValue, pGTASA + 0x6645C4);
     }
 
+    // Bigger distance for light coronas
+    if(cfg->Bind("BuffDistForLightCoronas", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x22\xC4\xF2\xC8\x32", 6); // CEntity::ProcessLightsForEntity
+        aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x20\xC4\xF2\xC8\x32", 6); // CTrafficLights::DisplayActualLight
+        aml->Write(pGTASA + 0x56585E, (uintptr_t)"\x00\x21\xC4\xF2\xF0\x21", 6); // CBike::PreRender
+        aml->Write(pGTASA + 0x5658FC, (uintptr_t)"\x00\x20\xC4\xF2\xF0\x21", 6); // CBike::PreRender
+        aml->Write(pGTASA + 0x573826, (uintptr_t)"\x00\x20\xC4\xF2\x96\x30", 6); // CHeli::SearchLightCone
+        aml->Unprot(pGTASA + 0x55BAD0, sizeof(float)); *(float*)(pGTASA + 0x55BAD0) = 300.0f; // CAutomobile::PreRender
+    }
+
     // Bigger distance for light shadows
     if(cfg->Bind("BuffDistForLightShadows", true, "Visual")->GetBool())
     {
@@ -1532,6 +1555,7 @@ extern "C" void OnModLoad()
     // Bring back light shadows from poles!
     if(cfg->Bind("BackPolesLightShadow", true, "Visual")->GetBool())
     {
+        // CShadows::CastShadowEntityXYZ maybe the reason of broken lightshadows?
         ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
         Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
     }
@@ -1548,7 +1572,11 @@ extern "C" void OnModLoad()
     {
         // Static shadows?
         asShadowsStored_NEW = new CRegisteredShadow[0xFF];
+        aStaticShadows_NEW = new CStaticShadow[0xFF];
         aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
+        aml->Write(pGTASA + 0x6798EC, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+
+        // Registered Shadows:
         // CShadows::StoreShadowToBeRendered
         aml->Write(pGTASA + 0x5B929A, (uintptr_t)"\xFE", 1);
         aml->Write(pGTASA + 0x5B92C0, (uintptr_t)"\xFE", 1);
@@ -1568,5 +1596,47 @@ extern "C" void OnModLoad()
         // CShadows::RenderExtraPlayerShadows
         aml->Write(pGTASA + 0x5BDDBA, (uintptr_t)"\xFE", 1);
         aml->Write(pGTASA + 0x5BDD5A, (uintptr_t)"\xFE", 1);
+
+        // Static Shadows:
+        // CShadows::StoreStaticShadow
+        aml->Write(pGTASA + 0x5B8E28, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTASA + 0x5B88C6, (uintptr_t)"\xB1\xF5\x7F\x5F", 4); // CMP.W R1, #16320
+        // CShadows::RenderStaticShadows
+        aml->Write(pGTASA + 0x5BB898, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTASA + 0x5BB8AA, (uintptr_t)"\xFF", 1);
+        // CShadows::UpdateStaticShadows
+        aml->Write(pGTASA + 0x5BD2EC, (uintptr_t)"\xFF", 1);
+    }
+
+    // Move shadows closer to the ground
+    if(cfg->Bind("MoveShadowsToTheGround", true, "Visual")->GetBool())
+    {
+        aml->Unprot(pGTASA + 0x5A224C, sizeof(float)); *(float*)(pGTASA + 0x5A224C) = -0.013f;
+        aml->Unprot(pGTASA + 0x5B3ED4, sizeof(float)); *(float*)(pGTASA + 0x5B3ED4) = 0.013f;
+        aml->Unprot(pGTASA + 0x5BB80C, sizeof(float)); *(float*)(pGTASA + 0x5BB80C) = 0.013f;
+        aml->Unprot(pGTASA + 0x5BC188, sizeof(float)); *(float*)(pGTASA + 0x5BC188) = 0.013f;
+        aml->Unprot(pGTASA + 0x5E03D0, sizeof(float)); *(float*)(pGTASA + 0x5E03D0) = 0.013f;
+    }
+
+    // Radar
+    if(cfg->Bind("FixRadarStreaming", true, "Visual")->GetBool())
+    {
+        Redirect(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
+    }
+
+    // texture2D bias? In theory, this thing is giving better FPS + better textures
+    if(cfg->Bind("NoShaderTextureBias", true, "Visual")->GetBool())
+    {
+        aml->Write(pGTASA + 0x5EAB20 + 52, (uintptr_t)"      ", 6);
+        aml->Write(pGTASA + 0x5EAB94 + 52, (uintptr_t)"      ", 6);
+        aml->Write(pGTASA + 0x5EAC96 + 75, (uintptr_t)"      ", 6);
+        aml->Write(pGTASA + 0x5EABE8 + 53, (uintptr_t)"      ", 6);
+        aml->Write(pGTASA + 0x5EABE8 + 99, (uintptr_t)"      ", 6);
+    }
+
+    // Sweet's roof is not that tasty anymore
+    if(cfg->Bind("FixClimbDying", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(ClimbProcessPed, pGTASA + 0x66CC28);
     }
 }
