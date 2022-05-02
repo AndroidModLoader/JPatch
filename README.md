@@ -4,13 +4,15 @@
  
  **GTA:SA**
  
- **Since v1.2.4*
+ **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger
  - Static shadows are moved to the ground a bit
- - Radar streaming should be fixed
- - Climb-dying glitch SHOULD be fixed
+ - **Radar streaming should be fixed**
+ - **Climb-dying glitch SHOULD be fixed**
  - Do not use bias in shaders, probably makes the game faster
  - Re-fixed emergency vehicles disappearing
+ - Fixed bikes generator at driving school (for new players)
+ - **Crosshair should be placed at the correct place**
  
  **Since v1.2.3**
  - Goddamn static light shadows from PC!

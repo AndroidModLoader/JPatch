@@ -49,7 +49,7 @@ CLinkList<AlphaObjectInfo>* m_alphaList;
 CPool<CObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
 
-float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
 int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail;
@@ -952,6 +952,32 @@ DECL_HOOK(bool, ClimbProcessPed, CTask* self, CPed* target)
     return ret;
 }
 
+// Driving school bikes
+DECL_HOOK(int, CreateCarGenerator, float x, float y, float z, float angle, int32_t modelId, int16_t color1, int16_t color2, uint8_t forceSpawn, uint8_t alarmChances,
+                                   uint8_t doorLockChances, uint16_t minDelay, uint16_t maxDelay, uint8_t iplId, bool ignorePopulationLimit)
+{
+    if((modelId == 463 || modelId == 521 || modelId == 522) && z == 10.1203f && (int)x == 1174)
+    {
+        if(y == 1364.832f)
+            return CreateCarGenerator(1175.76, y, z, angle, modelId, color1, color2, forceSpawn, alarmChances, doorLockChances, minDelay, maxDelay, iplId, ignorePopulationLimit);
+        if(y == 1366.479f)
+            return CreateCarGenerator(1175.999, 1368.4, z, angle, modelId, color1, color2, forceSpawn, alarmChances, doorLockChances, minDelay, maxDelay, iplId, ignorePopulationLimit);
+        if(y == 1368.359f)
+            return CreateCarGenerator(1175.967, 1372.0, z, angle, modelId, color1, color2, forceSpawn, alarmChances, doorLockChances, minDelay, maxDelay, iplId, ignorePopulationLimit);
+    }
+    return CreateCarGenerator(x, y, z, angle, modelId, color1, color2, forceSpawn, alarmChances, doorLockChances, minDelay, maxDelay, iplId, ignorePopulationLimit);
+}
+
+// Fixing a crosshair by very stupid math
+static constexpr float ar43 = 4.0f/3.0f;
+DECL_HOOKv(DrawCrosshair)
+{
+    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - (*ms_fAspectRatio - ar43) * 0.01125f;
+    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + (*ms_fAspectRatio - ar43) * 0.03600f;
+    DrawCrosshair();
+    *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1026,6 +1052,9 @@ extern "C" void OnModLoad()
     SET_TO(detailTexturesStorage,   aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE") + 8); // pGTASA + 0x6BD1D8
     SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
     SET_TO(RasterExtOffset,         aml->GetSym(hGTASA, "RasterExtOffset"));
+    SET_TO(m_f3rdPersonCHairMultX,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultXE"));
+    SET_TO(m_f3rdPersonCHairMultY,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultYE"));
+    SET_TO(ms_fAspectRatio,         aml->GetSym(hGTASA, "_ZN5CDraw15ms_fAspectRatioE"));
     // Variables End   //
 
     // Animated textures
@@ -1448,12 +1477,6 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x3F4DD2, (uintptr_t)"\x14", 1);
     }
 
-    // Spawn vehicles in front (cannot figure out what's wrong with that)
-    //if(cfg->Bind("SpawnCarsInFront", true, "Gameplay")->GetBool())
-    //{
-    //    Redirect(pGTASA + 0x2E864E + 0x1, pGTASA + 0x2E8686 + 0x1);
-    //}
-
     // Frick your "improved characters models", War Dumb
     if(cfg->Bind("FixPedSpecInShaders", true, "Visual")->GetBool())
     {
@@ -1639,4 +1662,22 @@ extern "C" void OnModLoad()
     {
         HOOKPLT(ClimbProcessPed, pGTASA + 0x66CC28);
     }
+
+    // Sweet's roof is not that tasty anymore
+    if(cfg->Bind("FixDrivingSchoolBikesSpawn", true, "SCMFixes")->GetBool())
+    {
+        HOOKPLT(CreateCarGenerator, pGTASA + 0x672808);
+    }
+
+    // Fixing a crosshair position by very stupid math
+    if(cfg->Bind("FixCrosshair", true, "Visual")->GetBool())
+    {
+        HOOKPLT(DrawCrosshair, pGTASA + 0x672880);
+    }
+
+    // Fix ped conversations are gone
+    //if(cfg->Bind("FixPedConversation", true, "Gameplay")->GetBool())
+    //{
+    //    Redirect(pGTASA + 0x301BFE + 0x1, pGTASA + 0x301C0E + 0x1);
+    //}
 }
