@@ -3,6 +3,9 @@
  Currently i can fix those things:
  
  **GTA:SA**
+
+ **Since v1.3**
+ - VitaPort: Fixed cheats hashtable
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger
