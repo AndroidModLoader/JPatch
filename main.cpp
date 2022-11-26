@@ -13,7 +13,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.2.4, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.3, RusJJ)
 
 union ScriptVariables
 {
@@ -101,7 +101,7 @@ void (*TimerUpdate)();
 void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
 bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
-void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
+inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
     {
@@ -110,7 +110,7 @@ void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& off
     }
     TransformPoint((RwV3d&)outPos, self->m_placement, (RwV3d&)offset);
 }
-void BumpStreamingMemory(int megabytes)
+inline void BumpStreamingMemory(int megabytes)
 {
     *ms_memoryAvailable += megabytes * 1024 * 1024;
 }
@@ -122,7 +122,7 @@ extern "C" void adadad(void)
 {
     //asm("VMOV.F32 S0, #0.5");
     asm("MOVT R1, #0x42F0");
-}
+} // This one is used internally for myself. Helps me to get patched values.
 
 // Moon phases
 int moon_alphafunc, moon_vertexblend, moon_alphaval;
