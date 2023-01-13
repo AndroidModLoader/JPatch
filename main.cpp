@@ -98,7 +98,7 @@ static uint32_t CCheat__m_aCheatHashKeys[] = {
 void Redirect(uintptr_t addr, uintptr_t to)
 {
     if(!addr) return;
-    uint32_t hook[2] = {0xE51FF004, to};
+    uintptr_t hook[2] = {0xE51FF004, to};
     if(addr & 1)
     {
         addr &= ~1;
@@ -111,6 +111,25 @@ void Redirect(uintptr_t addr, uintptr_t to)
     }
     aml->Write(addr, (uintptr_t)hook, sizeof(hook));
 }
+void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
+{
+    if(!addr) return;
+    uintptr_t hook[2] = {(uintptr_t)(0x10000000*reg + 0x0000F8DF), to}; // idk
+    if(addr & 1)
+    {
+        addr &= ~1;
+        if (addr & 2)
+        {
+            aml->PlaceNOP(addr, 1); 
+            addr += 2;
+        }
+        //hook[0] = 0x10000000*reg + 0x0000F8DF;
+    }
+    aml->Write(addr, (uintptr_t)hook, sizeof(hook));
+}
+void (*emu_glEnable)(GLenum);
+void (*emu_glDisable)(GLenum);
+void (*emu_glAlphaFunc)(GLenum, GLclampf);
 void (*RwRenderStateSet)(RwRenderState, void*);
 void (*RwRenderStateGet)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
@@ -157,15 +176,16 @@ inline void BumpStreamingMemory(int megabytes)
 extern "C" void adadad(void)
 {
     //asm("VMOV.F32 S0, #0.5");
-    asm("MOVT R1, #0x42F0");
-} // This one is used internally for myself. Helps me to get patched values.
+    asm("LDR PC, [PC, #-0x4]");
+    //asm("MOVT R1, #0x42F0");
+} // This one is used internally by myself. Helps me to get patched values.
 
 // Moon phases
 int moon_alphafunc, moon_vertexblend, moon_alphaval;
 uintptr_t MoonVisual_1_BackTo;
 extern "C" void MoonVisual_1(void)
 {
-    //glEnable(GL_ALPHA_TEST);
+    emu_glEnable(GL_ALPHA_TEST);
 
     RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
     RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
@@ -176,7 +196,8 @@ extern "C" void MoonVisual_1(void)
     RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDZERO);
 
-    //glAlphaFuncQCOM(GL_GREATER, 0.5f);
+    SET_TO(emu_glAlphaFunc, *(void**)(pGTASA + 0x6BCBF8));
+    emu_glAlphaFunc(GL_GREATER, 0.5f);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 {
@@ -192,6 +213,7 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 uintptr_t MoonVisual_2_BackTo;
 extern "C" void MoonVisual_2(void)
 {
+    emu_glAlphaFunc(GL_GREATER, 0.5f);
     RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)moon_alphafunc);
     RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)moon_vertexblend);
     RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)moon_alphaval);
@@ -200,7 +222,7 @@ extern "C" void MoonVisual_2(void)
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDONE);
     RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
 
-    //glDisable(GL_ALPHA_TEST);
+    emu_glDisable(GL_ALPHA_TEST);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
 {
@@ -758,6 +780,7 @@ DECL_HOOK(void*, RenderBufferedOneXLUSprite, float x, float y, float z, float w,
 DECL_HOOKv(RenderAlphaAtomics)
 {
     char *nodeName;
+    emu_glEnable(GL_ALPHA_TEST);
     for(CLink<AlphaObjectInfo> *entry = m_alphaList->usedListTail.prev; entry != &m_alphaList->usedListHead; entry = entry->prev)
     {
         //entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
@@ -781,6 +804,7 @@ DECL_HOOKv(RenderAlphaAtomics)
             entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
         }
     }
+    emu_glDisable(GL_ALPHA_TEST);
 }
 
 // LODs
@@ -1014,6 +1038,59 @@ DECL_HOOKv(DrawCrosshair)
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
 }
 
+// Fix crash while loading the save file
+DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
+{
+    logger->Info("%d", mdlIdx);
+    EntMdlNoCreate(self, mdlIdx);
+}
+
+CIntVector2D* windowSize;
+float windowSizeFakeY = 0;
+int myvalY;
+DECL_HOOKv(AdjustableSave, void* self)
+{
+    if(windowSizeFakeY == 0)
+    {
+        myvalY = windowSize->y;
+        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
+    }
+    windowSize->y = windowSizeFakeY;
+    RsGlobal->maximumHeight = windowSizeFakeY;
+    AdjustableSave(self);
+    windowSize->y = myvalY;
+    RsGlobal->maximumHeight = myvalY;
+}
+DECL_HOOK(void*, AdjustableConstruct, void* self)
+{
+    if(windowSizeFakeY == 0)
+    {
+        myvalY = windowSize->y;
+        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
+    }
+    windowSize->y = windowSizeFakeY;
+    RsGlobal->maximumHeight = windowSizeFakeY;
+    AdjustableConstruct(self);
+    windowSize->y = myvalY;
+    RsGlobal->maximumHeight = myvalY;
+    logger->Info("called");
+    return self;
+}
+DECL_HOOKv(AdjustableUpdate, void* self)
+{
+    if(windowSizeFakeY == 0)
+    {
+        myvalY = windowSize->y;
+        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
+    }
+    windowSize->y = windowSizeFakeY;
+    RsGlobal->maximumHeight = windowSizeFakeY;
+    AdjustableUpdate(self);
+    windowSize->y = myvalY;
+    RsGlobal->maximumHeight = myvalY;
+    logger->Info("upd");
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1056,6 +1133,8 @@ extern "C" void OnModLoad()
     SET_TO(GetTouchPosition,        aml->GetSym(hGTASA, "_ZN15CTouchInterface16GetTouchPositionEi"));
     SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, "_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf"));
     SET_TO(TransformPoint,          aml->GetSym(hGTASA, "_Z14TransformPointR5RwV3dRK16CSimpleTransformRKS_"));
+    SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
+    SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
     // Functions End   //
     
     // Variables Start //
@@ -1108,14 +1187,14 @@ extern "C" void OnModLoad()
 
     // Fix moon!
     // War Drum moment: cannot get Alpha testing to work
-    //if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
-    //{
-    //    //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
-    //    MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
-    //    MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
-    //    Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
-    //    Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
-    //}
+    if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
+    {
+        //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
+        MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
+        MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
+        Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
+        Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
+    }
 
     // Fix sky multitude
     if(cfg->Bind("FixSkyMultitude", true, "Visual")->GetBool())
@@ -1545,10 +1624,10 @@ extern "C" void OnModLoad()
     //}
 
     // Helicopter's rotor blur
-    //if(cfg->Bind("HeliRotorBlur", true, "Visual")->GetBool())
-    //{
-    //    HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
-    //}
+    if(cfg->Bind("HeliRotorBlur", true, "Visual")->GetBool())
+    {
+        HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
+    }
 
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
@@ -1715,7 +1794,23 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixCheatsHash", true, "Gameplay")->GetBool())
     {
         
-        aml->Write(aml->GetSym(hGTASA, "_ZN6CCheat16m_aCheatHashKeysE"), "_ZN6CCheat16m_aCheatHashKeysE"), (uintptr_t)CCheat__m_aCheatHashKeys, sizeof(CCheat__m_aCheatHashKeys));
+        aml->Write(aml->GetSym(hGTASA, "_ZN6CCheat16m_aCheatHashKeysE"), (uintptr_t)CCheat__m_aCheatHashKeys, sizeof(CCheat__m_aCheatHashKeys));
+    }
+    
+    // Save file loading crash fix
+    if(cfg->Bind("FixSaveLoadingCrash1", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(EntMdlNoCreate, pGTASA + 0x673844);
+    }
+    
+    // Fix Adjustable.cfg loading?
+    if(cfg->Bind("FixAdjustableSizeLowering", true, "Visual")->GetBool())
+    {
+        SET_TO(windowSize, aml->GetSym(hGTASA, "windowSize"));
+        HOOKPLT(AdjustableSave, pGTASA + 0x66FFA0);
+        HOOKPLT(AdjustableConstruct, pGTASA + 0x673648);
+        HOOKPLT(AdjustableUpdate, pGTASA + 0x6754F4); // LoadTouchControls
+        //HOOKPLT(AdjustableUpdate, pGTASA + 0x671708);
     }
     
     // Fix ped conversations are gone
