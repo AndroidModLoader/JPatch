@@ -130,6 +130,7 @@ void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
 void (*emu_glEnable)(GLenum);
 void (*emu_glDisable)(GLenum);
 void (*emu_glAlphaFunc)(GLenum, GLclampf);
+bool (*IsOnAMission)();
 void (*RwRenderStateSet)(RwRenderState, void*);
 void (*RwRenderStateGet)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
@@ -140,7 +141,7 @@ bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
 void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
-CPed* (*FindPlayerPed)(int playerId);
+CPlayerPed* (*FindPlayerPed)(int playerId);
 void (*PhysicalApplyForce)(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed);
 char* (*GetFrameNodeName)(RwFrame*);
 int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, bool checkMaxVisible, bool checkMinVisible);
@@ -653,7 +654,7 @@ DECL_HOOK(CObject*, Object_New, uint32_t size)
                 WorldRemoveEntity(existing);
                 delete existing;
                 obj = objPool->New(handle);
-                break;
+                return obj;
             }
         }
 	}
@@ -951,9 +952,9 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 // Light shadows from poles
 uintptr_t ProcessLightsForEntity_BackTo;
 float fLightDist = 40.0f;
-extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum)
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
 {
-    if(eff->light.m_fShadowSize != 0.0f)
+    if(bDoLight && eff->light.m_fShadowSize != 0)
     {
         CVector a;
         TransformFromObjectSpace(ent, a, eff->m_vecPosn);
@@ -967,14 +968,17 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
 {
     asm volatile(
         "MOV R0, R9\n"
-        "MOV R10, R6\n"
-        "PUSH {R1-R7,R9-R11}\n"
-        "MOV R1, R8\n"
-        "MOV R2, R10\n"
+        //"MOV R10, R6\n"
+        "PUSH {R1-R11}\n"
+        //"MOV R1, R8\n"
+        //"MOV R2, R10\n"
+        "LDR R1, [SP, #28]\n"
+        "LDR R2, [SP, #20]\n"
+        "LDR R3, [SP, #12]\n"
         "BL ProcessLightsForEntity_patch\n");
     asm volatile(
         "MOV R12, %0\n"
-        "POP {R1-R7,R9-R11}\n"
+        "POP {R1-R11}\n"
         "LDR.W R10, [SP,#0x150+0x98]\n"
         "BX R12\n"
     :: "r" (ProcessLightsForEntity_BackTo));
@@ -1077,7 +1081,7 @@ DECL_HOOK(void*, AdjustableConstruct, void* self)
     RsGlobal->maximumHeight = myvalY;
     return self;
 }
-DECL_HOOKv(AdjustableUpdate, void* self)
+DECL_HOOKv(LoadTouchControls, void* self)
 {
     if(windowSizeFakeY == 0)
     {
@@ -1086,7 +1090,7 @@ DECL_HOOKv(AdjustableUpdate, void* self)
     }
     windowSize->y = windowSizeFakeY;
     RsGlobal->maximumHeight = windowSizeFakeY;
-    AdjustableUpdate(self);
+    LoadTouchControls(self);
     windowSize->y = myvalY;
     RsGlobal->maximumHeight = myvalY;
 }
@@ -1101,7 +1105,7 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
     if(self->m_nModelIndex == 420 ||
        self->m_nModelIndex == 438)
     {
-        CPed* p = FindPlayerPed(-1);
+        CPlayerPed* p = FindPlayerPed(-1);
         
         if(self->vehicleFlags.bEngineOn &&
            self->m_pDriver &&
@@ -1115,6 +1119,14 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
             SetTaxiLight(self, false);
         }
     }
+}
+
+// Interior radar
+DECL_HOOKv(DrawRadar, void* self)
+{
+    CPlayerPed* p = FindPlayerPed(-1);
+    if(!p || p->m_nInterior == 0 || IsOnAMission())
+        DrawRadar(self);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1160,6 +1172,7 @@ extern "C" void OnModLoad()
     SET_TO(GetTouchPosition,        aml->GetSym(hGTASA, "_ZN15CTouchInterface16GetTouchPositionEi"));
     SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, "_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf"));
     SET_TO(TransformPoint,          aml->GetSym(hGTASA, "_Z14TransformPointR5RwV3dRK16CSimpleTransformRKS_"));
+    SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
     SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
     SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
     // Functions End   //
@@ -1836,8 +1849,7 @@ extern "C" void OnModLoad()
         SET_TO(windowSize, aml->GetSym(hGTASA, "windowSize"));
         HOOKPLT(AdjustableSave, pGTASA + 0x66FFA0);
         HOOKPLT(AdjustableConstruct, pGTASA + 0x673648);
-        HOOKPLT(AdjustableUpdate, pGTASA + 0x6754F4); // LoadTouchControls
-        //HOOKPLT(AdjustableUpdate, pGTASA + 0x671708);
+        HOOKPLT(LoadTouchControls, pGTASA + 0x6754F4);
     }
     
     // Taxi light (obviously)
@@ -1845,6 +1857,12 @@ extern "C" void OnModLoad()
     {
         SET_TO(SetTaxiLight, aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
         HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
+    }
+    
+    // Minimap in interiors? Hell no!
+    if(cfg->Bind("NoInteriorRadar", true, "Visual")->GetBool())
+    {
+        HOOKPLT(DrawRadar, pGTASA + 0x66F618);
     }
     
     // Fix ped conversations are gone
