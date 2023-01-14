@@ -8,6 +8,7 @@
  - VitaPort: Fixed cheats hashtable (not ready)
  - Fix save loading crash (not ready)
  - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9
+ - Taxi light is activated
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger

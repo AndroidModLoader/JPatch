@@ -140,6 +140,7 @@ bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
 void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
+CPed* (*FindPlayerPed)(int playerId);
 void (*PhysicalApplyForce)(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed);
 char* (*GetFrameNodeName)(RwFrame*);
 int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, bool checkMaxVisible, bool checkMinVisible);
@@ -1045,6 +1046,7 @@ DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
     EntMdlNoCreate(self, mdlIdx);
 }
 
+// Adjustable.cfg
 CIntVector2D* windowSize;
 float windowSizeFakeY = 0;
 int myvalY;
@@ -1073,7 +1075,6 @@ DECL_HOOK(void*, AdjustableConstruct, void* self)
     AdjustableConstruct(self);
     windowSize->y = myvalY;
     RsGlobal->maximumHeight = myvalY;
-    logger->Info("called");
     return self;
 }
 DECL_HOOKv(AdjustableUpdate, void* self)
@@ -1088,7 +1089,32 @@ DECL_HOOKv(AdjustableUpdate, void* self)
     AdjustableUpdate(self);
     windowSize->y = myvalY;
     RsGlobal->maximumHeight = myvalY;
-    logger->Info("upd");
+}
+
+// Taxi lights
+void (*SetTaxiLight)(CAutomobile*, bool);
+CAutomobile* pLastPlayerTaxi = NULL;
+DECL_HOOKv(AutomobileRender, CAutomobile* self)
+{
+    AutomobileRender(self);
+    
+    if(self->m_nModelIndex == 420 ||
+       self->m_nModelIndex == 438)
+    {
+        CPed* p = FindPlayerPed(-1);
+        
+        if(self->vehicleFlags.bEngineOn &&
+           self->m_pDriver &&
+           self->m_nNumPassengers == 0 &&
+           self->m_fHealth > 0)
+        {
+            SetTaxiLight(self, true);
+        }
+        else
+        {
+            SetTaxiLight(self, false);
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1117,6 +1143,7 @@ extern "C" void OnModLoad()
     SET_TO(SetCameraDirectlyBehindForFollowPed, aml->GetSym(hGTASA, "_ZN7CCamera48SetCameraDirectlyBehindForFollowPed_CamOnAStringEv"));
     SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
     SET_TO(FindPlayerVehicle,       aml->GetSym(hGTASA, "_Z17FindPlayerVehicleib"));
+    SET_TO(FindPlayerPed,           aml->GetSym(hGTASA, "_Z13FindPlayerPedi"));
     SET_TO(PhysicalApplyForce,      aml->GetSym(hGTASA, "_ZN9CPhysical10ApplyForceE7CVectorS0_b"));
     SET_TO(GetFrameNodeName,        aml->GetSym(hGTASA, "_Z16GetFrameNodeNameP7RwFrame"));
     SET_TO(SpriteCalcScreenCoors,   aml->GetSym(hGTASA, "_ZN7CSprite15CalcScreenCoorsERK5RwV3dPS0_PfS4_bb"));
@@ -1811,6 +1838,13 @@ extern "C" void OnModLoad()
         HOOKPLT(AdjustableConstruct, pGTASA + 0x673648);
         HOOKPLT(AdjustableUpdate, pGTASA + 0x6754F4); // LoadTouchControls
         //HOOKPLT(AdjustableUpdate, pGTASA + 0x671708);
+    }
+    
+    // Taxi light (obviously)
+    if(cfg->Bind("TaxiLights", true, "Gameplay")->GetBool())
+    {
+        SET_TO(SetTaxiLight, aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
+        HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
     }
     
     // Fix ped conversations are gone
