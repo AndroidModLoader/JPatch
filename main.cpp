@@ -95,22 +95,6 @@ static uint32_t CCheat__m_aCheatHashKeys[] = {
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-void Redirect(uintptr_t addr, uintptr_t to)
-{
-    if(!addr) return;
-    uintptr_t hook[2] = {0xE51FF004, to};
-    if(addr & 1)
-    {
-        addr &= ~1;
-        if (addr & 2)
-        {
-            aml->PlaceNOP(addr, 1); 
-            addr += 2;
-        }
-        hook[0] = 0xF000F8DF;
-    }
-    aml->Write(addr, (uintptr_t)hook, sizeof(hook));
-}
 void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
 {
     if(!addr) return;
@@ -1232,8 +1216,8 @@ extern "C" void OnModLoad()
         //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
         MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
         MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
-        Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
-        Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
+        aml->Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
+        aml->Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
     }
 
     // Fix sky multitude
@@ -1255,7 +1239,7 @@ extern "C" void OnModLoad()
     if(cfg->Bind("LimitSandDustBulletParticles", true, "Visual")->GetBool())
     {
         AddBulletImpactFx_BackTo = pGTASA + 0x36478E + 0x1;
-        Redirect(pGTASA + 0x36477C + 0x1, (uintptr_t)AddBulletImpactFx_inject);
+        aml->Redirect(pGTASA + 0x36477C + 0x1, (uintptr_t)AddBulletImpactFx_inject);
         if(cfg->Bind("LimitSandDustBulletParticlesWithSparkles", false, "Visual")->GetBool())
         {
             nLimitWithSparkles = BULLETFX_SPARK;
@@ -1279,7 +1263,7 @@ extern "C" void OnModLoad()
     {
         SwimmingResistanceBack_BackTo = pGTASA + 0x53BD3A + 0x1;
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
-        Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
+        aml->Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
     }
 
     // Fix stealable items sucking
@@ -1322,14 +1306,14 @@ extern "C" void OnModLoad()
     if(cfg->Bind("WeaponPenaltyIfDied", true, "Gameplay")->GetBool())
     {
         DiedPenalty_BackTo = pGTASA + 0x3088E0 + 0x1;
-        Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_inject);
+        aml->Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_inject);
     }
 
     // Fix emergency vehicles
     if(cfg->Bind("FixEmergencyVehicles", true, "Gameplay")->GetBool())
     {
         EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
-        Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
+        aml->Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
         HOOKPLT(SetFOV_Emergency, pGTASA + 0x673DDC);
         aml->Write(pGTASA + 0x3DD8A0, (uintptr_t)"\xB0\xEE\x42\x1A", 4); // WarDumbs are multiplying it by 0.8? Reasonable for 2013 but why didnt they remove that in 2.00?
         aml->Write(pGTASA + 0x3DD8A4, (uintptr_t)"\xB0\xEE\x40\x2A", 4); // Same thing but by 0.875... Cringe.
@@ -1354,7 +1338,7 @@ extern "C" void OnModLoad()
     // Dont set player on fire when he's on burning BMX (MTA:SA)
     if(cfg->Bind("DontBurnPlayerOnBurningBMX", true, "Gameplay")->GetBool())
     {
-        Redirect(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
+        aml->Redirect(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
     }
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
@@ -1369,7 +1353,7 @@ extern "C" void OnModLoad()
     // THROWN projectiles throw more accurately (MTA:SA)
     if(cfg->Bind("ThrownProjectilesAccuracy", true, "Gameplay")->GetBool())
     {
-        Redirect(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
+        aml->Redirect(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
     }
 
     // Disable call to FxSystem_c::GetCompositeMatrix in CAEFireAudioEntity::UpdateParameters 
@@ -1404,7 +1388,7 @@ extern "C" void OnModLoad()
     if (cfg->Bind("SkimmerPlaneFix", true, "Gameplay")->GetBool())
     {
         SkimmerWaterResistance_BackTo = pGTASA + 0x589ADC + 0x1;
-        Redirect(pGTASA + 0x589AD4 + 0x1, (uintptr_t)SkimmerWaterResistance_inject);
+        aml->Redirect(pGTASA + 0x589AD4 + 0x1, (uintptr_t)SkimmerWaterResistance_inject);
     }
 
     // Buff streaming
@@ -1456,7 +1440,7 @@ extern "C" void OnModLoad()
     // Disable GTA vehicle detachment at rotation awkwardness
     if(cfg->Bind("FixVehicleDetachmentAtRot", true, "Visual")->GetBool())
     {
-        Redirect(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
+        aml->Redirect(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
     }
 
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
@@ -1464,7 +1448,7 @@ extern "C" void OnModLoad()
     {
         GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
         GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
-        Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_inject);
+        aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_inject);
     }
 
     // Just a fuzzy seek. Tell MPG123 to not load useless data.
@@ -1484,14 +1468,14 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixHighFPSOpcode034E", true, "SCMFixes")->GetBool())
     {
         ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
-        Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
+        aml->Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
     }
 
     // Fix pushing force
     if(cfg->Bind("FixPhysicalPushForce", true, "Gameplay")->GetBool())
     {
         PhysicalApplyCollision_BackTo = pGTASA + 0x402B72 + 0x1;
-        Redirect(pGTASA + 0x402B68 + 0x1, (uintptr_t)PhysicalApplyCollision_inject);
+        aml->Redirect(pGTASA + 0x402B68 + 0x1, (uintptr_t)PhysicalApplyCollision_inject);
     }
 
     // Can now rotate the camera inside the heli/plane?
@@ -1556,8 +1540,8 @@ extern "C" void OnModLoad()
     // RE3: Make cars and peds to not despawn when you look away
     if(cfg->Bind("Re3_ExtOffscreenDespRange", true, "Gameplay")->GetBool())
     {
-        Redirect(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
-        Redirect(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
+        aml->Redirect(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
+        aml->Redirect(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
     }
 
     // RE3: Do not remove locked cars
@@ -1605,14 +1589,14 @@ extern "C" void OnModLoad()
     // Dont kill peds when jacking their car, monster!
     if(cfg->Bind("DontKillPedsOnCarJacking", true, "Gameplay")->GetBool())
     {
-        Redirect(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
+        aml->Redirect(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
     }
 
     // Colored zone names are back
     if(cfg->Bind("ColoredZoneNames", true, "Visual")->GetBool())
     {
         ColoredZoneNames_BackTo = pGTASA + 0x438404 + 0x1;
-        Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
+        aml->Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
     }
 
     // Bigger max count of peds
@@ -1638,7 +1622,7 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x1CE2F0, (uintptr_t)"\x40\x46\x00\xBF", 4);
         aml->Write(pGTASA + 0x1CEDC4, (uintptr_t)"\x40\xF2\x40\x60", 4);
         aml->Write(pGTASA + 0x1CEF1A, (uintptr_t)"\x58\x46\x00\xBF", 4);
-        Redirect(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
+        aml->Redirect(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
     }
 
     // Tells "FindGroundZ" functions that we need can teleport on objects too
@@ -1683,7 +1667,7 @@ extern "C" void OnModLoad()
         if(bPreloadLOD)
         {
             LoadScene_BackTo = pGTASA + 0x4691E2 + 0x1;
-            Redirect(pGTASA + 0x4691D6 + 0x1, (uintptr_t)LoadScene_inject);
+            aml->Redirect(pGTASA + 0x4691D6 + 0x1, (uintptr_t)LoadScene_inject);
         }
         if(bPreloadPed)
         {
@@ -1735,7 +1719,7 @@ extern "C" void OnModLoad()
     {
         // CShadows::CastShadowEntityXYZ maybe the reason of broken lightshadows?
         ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
-        Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
+        aml->Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
     }
 
     // Fix greenish detail tex
@@ -1799,7 +1783,7 @@ extern "C" void OnModLoad()
     // Radar
     if(cfg->Bind("FixRadarStreaming", true, "Visual")->GetBool())
     {
-        Redirect(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
+        aml->Redirect(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
     }
 
     // texture2D bias? In theory, this thing is giving better FPS + better textures
@@ -1852,14 +1836,14 @@ extern "C" void OnModLoad()
         HOOKPLT(LoadTouchControls, pGTASA + 0x6754F4);
     }
     
-    // Taxi light (obviously)
-    if(cfg->Bind("TaxiLights", true, "Gameplay")->GetBool())
+    // Taxi lights (obviously)
+    if(cfg->Bind("TaxiLights", true, "Visual")->GetBool())
     {
         SET_TO(SetTaxiLight, aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
         HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
     }
     
-    // Minimap in interiors? Hell no!
+    // Minimap in interiors? Hell nah!
     if(cfg->Bind("NoInteriorRadar", true, "Visual")->GetBool())
     {
         HOOKPLT(DrawRadar, pGTASA + 0x66F618);
