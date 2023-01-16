@@ -12,6 +12,7 @@
  - No minimap in interiors
  - PC-like money in HUD (disabled by default)
  - A bit darker HUD colours (disabled by default)
+ - Aiming with Country Rifle is now in 3rd person
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger

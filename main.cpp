@@ -1919,7 +1919,12 @@ extern "C" void OnModLoad()
         SET_TO(HudColors, aml->GetSym(hGTASA, "HudColour"));
     }
     
-    //aml->Write(pGTASA + 0x3C6C70, (uintptr_t)"\x00", 1);
+    // Country. Rifle. Is. 3rd. Person.
+    if(cfg->Bind("FixCountryRifleAim", true, "Gameplay")->GetBool())
+    {
+        // YES, THATS EXTREMELY EASY TO FIX, LMAO
+        aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\x00", 1);
+    }
     
     // Fix ped conversations are gone
     //if(cfg->Bind("FixPedConversation", true, "Gameplay")->GetBool())
