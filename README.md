@@ -5,7 +5,8 @@
  **GTA:SA**
 
  **Since v1.3 (W.I.P.)**
- - VitaPort: Fixed cheats hashtable (not ready)
+ - VitaPort: Fixed cheats hashtable
+ - Cheats can now be entered using keyboards
  - Fix save loading crash (not ready)
  - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9
  - Taxi light is activated

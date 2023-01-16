@@ -3,6 +3,7 @@
 #include <mod/config.h>
 #include <dlfcn.h>
 #include <vector>
+#include <cctype>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GLES/gl.h>
@@ -50,6 +51,8 @@ CPool<CObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
 CRGBA* HudColors = NULL;
 CWeaponInfo* aWeaponInfo;
+int keys[538];
+int keysOld[538]; // own
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -143,6 +146,7 @@ void (*emu_glEnable)(GLenum);
 void (*emu_glDisable)(GLenum);
 void (*emu_glAlphaFunc)(GLenum, GLclampf);
 bool (*IsOnAMission)();
+void (*AddToCheatString)(char);
 void (*RwRenderStateSet)(RwRenderState, void*);
 void (*RwRenderStateGet)(RwRenderState, void*);
 void (*ClearPedWeapons)(CPed*);
@@ -1056,11 +1060,29 @@ DECL_HOOKv(DrawCrosshair)
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
 }
 
+// Cheats!
+DECL_HOOKv(DoCheats, int self, int keyNum)
+{
+    // Suppress
+    //DoCheats(self, keyNum);
+}
+DECL_HOOKv(KBEvent, bool pushed, int keyNum, int ctrl_or_shift, int alwaysZero)
+{
+    KBEvent(pushed, keyNum, ctrl_or_shift, alwaysZero);
+    
+    char key = 0;
+    
+    if(keyNum >= 17 && keyNum <= 26) key = keyNum + 31; // numbas
+    else if(keyNum >= 27 && keyNum <= 52) key = keyNum + 70; // symbalz
+    
+    if(!pushed && key != 0) AddToCheatString(toupper(key));
+}
+
 // Fix crash while loading the save file
 DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
 {
-    //RequestModel(mdlIdx, STREAMING_PRIORITY_REQUEST);
-    //LoadAllRequestedModels(true);
+    RequestModel(mdlIdx, STREAMING_PRIORITY_REQUEST);
+    LoadAllRequestedModels(true);
     EntMdlNoCreate(self, mdlIdx);
 }
 
@@ -1184,6 +1206,7 @@ extern "C" void OnModLoad()
     hGTASA = dlopen("libGTASA.so", RTLD_LAZY);
 
     // Functions Start //
+    SET_TO(AddToCheatString,        aml->GetSym(hGTASA, "_ZN6CCheat16AddToCheatStringEc"));
     SET_TO(RwRenderStateSet,        aml->GetSym(hGTASA, "_Z16RwRenderStateSet13RwRenderStatePv"));
     SET_TO(RwRenderStateGet,        aml->GetSym(hGTASA, "_Z16RwRenderStateGet13RwRenderStatePv"));
     SET_TO(ClearPedWeapons,         aml->GetSym(hGTASA, "_ZN4CPed12ClearWeaponsEv"));
@@ -1214,6 +1237,7 @@ extern "C" void OnModLoad()
     SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
     SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
     SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
+    SET_TO(keys,                    aml->GetSym(hGTASA, "keys"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
@@ -1871,10 +1895,11 @@ extern "C" void OnModLoad()
         HOOKPLT(DrawCrosshair, pGTASA + 0x672880);
     }
 
-    // Fixing a crosshair position by very stupid math
-    if(cfg->Bind("FixCheatsHash", true, "Gameplay")->GetBool())
+    // Fixed cheats
+    if(cfg->Bind("FixCheats", true, "Gameplay")->GetBool())
     {
-        
+        HOOKPLT(DoCheats, pGTASA + 0x675458);
+        HOOKPLT(KBEvent, pGTASA + 0x6709B8);
         aml->Write(aml->GetSym(hGTASA, "_ZN6CCheat16m_aCheatHashKeysE"), (uintptr_t)CCheat__m_aCheatHashKeys, sizeof(CCheat__m_aCheatHashKeys));
     }
     
