@@ -48,6 +48,8 @@ ScriptVariables* ScriptParams;
 CLinkList<AlphaObjectInfo>* m_alphaList;
 CPool<CObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
+CRGBA* HudColors = NULL;
+CWeaponInfo* aWeaponInfo;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -110,6 +112,32 @@ void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
         //hook[0] = 0x10000000*reg + 0x0000F8DF;
     }
     aml->Write(addr, (uintptr_t)hook, sizeof(hook));
+}
+DECL_HOOK(bool, InitRenderWare)
+{
+    if(!InitRenderWare()) return false;
+    
+    if(HudColors != NULL) // Darker colors
+    {
+        HudColors[HUD_COLOUR_RED] = CRGBA(166, 23, 26); //CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_GREEN] = CRGBA(47, 91, 38); //CRGBA(54, 104, 44);
+        /*HudColors[HUD_COLOUR_DARK_BLUE] = CRGBA(50, 60, 127);
+        HudColors[HUD_COLOUR_LIGHT_BLUE] = CRGBA(172, 203, 241);
+        HudColors[HUD_COLOUR_LIGHT_GRAY] = CRGBA(225, 225, 225);*/
+        HudColors[HUD_COLOUR_WHITE] = CRGBA(225, 225, 225); //CRGBA(255, 255, 255);
+        /*HudColors[HUD_COLOUR_BLACK] = CRGBA(0, 0, 0);
+        HudColors[HUD_COLOUR_GOLD] = CRGBA(144, 98, 16);
+        HudColors[HUD_COLOUR_PURPLE] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_DARK_GRAY] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_DARK_RED] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_DARK_GREEN] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_CREAM] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_NIGHT_BLUE] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_BLUE] = CRGBA(180, 25, 29);
+        HudColors[HUD_COLOUR_YELLOW] = CRGBA(180, 25, 29);*/
+    }
+    
+    return true;
 }
 void (*emu_glEnable)(GLenum);
 void (*emu_glDisable)(GLenum);
@@ -353,7 +381,7 @@ extern "C" void DiedPenalty(void)
 {
     if(WorldPlayers[0].m_nMoney > 0)
     {
-        WorldPlayers[0].m_nMoney = WorldPlayers[0].m_nMoney - 100 < 0 ? 0 : WorldPlayers[0].m_nMoney - 100;
+        WorldPlayers[0].m_nMoney = (WorldPlayers[0].m_nMoney - 100) < 0 ? 0 : (WorldPlayers[0].m_nMoney - 100);
     }
     ClearPedWeapons(WorldPlayers[0].m_pPed);
 }
@@ -484,7 +512,8 @@ uintptr_t GetCarGunFired_BackTo1, GetCarGunFired_BackTo2; // For optimization?
 extern "C" void GetCarGunFired_patch(void)
 {
     CVehicle* veh = FindPlayerVehicle(-1, false);
-    if(veh != NULL && (veh->m_nModelIndex == 407 || veh->m_nModelIndex == 601))
+    if(veh != NULL && (veh->m_nModelIndex == 407 || veh->m_nModelIndex == 601 ||
+                       veh->m_nModelIndex == 430))
     {
         GetCarGunFired_BackTo = GetCarGunFired_BackTo1;
     }
@@ -1030,7 +1059,8 @@ DECL_HOOKv(DrawCrosshair)
 // Fix crash while loading the save file
 DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
 {
-    logger->Info("%d", mdlIdx);
+    //RequestModel(mdlIdx, STREAMING_PRIORITY_REQUEST);
+    //LoadAllRequestedModels(true);
     EntMdlNoCreate(self, mdlIdx);
 }
 
@@ -1113,6 +1143,31 @@ DECL_HOOKv(DrawRadar, void* self)
         DrawRadar(self);
 }
 
+// I got the moneeeey
+uintptr_t DrawMoney_BackTo;
+extern "C" const char* DrawMoney_patch(int isPositive)
+{
+    static const char* positiveT = "$%08d";
+    static const char* negativeT = "-$%07d";
+    
+    return isPositive ? positiveT : negativeT;
+}
+__attribute__((optnone)) __attribute__((naked)) void DrawMoney_inject(void)
+{
+    asm volatile(
+        "LDR R5, [R0]\n"
+        "SMLABB R0, R1, R11, R5\n"
+        "PUSH {R0-R11}\n"
+        "LDR R0, [SP, #8]\n"
+        "BL DrawMoney_patch\n"
+        "STR R0, [SP, #4]\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0-R11}\n"
+        "BX R12\n"
+    :: "r" (DrawMoney_BackTo));
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1159,6 +1214,7 @@ extern "C" void OnModLoad()
     SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
     SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
     SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
+    HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
     // Variables Start //
@@ -1194,6 +1250,7 @@ extern "C" void OnModLoad()
     SET_TO(m_f3rdPersonCHairMultX,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultXE"));
     SET_TO(m_f3rdPersonCHairMultY,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultYE"));
     SET_TO(ms_fAspectRatio,         aml->GetSym(hGTASA, "_ZN5CDraw15ms_fAspectRatioE"));
+    SET_TO(aWeaponInfo,             aml->GetSym(hGTASA, "aWeaponInfo"));
     // Variables End   //
 
     // Animated textures
@@ -1211,14 +1268,14 @@ extern "C" void OnModLoad()
 
     // Fix moon!
     // War Drum moment: cannot get Alpha testing to work
-    if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
+    /*if(cfg->Bind("MoonPhases", true, "Visual")->GetBool())
     {
         //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
         MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
         MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
         aml->Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
         aml->Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
-    }
+    }*/
 
     // Fix sky multitude
     if(cfg->Bind("FixSkyMultitude", true, "Visual")->GetBool())
@@ -1648,10 +1705,10 @@ extern "C" void OnModLoad()
     //}
 
     // Helicopter's rotor blur
-    if(cfg->Bind("HeliRotorBlur", true, "Visual")->GetBool())
+    /*if(cfg->Bind("HeliRotorBlur", true, "Visual")->GetBool())
     {
         HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
-    }
+    }*/
 
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
@@ -1786,7 +1843,7 @@ extern "C" void OnModLoad()
         aml->Redirect(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
     }
 
-    // texture2D bias? In theory, this thing is giving better FPS + better textures
+    // texture2D bias? In theory, this thing (below) is giving better FPS + better textures
     if(cfg->Bind("NoShaderTextureBias", true, "Visual")->GetBool())
     {
         aml->Write(pGTASA + 0x5EAB20 + 52, (uintptr_t)"      ", 6);
@@ -1848,6 +1905,21 @@ extern "C" void OnModLoad()
     {
         HOOKPLT(DrawRadar, pGTASA + 0x66F618);
     }
+    
+    // Money have 8 digits now? Exciting!
+    if(cfg->Bind("PCStyledMoney", false, "Visual")->GetBool())
+    {
+        DrawMoney_BackTo = pGTASA + 0x2BD260 + 0x1;
+        aml->Redirect(pGTASA + 0x2BD258 + 0x1, (uintptr_t)DrawMoney_inject);
+    }
+    
+    // Oh no, darker hud!
+    if(cfg->Bind("DarkerHudColors", false, "Visual")->GetBool())
+    {
+        SET_TO(HudColors, aml->GetSym(hGTASA, "HudColour"));
+    }
+    
+    //aml->Write(pGTASA + 0x3C6C70, (uintptr_t)"\x00", 1);
     
     // Fix ped conversations are gone
     //if(cfg->Bind("FixPedConversation", true, "Gameplay")->GetBool())
