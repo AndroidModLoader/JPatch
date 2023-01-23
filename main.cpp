@@ -53,7 +53,7 @@ CZoneInfo** m_pCurrZoneInfo;
 CRGBA* HudColors = NULL;
 CWeaponInfo* aWeaponInfo;
 int keys[538];
-int keysOld[538]; // own
+bool *ms_bIsPlayerOnAMission;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -101,6 +101,8 @@ static uint32_t CCheat__m_aCheatHashKeys[] = {
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+int ret0(int a, ...) { return 0; } // Generic
+int ret1(int a, ...) { return 1; } // Generic
 void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
 {
     if(!addr) return;
@@ -1146,8 +1148,6 @@ __attribute__((optnone)) __attribute__((naked)) void DrawMoney_inject(void)
     :: "r" (DrawMoney_BackTo));
 }
 
-int ret0(int a, ...) { return 0; }
-
 // Para dmg anim fix
 DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
 {
@@ -1158,11 +1158,15 @@ DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
     if(bNeedFix) *(eWeaponType*)(self + 24) = WEAPON_PARACHUTE;
 }
 
-bool bFakeMission = false;
+// MixSets-SA: HostilreGangs
+bool bFakeMission = false, bSaveStat;
 DECL_HOOKv(ProcessPedGroups)
 {
     bFakeMission = true;
+    bSaveStat = *ms_bIsPlayerOnAMission;
+    *ms_bIsPlayerOnAMission = false;
     ProcessPedGroups();
+    *ms_bIsPlayerOnAMission = bSaveStat;
     bFakeMission = false;
 }
 DECL_HOOK(bool, PedGroups_IsOnAMission)
@@ -1171,9 +1175,15 @@ DECL_HOOK(bool, PedGroups_IsOnAMission)
 }
 
 
+
+DECL_HOOKv(PedBu, CPed* p)
+{
+    //PedBu(p);
+    logger->Info("ped buo");
+}
 DECL_HOOKv(AMF, CPhysical* target, CVector force)
 {
-    AMF(target, force);
+    //AMF(target, CVector(force.x,force.y,-10.f*force.z));
     logger->Info("force %f", force.z);
 }
 
@@ -1263,6 +1273,7 @@ extern "C" void OnModLoad()
     SET_TO(ms_fAspectRatio,         aml->GetSym(hGTASA, "_ZN5CDraw15ms_fAspectRatioE"));
     SET_TO(aWeaponInfo,             aml->GetSym(hGTASA, "aWeaponInfo"));
     SET_TO(windowSize,              aml->GetSym(hGTASA, "windowSize"));
+    SET_TO(ms_bIsPlayerOnAMission,  aml->GetSym(hGTASA, "_ZN10CPedGroups22ms_bIsPlayerOnAMissionE"));
     // Variables End   //
 
     // Animated textures
@@ -1956,10 +1967,15 @@ extern "C" void OnModLoad()
         HOOK(ComputeDamageAnim, aml->GetSym(hGTASA, "_ZN12CEventDamage17ComputeDamageAnimEP4CPedb"));
     }
     
-    //
+    // MixSets-SA: Hostile gangs
+    if(cfg->Bind("MIX_HostileGangs", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(ProcessPedGroups, pGTASA + 0x670164);
+        HOOKPLT(PedGroups_IsOnAMission, pGTASA + 0x670CDC);
+    }
     
-    //HOOKPLT(ProcessPedGroups, pGTASA + 0x670164);
-    //HOOKPLT(PedGroups_IsOnAMission, pGTASA + 0x670CDC);
     
+    
+    //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
     //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
 }
