@@ -8,12 +8,14 @@
  - VitaPort: Fixed cheats hashtable
  - Cheats can now be entered using keyboards
  - Fix save loading crash (not ready)
- - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9
- - Taxi light is activated
+ - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9 (has a lil glitch with x position shifting)
+ - Taxi lights are activated
  - No minimap in interiors
  - PC-like money in HUD (disabled by default)
  - A bit darker HUD colours (disabled by default)
  - Aiming with Country Rifle is now in 3rd person
+ - Force the game's inner check always return that we have only touch (disabled by default)
+ - Fixed ped animation after being attacked with parachute (inspired by Alexander Polyak)
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger

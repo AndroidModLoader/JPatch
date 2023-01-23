@@ -41,6 +41,7 @@ CStaticShadow* aStaticShadows_NEW;
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 CPlayerInfo* WorldPlayers;
+CIntVector2D* windowSize;
 CCamera* TheCamera;
 RsGlobalType* RsGlobal;
 MobileMenu *gMobileMenu;
@@ -1086,51 +1087,6 @@ DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
     EntMdlNoCreate(self, mdlIdx);
 }
 
-// Adjustable.cfg
-CIntVector2D* windowSize;
-float windowSizeFakeY = 0;
-int myvalY;
-DECL_HOOKv(AdjustableSave, void* self)
-{
-    if(windowSizeFakeY == 0)
-    {
-        myvalY = windowSize->y;
-        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
-    }
-    windowSize->y = windowSizeFakeY;
-    RsGlobal->maximumHeight = windowSizeFakeY;
-    AdjustableSave(self);
-    windowSize->y = myvalY;
-    RsGlobal->maximumHeight = myvalY;
-}
-DECL_HOOK(void*, AdjustableConstruct, void* self)
-{
-    if(windowSizeFakeY == 0)
-    {
-        myvalY = windowSize->y;
-        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
-    }
-    windowSize->y = windowSizeFakeY;
-    RsGlobal->maximumHeight = windowSizeFakeY;
-    AdjustableConstruct(self);
-    windowSize->y = myvalY;
-    RsGlobal->maximumHeight = myvalY;
-    return self;
-}
-DECL_HOOKv(LoadTouchControls, void* self)
-{
-    if(windowSizeFakeY == 0)
-    {
-        myvalY = windowSize->y;
-        windowSizeFakeY = (int)(windowSize->x * 0.5625f);
-    }
-    windowSize->y = windowSizeFakeY;
-    RsGlobal->maximumHeight = windowSizeFakeY;
-    LoadTouchControls(self);
-    windowSize->y = myvalY;
-    RsGlobal->maximumHeight = myvalY;
-}
-
 // Taxi lights
 void (*SetTaxiLight)(CAutomobile*, bool);
 CAutomobile* pLastPlayerTaxi = NULL;
@@ -1188,6 +1144,37 @@ __attribute__((optnone)) __attribute__((naked)) void DrawMoney_inject(void)
         "POP {R0-R11}\n"
         "BX R12\n"
     :: "r" (DrawMoney_BackTo));
+}
+
+int ret0(int a, ...) { return 0; }
+
+// Para dmg anim fix
+DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
+{
+    bool bNeedFix = *(eWeaponType*)(self + 24) == WEAPON_PARACHUTE;
+    
+    if(bNeedFix) *(eWeaponType*)(self + 24) = WEAPON_UNARMED;
+    ComputeDamageAnim(self, victim, a2);
+    if(bNeedFix) *(eWeaponType*)(self + 24) = WEAPON_PARACHUTE;
+}
+
+bool bFakeMission = false;
+DECL_HOOKv(ProcessPedGroups)
+{
+    bFakeMission = true;
+    ProcessPedGroups();
+    bFakeMission = false;
+}
+DECL_HOOK(bool, PedGroups_IsOnAMission)
+{
+    return bFakeMission || PedGroups_IsOnAMission();
+}
+
+
+DECL_HOOKv(AMF, CPhysical* target, CVector force)
+{
+    AMF(target, force);
+    logger->Info("force %f", force.z);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1275,6 +1262,7 @@ extern "C" void OnModLoad()
     SET_TO(m_f3rdPersonCHairMultY,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultYE"));
     SET_TO(ms_fAspectRatio,         aml->GetSym(hGTASA, "_ZN5CDraw15ms_fAspectRatioE"));
     SET_TO(aWeaponInfo,             aml->GetSym(hGTASA, "aWeaponInfo"));
+    SET_TO(windowSize,              aml->GetSym(hGTASA, "windowSize"));
     // Variables End   //
 
     // Animated textures
@@ -1910,12 +1898,11 @@ extern "C" void OnModLoad()
     }
     
     // Fix Adjustable.cfg loading?
+    // UPD: Introduced another glitch, so its unfixed. yet.
+    // UD2: Fixed with a much better way. But anothet glitch arrived with x shifting
     if(cfg->Bind("FixAdjustableSizeLowering", true, "Visual")->GetBool())
     {
-        SET_TO(windowSize, aml->GetSym(hGTASA, "windowSize"));
-        HOOKPLT(AdjustableSave, pGTASA + 0x66FFA0);
-        HOOKPLT(AdjustableConstruct, pGTASA + 0x673648);
-        HOOKPLT(LoadTouchControls, pGTASA + 0x6754F4);
+        aml->Unprot(pGTASA + 0x28260C, sizeof(float)); *(float*)(pGTASA + 0x28260C) = 5.0f;
     }
     
     // Taxi lights (obviously)
@@ -1948,7 +1935,13 @@ extern "C" void OnModLoad()
     if(cfg->Bind("FixCountryRifleAim", true, "Gameplay")->GetBool())
     {
         // YES, THATS EXTREMELY EASY TO FIX, LMAO
-        aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\x00", 1);
+        aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\xFF", 1);
+    }
+    
+    // Haha, no gejmpat!!1
+    if(cfg->Bind("ForceTouchControls", false, "Gameplay")->GetBool())
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_ZN4CHID12GetInputTypeEv"), (uintptr_t)ret0);
     }
     
     // Fix ped conversations are gone
@@ -1956,4 +1949,17 @@ extern "C" void OnModLoad()
     //{
     //    Redirect(pGTASA + 0x301BFE + 0x1, pGTASA + 0x301C0E + 0x1);
     //}
+    
+    // Equipped parachute attacked anim fix
+    if(cfg->Bind("EquippedParaAttackAnimFix", true, "Visual")->GetBool())
+    {
+        HOOK(ComputeDamageAnim, aml->GetSym(hGTASA, "_ZN12CEventDamage17ComputeDamageAnimEP4CPedb"));
+    }
+    
+    //
+    
+    //HOOKPLT(ProcessPedGroups, pGTASA + 0x670164);
+    //HOOKPLT(PedGroups_IsOnAMission, pGTASA + 0x670CDC);
+    
+    //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
 }
