@@ -54,6 +54,7 @@ CRGBA* HudColors = NULL;
 CWeaponInfo* aWeaponInfo;
 int keys[538];
 bool *ms_bIsPlayerOnAMission;
+int *DETAILEDWATERDIST;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -1274,8 +1275,9 @@ extern "C" void OnModLoad()
     SET_TO(aWeaponInfo,             aml->GetSym(hGTASA, "aWeaponInfo"));
     SET_TO(windowSize,              aml->GetSym(hGTASA, "windowSize"));
     SET_TO(ms_bIsPlayerOnAMission,  aml->GetSym(hGTASA, "_ZN10CPedGroups22ms_bIsPlayerOnAMissionE"));
+    SET_TO(DETAILEDWATERDIST,       aml->GetSym(hGTASA, "DETAILEDWATERDIST"));
     // Variables End   //
-
+    
     // Animated textures
     if(cfg->Bind("EnableAnimatedTextures", true, "Visual")->GetBool())
     {
@@ -1974,6 +1976,13 @@ extern "C" void OnModLoad()
         HOOKPLT(PedGroups_IsOnAMission, pGTASA + 0x670CDC);
     }
     
+    // Water Quadrant
+    int dist = cfg->Bind("DetailedWaterDrawDistance", 48 * 5, "Visual")->GetInt();
+    if(dist > 0)
+    {
+        if(dist < 24) dist = 24;
+        *DETAILEDWATERDIST = dist;
+    }
     
     
     //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));

@@ -16,7 +16,8 @@
  - Aiming with Country Rifle is now in 3rd person
  - Force the game's inner check always return that we have only touch (disabled by default)
  - Fixed ped animation after being attacked with parachute (inspired by Alexander Polyak)
- - MixSets: Hostile gangs 
+ - MixSets: Hostile gangs
+ - Adjustable detailed water draw distance (known as water quadrant fix)
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger
