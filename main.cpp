@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.3, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.3.1, RusJJ)
 
 union ScriptVariables
 {

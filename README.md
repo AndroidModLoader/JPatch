@@ -4,7 +4,10 @@
  
  **GTA:SA**
 
- **Since v1.3 (W.I.P.)**
+ **Since v1.3.1 (W.I.P.)**
+
+
+ **Since v1.3**
  - VitaPort: Fixed cheats hashtable
  - Cheats can now be entered using keyboard
  - Fix save loading crash (may work... no save with that glitch :( )
