@@ -6,8 +6,8 @@
 
  **Since v1.3 (W.I.P.)**
  - VitaPort: Fixed cheats hashtable
- - Cheats can now be entered using keyboards
- - Fix save loading crash (not ready)
+ - Cheats can now be entered using keyboard
+ - Fix save loading crash (may work... no save with that glitch :( )
  - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9 (has a lil glitch with x position shifting)
  - Taxi lights are activated
  - No minimap in interiors

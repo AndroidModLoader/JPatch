@@ -184,6 +184,8 @@ void (*TimerUpdate)();
 void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
 bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
+void* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
+CObject* (*CreateObject)(int mdlIdx, bool create);
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -1193,6 +1195,75 @@ DECL_HOOKv(TrFix_InitGame2nd, const char* a1)
     BrightLightsInit();
 }
 
+// Food Eating Fix
+DECL_HOOKv(PlayerInfoProcess_Food, CPlayerInfo* info, int playerNum)
+{
+    PlayerInfoProcess_Food(info, playerNum);
+    if(IsOnAMission()) return;
+
+    RpClump* pedcl = info->m_pPed->m_pRwClump;
+    void* assoc;
+    static bool active = false;
+    static CObject* obj;
+    int mdlIdx = 2880;
+    
+    if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "VEND_EAT_P")) != NULL)
+    {
+      success_eating:
+        float blendTime = *(float*)((uintptr_t)assoc + 0x20);
+        float remainingTime = *(float*)(*(uintptr_t*)((uintptr_t)assoc + 0x14) + 0x10);
+        float fProgress = blendTime / remainingTime;
+        if(fProgress <= 0.8f && !active)
+        {
+            active = true;
+            
+            obj = CreateObject(mdlIdx, true);
+            obj->GetPosition() = info->m_pPed->GetPosition();
+        }
+        else if(fProgress > 0.8f && active) goto end_food_anim;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "VEND_EAT1_P")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "VEND_Drink_P")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "VEND_Drink1_P")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "EAT_Burger")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "EAT_Chicken")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "EAT_Pizza")) != NULL)
+    {
+        
+        goto success_eating;
+    }
+    else
+    {
+        if(active)
+        {
+          end_food_anim:
+            active = false;
+            
+            
+        }
+    }
+}
+
 // Buoyancy testing
 DECL_HOOKv(PedBu, CPed* p)
 {
@@ -1254,6 +1325,8 @@ extern "C" void OnModLoad()
     SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
     SET_TO(BrightLightsInit,        aml->GetSym(hGTASA, "_ZN13CBrightLights4InitEv"));
     SET_TO(BrightLightsRender,      aml->GetSym(hGTASA, "_ZN13CBrightLights6RenderEv"));
+    SET_TO(CreateObject,            aml->GetSym(hGTASA, "_ZN7CObject6CreateEib"));
+    SET_TO(RpAnimBlendClumpGetAssociation,aml->GetSym(hGTASA, "_Z30RpAnimBlendClumpGetAssociationP7RpClumpPKc"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
@@ -2008,6 +2081,12 @@ extern "C" void OnModLoad()
         HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
         HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
     }
+
+    // JuniorDjjr, W.I.P.
+    /*if(cfg->Bind("FoodEatingModelFix", true, "Gameplay")->GetBool())
+    {
+        HOOKPLT(PlayerInfoProcess_Food, pGTASA + 0x673E84);
+    }*/
     
     //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
     //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
