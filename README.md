@@ -18,6 +18,7 @@
  - Fixed ped animation after being attacked with parachute (inspired by Alexander Polyak)
  - MixSets: Hostile gangs
  - Adjustable detailed water draw distance (known as water quadrant fix)
+ - Peepo: Traffic lights fix
  
  **Since v1.2.4**
  - Corona sprites draw distance is 3 times bigger

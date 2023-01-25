@@ -31,6 +31,8 @@ uintptr_t pGTASA;
 void* hGTASA;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
+
+bool bIsRWReady = false;
 float fEmergencyVehiclesFix;
 CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600
 void* pNewIntroRectangles = new void*[15*nMaxScriptSprites] {NULL}; // 384*60=23040 0x5A00
@@ -124,6 +126,8 @@ DECL_HOOK(bool, InitRenderWare)
 {
     if(!InitRenderWare()) return false;
     
+    bIsRWReady = true;
+    
     if(HudColors != NULL) // Darker colors
     {
         HudColors[HUD_COLOUR_RED] = CRGBA(166, 23, 26); //CRGBA(180, 25, 29);
@@ -146,6 +150,8 @@ DECL_HOOK(bool, InitRenderWare)
     
     return true;
 }
+void (*BrightLightsInit)();
+void (*BrightLightsRender)();
 void (*emu_glEnable)(GLenum);
 void (*emu_glDisable)(GLenum);
 void (*emu_glAlphaFunc)(GLenum, GLclampf);
@@ -1159,7 +1165,7 @@ DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
     if(bNeedFix) *(eWeaponType*)(self + 24) = WEAPON_PARACHUTE;
 }
 
-// MixSets-SA: HostilreGangs
+// MixSets-SA: HostileGangs
 bool bFakeMission = false, bSaveStat;
 DECL_HOOKv(ProcessPedGroups)
 {
@@ -1175,8 +1181,19 @@ DECL_HOOK(bool, PedGroups_IsOnAMission)
     return bFakeMission || PedGroups_IsOnAMission();
 }
 
+// Peepo: Fix traffic lights
+DECL_HOOKv(TrFix_RenderEffects)
+{
+    TrFix_RenderEffects();
+    BrightLightsRender();
+}
+DECL_HOOKv(TrFix_InitGame2nd, const char* a1)
+{
+    TrFix_InitGame2nd(a1);
+    BrightLightsInit();
+}
 
-
+// Buoyancy testing
 DECL_HOOKv(PedBu, CPed* p)
 {
     //PedBu(p);
@@ -1194,7 +1211,7 @@ DECL_HOOKv(AMF, CPhysical* target, CVector force)
 extern "C" void OnModLoad()
 {
     cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]");
-    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS");
+    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS, Peepo");
     cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg");
     cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch");
     cfg->Save();
@@ -1235,7 +1252,8 @@ extern "C" void OnModLoad()
     SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
     SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
     SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
-    SET_TO(keys,                    aml->GetSym(hGTASA, "keys"));
+    SET_TO(BrightLightsInit,        aml->GetSym(hGTASA, "_ZN13CBrightLights4InitEv"));
+    SET_TO(BrightLightsRender,      aml->GetSym(hGTASA, "_ZN13CBrightLights6RenderEv"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
@@ -1984,6 +2002,12 @@ extern "C" void OnModLoad()
         *DETAILEDWATERDIST = dist;
     }
     
+    // Peepo: Fix traffic lights
+    if(cfg->Bind("FixTrafficLights", true, "Visual")->GetBool())
+    {
+        HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
+        HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
+    }
     
     //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
     //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
