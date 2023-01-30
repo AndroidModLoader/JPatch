@@ -1281,13 +1281,16 @@ DECL_HOOKv(AMF, CPhysical* target, CVector force)
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void OnModLoad()
 {
+    logger->SetTag("JPatch");
+    
+    //aml->PatchForThumb(true); // Auto but may be enabled to be sure
+    
     cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]");
     cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS, Peepo");
     cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg");
     cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch");
     cfg->Save();
 
-    logger->SetTag("JPatch");
     pGTASA = aml->GetLib("libGTASA.so");
     hGTASA = dlopen("libGTASA.so", RTLD_LAZY);
 
@@ -1511,7 +1514,7 @@ extern "C" void OnModLoad()
     // Dont set player on fire when he's on burning BMX (MTA:SA)
     if(cfg->Bind("DontBurnPlayerOnBurningBMX", true, "Gameplay")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
+        aml->PlaceB(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
     }
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
@@ -1526,7 +1529,7 @@ extern "C" void OnModLoad()
     // THROWN projectiles throw more accurately (MTA:SA)
     if(cfg->Bind("ThrownProjectilesAccuracy", true, "Gameplay")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
+        aml->PlaceB(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
     }
 
     // Disable call to FxSystem_c::GetCompositeMatrix in CAEFireAudioEntity::UpdateParameters 
@@ -1613,7 +1616,7 @@ extern "C" void OnModLoad()
     // Disable GTA vehicle detachment at rotation awkwardness
     if(cfg->Bind("FixVehicleDetachmentAtRot", true, "Visual")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
+        aml->PlaceB(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
     }
 
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
@@ -1713,8 +1716,8 @@ extern "C" void OnModLoad()
     // RE3: Make cars and peds to not despawn when you look away
     if(cfg->Bind("Re3_ExtOffscreenDespRange", true, "Gameplay")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
-        aml->Redirect(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
+        aml->PlaceB(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
+        aml->PlaceB(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
     }
 
     // RE3: Do not remove locked cars
@@ -1762,7 +1765,7 @@ extern "C" void OnModLoad()
     // Dont kill peds when jacking their car, monster!
     if(cfg->Bind("DontKillPedsOnCarJacking", true, "Gameplay")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
+        aml->PlaceB(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
     }
 
     // Colored zone names are back
@@ -1795,7 +1798,7 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x1CE2F0, (uintptr_t)"\x40\x46\x00\xBF", 4);
         aml->Write(pGTASA + 0x1CEDC4, (uintptr_t)"\x40\xF2\x40\x60", 4);
         aml->Write(pGTASA + 0x1CEF1A, (uintptr_t)"\x58\x46\x00\xBF", 4);
-        aml->Redirect(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
+        aml->PlaceB(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
     }
 
     // Tells "FindGroundZ" functions that we need can teleport on objects too
@@ -1872,7 +1875,7 @@ extern "C" void OnModLoad()
     if(cfg->Bind("BuffDistForLightCoronas", true, "Visual")->GetBool())
     {
         aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x22\xC4\xF2\xC8\x32", 6); // CEntity::ProcessLightsForEntity
-        aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x20\xC4\xF2\xC8\x32", 6); // CTrafficLights::DisplayActualLight
+        aml->Write(pGTASA + 0x362EC6, (uintptr_t)"\x00\x20\xC4\xF2\xC8\x30", 6); // CTrafficLights::DisplayActualLight
         aml->Write(pGTASA + 0x56585E, (uintptr_t)"\x00\x21\xC4\xF2\xF0\x21", 6); // CBike::PreRender
         aml->Write(pGTASA + 0x5658FC, (uintptr_t)"\x00\x20\xC4\xF2\xF0\x21", 6); // CBike::PreRender
         aml->Write(pGTASA + 0x573826, (uintptr_t)"\x00\x20\xC4\xF2\x96\x30", 6); // CHeli::SearchLightCone
@@ -1956,7 +1959,7 @@ extern "C" void OnModLoad()
     // Radar
     if(cfg->Bind("FixRadarStreaming", true, "Visual")->GetBool())
     {
-        aml->Redirect(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
+        aml->PlaceB(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
     }
 
     // texture2D bias? In theory, this thing (below) is giving better FPS + better textures
