@@ -5,7 +5,7 @@
  **GTA:SA**
 
  **Since v1.3.1 (W.I.P.)**
-
+ - Finally fixed BuffDistForLightCoronas!
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable

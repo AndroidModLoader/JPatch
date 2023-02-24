@@ -208,9 +208,13 @@ inline void BumpStreamingMemory(int megabytes)
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void adadad(void)
 {
-    //asm("VMOV.F32 S0, #0.5");
-    asm("LDR PC, [PC, #-0x4]");
-    //asm("MOVT R1, #0x42F0");
+    asm("MOV R0, #10000");
+    asm("MOV R5, R0");
+    //asm("MOV R5, #10000");
+    asm("MOVW R0, #0x8B80");
+    asm("MOVT R0, #0x8");
+    
+    
 } // This one is used internally by myself. Helps me to get patched values.
 
 // Moon phases
@@ -1282,6 +1286,10 @@ DECL_HOOKv(AMF, CPhysical* target, CVector force)
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+extern "C" const char* OnUpdaterURLRequested()
+{
+    return "https://raw.githubusercontent.com/AndroidModLoader/JPatch/main/updater.txt";
+}
 extern "C" void OnModLoad()
 {
     logger->SetTag("JPatch");
@@ -1880,7 +1888,7 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x22\xC4\xF2\xC8\x32", 6); // CEntity::ProcessLightsForEntity
         aml->Write(pGTASA + 0x362EC6, (uintptr_t)"\x00\x20\xC4\xF2\xC8\x30", 6); // CTrafficLights::DisplayActualLight
         aml->Write(pGTASA + 0x56585E, (uintptr_t)"\x00\x21\xC4\xF2\xF0\x21", 6); // CBike::PreRender
-        aml->Write(pGTASA + 0x5658FC, (uintptr_t)"\x00\x20\xC4\xF2\xF0\x21", 6); // CBike::PreRender
+        aml->Write(pGTASA + 0x5658FC, (uintptr_t)"\x00\x20\xC4\xF2\xF0\x20", 6); // CBike::PreRender
         aml->Write(pGTASA + 0x573826, (uintptr_t)"\x00\x20\xC4\xF2\x96\x30", 6); // CHeli::SearchLightCone
         aml->Unprot(pGTASA + 0x55BAD0, sizeof(float)); *(float*)(pGTASA + 0x55BAD0) = 300.0f; // CAutomobile::PreRender
     }
