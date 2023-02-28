@@ -6,6 +6,8 @@
 
  **Since v1.3.1 (W.I.P.)**
  - Finally fixed BuffDistForLightCoronas!
+ - Fixed peds are not speaking
+ - Rotor blur by peepo (W.I.P.)
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable

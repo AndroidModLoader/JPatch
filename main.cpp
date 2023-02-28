@@ -16,7 +16,7 @@
 
 MYMODCFG(net.rusjj.jpatch, JPatch, 1.3.1, RusJJ)
 BEGIN_DEPLIST()
-    ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.1)
+    ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
 
 union ScriptVariables
@@ -815,34 +815,35 @@ DECL_HOOK(void*, RenderBufferedOneXLUSprite, float x, float y, float z, float w,
 // Heli rotor blur
 // https://gtaforums.com/topic/703439-san-andreas-moon-and-rotor-blades-fix-for-pc/
 // Doesnt work :)
-DECL_HOOKv(RenderAlphaAtomics)
+// peepo found a way. So, actually, R* disabled it. LOL
+
+#define SMOOTHING_PERCENT 0.3f
+#define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.0f - SMOOTHING_PERCENT)))
+uint8_t *compa1, *compa2;
+uint8_t *blura1, *blura2;
+inline void SetRBladeAlpha(float fAlpha)
 {
-    char *nodeName;
-    emu_glEnable(GL_ALPHA_TEST);
-    for(CLink<AlphaObjectInfo> *entry = m_alphaList->usedListTail.prev; entry != &m_alphaList->usedListHead; entry = entry->prev)
-    {
-        //entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
-        nodeName = GetFrameNodeName((RwFrame*)entry->data.m_pAtomic->object.object.parent);
-        if(!strncmp(nodeName, "moving_rotor", 12) && (nodeName[12] == '\0' || (nodeName[12] == '2' && nodeName[13] == '\0')))
-        {
-            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONEQUAL);
-            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)255);
-            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
-            RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
-            RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
-            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONLESS);
-            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
-            RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
-            RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)false);
-            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONGREATER);
-            RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)100);
-        }
-        else
-        {
-            entry->data.m_pCallback(entry->data.m_pAtomic, entry->data.m_fDepth);
-        }
-    }
-    emu_glDisable(GL_ALPHA_TEST);
+    uint8_t alpha = fAlpha;
+    if(fAlpha < 0) alpha = 0;
+    else if(fAlpha > 255) alpha = 255;
+    
+    uint8_t ralpha = 255 - alpha;
+    
+    *compa1 = ralpha; *compa2 = ralpha;
+    *blura1 = alpha; *blura2 = alpha;
+}
+DECL_HOOKv(HeliRender, CHeli* self)
+{
+    float fProgress = self->m_aWheelAngularVelocity[1] / 0.220484f;
+    SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
+    HeliRender(self);
+}
+DECL_HOOKv(PlaneRender, CPlane* self)
+{
+    //logger->Info("Velma %f", self->m_fEngineSpeed);
+    float fProgress = self->m_fEngineSpeed / 0.2f;
+    SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
+    HeliRender((CHeli*)self);
 }
 
 // LODs
@@ -1835,10 +1836,20 @@ extern "C" void OnModLoad()
     //}
 
     // Helicopter's rotor blur
-    /*if(cfg->BindOnce("HeliRotorBlur", true, "Visual")->GetBool())
+    if(cfg->BindOnce("HeliRotorBlur", true, "Visual")->GetBool())
     {
-        HOOKPLT(RenderAlphaAtomics, pGTASA + 0x670E90);
-    }*/
+        SET_TO(compa1, pGTASA + 0x572D2E);
+        SET_TO(compa2, pGTASA + 0x572D4E);
+        SET_TO(blura1, pGTASA + 0x572D70);
+        SET_TO(blura2, pGTASA + 0x572D90);
+        aml->Unprot(pGTASA + 0x572D2E, 1);
+        aml->Unprot(pGTASA + 0x572D4E, 1);
+        aml->Unprot(pGTASA + 0x572D70, 1);
+        aml->Unprot(pGTASA + 0x572D90, 1);
+        HOOK(HeliRender, aml->GetSym(hGTASA, "_ZN5CHeli6RenderEv"));
+        // Glitchy planes
+        //HOOK(PlaneRender, aml->GetSym(hGTASA, "_ZN6CPlane6RenderEv"));
+    }
 
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
@@ -1989,7 +2000,7 @@ extern "C" void OnModLoad()
         HOOKPLT(ClimbProcessPed, pGTASA + 0x66CC28);
     }
 
-    // Sweet's roof is not that tasty anymore
+    // For new save only, fixes 3 bikes spawn that are inside each other
     if(cfg->BindOnce("FixDrivingSchoolBikesSpawn", true, "SCMFixes")->GetBool())
     {
         HOOKPLT(CreateCarGenerator, pGTASA + 0x672808);
@@ -2053,7 +2064,7 @@ extern "C" void OnModLoad()
     if(cfg->BindOnce("FixCountryRifleAim", true, "Gameplay")->GetBool())
     {
         // YES, THATS EXTREMELY EASY TO FIX, LMAO
-        // TODO: Requires a CrosshairFix and Free-aim shoot btn "duplication"
+        // TODO: Requires a CrosshairFix and Free-aim shoot btn "duplication" fix
         aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\xFF", 1);
     }
     
@@ -2064,10 +2075,10 @@ extern "C" void OnModLoad()
     }
     
     // Fix ped conversations are gone
-    //if(cfg->BindOnce("FixPedConversation", true, "Gameplay")->GetBool())
-    //{
-    //    aml->PlaceB(pGTASA + 0x301BFE + 0x1, pGTASA + 0x301C0E + 0x1);
-    //}
+    if(cfg->BindOnce("FixPedConversation", true, "Gameplay")->GetBool())
+    {
+        aml->PlaceB(pGTASA + 0x301BFE + 0x1, pGTASA + 0x301C0E + 0x1);
+    }
     
     // Equipped parachute attacked anim fix
     if(cfg->BindOnce("EquippedParaAttackAnimFix", true, "Visual")->GetBool())
@@ -2097,6 +2108,8 @@ extern "C" void OnModLoad()
         HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
     }
 
+    
+    
     // JuniorDjjr, W.I.P.
     /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay")->GetBool())
     {
