@@ -7,7 +7,13 @@
  **Since v1.3.1 (W.I.P.)**
  - Finally fixed BuffDistForLightCoronas!
  - Fixed peds are not speaking
+ - Always draw wanted stars
+ - Fix ped conversations are gone
  - Rotor blur by peepo (W.I.P.)
+ - Cloud saves can be disabled (disabled by default)
+ - Always drawable wanted stars (disabled by default)
+ - Fixed PED preloading (for Improved Streaming, disabled by default)
+ - A count of max loading screens can be changed now (default is 7)
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable

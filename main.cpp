@@ -30,8 +30,8 @@ union ScriptVariables
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-uintptr_t pGTASA;
-void* hGTASA;
+uintptr_t pGTASA, pSC;
+void* hGTASA, *hSC;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
 
@@ -187,7 +187,7 @@ void (*TimerUpdate)();
 void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
 bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
-void* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
+CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
 CObject* (*CreateObject)(int mdlIdx, bool create);
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -222,7 +222,7 @@ int moon_alphafunc, moon_vertexblend, moon_alphaval;
 uintptr_t MoonVisual_1_BackTo;
 extern "C" void MoonVisual_1(void)
 {
-    emu_glEnable(GL_ALPHA_TEST);
+    //emu_glEnable(GL_ALPHA_TEST);
 
     RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
     RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
@@ -233,8 +233,8 @@ extern "C" void MoonVisual_1(void)
     RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDZERO);
 
-    SET_TO(emu_glAlphaFunc, *(void**)(pGTASA + 0x6BCBF8));
-    emu_glAlphaFunc(GL_GREATER, 0.5f);
+    //SET_TO(emu_glAlphaFunc, *(void**)(pGTASA + 0x6BCBF8));
+    //emu_glAlphaFunc(GL_GREATER, 0.5f);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 {
@@ -250,7 +250,7 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
 uintptr_t MoonVisual_2_BackTo;
 extern "C" void MoonVisual_2(void)
 {
-    emu_glAlphaFunc(GL_GREATER, 0.5f);
+    //emu_glAlphaFunc(GL_GREATER, 0.5f);
     RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)moon_alphafunc);
     RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)moon_vertexblend);
     RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)moon_alphaval);
@@ -259,7 +259,7 @@ extern "C" void MoonVisual_2(void)
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDONE);
     RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
 
-    emu_glDisable(GL_ALPHA_TEST);
+    //emu_glDisable(GL_ALPHA_TEST);
 }
 __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
 {
@@ -396,6 +396,21 @@ DECL_HOOKv(DropJetPackTask, void* task, CPed* ped)
 {
     if(!ped->m_PedFlags.bIsStanding) return;
     DropJetPackTask(task, ped);
+}
+
+// Immediately leave the car
+uintptr_t ImmLeaveCar_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void ImmLeaveCar_inject(void)
+{
+    asm volatile(
+        "str r3, [r0,#0x48c]\n"
+        "str r6, [r0,#0x490]\n"
+        "push {r0-r11}\n");
+    asm volatile(
+        "mov r12, %0\n"
+        "pop {r0-r11}\n"
+        "bx r12\n"
+    :: "r" (ImmLeaveCar_BackTo));
 }
 
 // Died penalty
@@ -850,7 +865,7 @@ DECL_HOOKv(PlaneRender, CPlane* self)
 #define SKIP_START_FRAMES 3
 #define ANIMBLOCK_OFFSET  25575
 
-uintptr_t LoadScene_BackTo;
+uintptr_t LoadScene_BackTo, InitPools_BackTo, InitPools2_BackTo;
 std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
@@ -898,6 +913,8 @@ DECL_HOOKv(GameProcess)
                 int size = g_aPeds.size();
                 for(int i = 0; i < size; ++i)
                 {
+                    // The game doesnt want to load models 290-299?
+                    if(g_aPeds[i] > 289) continue;
                     RequestModel(g_aPeds[i], STREAMING_MISSION_REQUIRED);
                 }
                 LoadAllRequestedModels(false);
@@ -937,6 +954,61 @@ DECL_HOOK(CBaseModelInfo*, AddPedModel, int id)
 {
     g_aPeds.push_back(id);
     return AddPedModel(id);
+}
+/* FROM MY PROJECT ReSAMP */
+struct CSAPool
+{
+    void*     objects;
+    uint8_t*  flags;
+    uint32_t  count;
+    uint32_t  top;
+    uint32_t  initialized;
+};
+static CSAPool* AllocatePool(size_t count, size_t size)
+{
+    CSAPool *p = new CSAPool;
+    p->objects = new char[size*count];
+    p->flags = new uint8_t[count];
+    p->count = count;
+    p->top = 0xFFFFFFFF;
+    p->initialized = 1;
+    for (size_t i = 0; i < count; ++i)
+    {
+        p->flags[i] |= 0x80;
+        p->flags[i] &= 0x80;
+    }
+    return p;
+}
+/* FROM MY PROJECT ReSAMP */
+extern "C" void InitPools_patch()
+{
+    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools16ms_pColModelPoolE")) =AllocatePool(50000,  0x30);
+}
+__attribute__((optnone)) __attribute__((naked)) void InitPools_inject(void)
+{
+    asm volatile(
+        "PUSH {R0-R11}\n"
+        "BL InitPools_patch\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0-R11}\n"
+        "BX R12\n"
+    :: "r" (InitPools_BackTo));
+}
+extern "C" void InitPools2_patch()
+{
+    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools15ms_pVehiclePoolE")) =AllocatePool(2000,  2604);
+}
+__attribute__((optnone)) __attribute__((naked)) void InitPools2_inject(void)
+{
+    asm volatile(
+        "PUSH {R0-R11}\n"
+        "BL InitPools2_patch\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0-R11}\n"
+        "BX R12\n"
+    :: "r" (InitPools2_BackTo));
 }
 extern "C" void LoadScene_patch(CEntity* ent)
 {
@@ -1210,7 +1282,7 @@ DECL_HOOKv(PlayerInfoProcess_Food, CPlayerInfo* info, int playerNum)
     if(IsOnAMission()) return;
 
     RpClump* pedcl = info->m_pPed->m_pRwClump;
-    void* assoc;
+    CAnimBlendAssociation* assoc;
     static bool active = false;
     static CObject* obj;
     int mdlIdx = 2880;
@@ -1218,9 +1290,7 @@ DECL_HOOKv(PlayerInfoProcess_Food, CPlayerInfo* info, int playerNum)
     if((assoc = RpAnimBlendClumpGetAssociation(pedcl, "VEND_EAT_P")) != NULL)
     {
       success_eating:
-        float blendTime = *(float*)((uintptr_t)assoc + 0x20);
-        float remainingTime = *(float*)(*(uintptr_t*)((uintptr_t)assoc + 0x14) + 0x10);
-        float fProgress = blendTime / remainingTime;
+        float fProgress = assoc->m_fCurrentTime / assoc->m_pAnimBlendHierarchy->m_fTotalTime;
         if(fProgress <= 0.8f && !active)
         {
             active = true;
@@ -1284,6 +1354,12 @@ DECL_HOOKv(AMF, CPhysical* target, CVector force)
     logger->Info("force %f", force.z);
 }
 
+DECL_HOOK(void*, SC_EnterSocial)
+{
+    logger->Info("SC_EnterSocial 0x%08X", SC_EnterSocial());
+    return NULL;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1294,6 +1370,7 @@ extern "C" const char* OnUpdaterURLRequested()
 extern "C" void OnModLoad()
 {
     logger->SetTag("JPatch");
+    logger->Info("Doing patching");
     
     //aml->PatchForThumb(true); // Auto but may be enabled to be sure
     
@@ -1305,6 +1382,9 @@ extern "C" void OnModLoad()
 
     pGTASA = aml->GetLib("libGTASA.so");
     hGTASA = aml->GetLibHandle("libGTASA.so");
+    
+    pSC = aml->GetLib("libSCAnd.so");
+    hSC = aml->GetLibHandle("libSCAnd.so");
 
     // Functions Start //
     SET_TO(AddToCheatString,        aml->GetSym(hGTASA, "_ZN6CCheat16AddToCheatStringEc"));
@@ -1488,6 +1568,10 @@ extern "C" void OnModLoad()
     if(cfg->BindOnce("ImmediatelyLeaveTheCar", true, "Gameplay")->GetBool())
     {
         aml->PlaceNOP(pGTASA + 0x409A18, 3);
+        aml->Redirect(pGTASA + 0x409A6C + 0x1, (uintptr_t)ImmLeaveCar_inject);
+        ImmLeaveCar_BackTo = pGTASA + 0x40A7F2 + 0x1;
+        //aml->PlaceB(pGTASA + 0x409A74 + 0x1, pGTASA + 0x40A7F2 + 0x1);
+        //aml->PlaceB(pGTASA + 0x409A74 + 0x1, pGTASA + 0x40A7F2 + 0x1);
     }
 
     // Bring back penalty when CJ dies!
@@ -1858,7 +1942,7 @@ extern "C" void OnModLoad()
     // Preload LOD models
     bPreloadLOD = cfg->BindOnce("IS_PreloadLODs", false, "Gameplay")->GetBool();
     bPreloadAnim = cfg->BindOnce("IS_PreloadAnims", false, "Gameplay")->GetBool();
-    //bPreloadPed = cfg->BindOnce("PreloadPeds", true, "Gameplay")->GetBool();
+    bPreloadPed = cfg->BindOnce("PreloadPeds", true, "Gameplay")->GetBool();
     if(bPreloadLOD || bPreloadAnim || bPreloadPed || bDynStreamingMem)
     {
         HOOKPLT(GameProcess, pGTASA + 0x66FE58);
@@ -1870,6 +1954,8 @@ extern "C" void OnModLoad()
         if(bPreloadPed)
         {
             HOOKPLT(AddPedModel, pGTASA + 0x675D98);
+            aml->Redirect(pGTASA + 0x40CC20 + 0x1, (uintptr_t)InitPools_inject);
+            InitPools_BackTo = pGTASA + 0x40CC8A + 0x1;
         }
     }
     bUnloadUnusedModels = cfg->BindOnce("IS_UnloadUnusedModels", true, "Gameplay")->GetBool();
@@ -2028,7 +2114,7 @@ extern "C" void OnModLoad()
     
     // Fix Adjustable.cfg loading?
     // UPD: Introduced another glitch, so its unfixed. yet.
-    // UD2: Fixed with a much better way. But anothet glitch arrived with x shifting
+    // UD2: Fixed with a much better way. But another glitch arrived with X-coord shifting
     if(cfg->BindOnce("FixAdjustableSizeLowering", true, "Visual")->GetBool())
     {
         aml->Unprot(pGTASA + 0x28260C, sizeof(float)); *(float*)(pGTASA + 0x28260C) = 5.0f;
@@ -2107,9 +2193,28 @@ extern "C" void OnModLoad()
         HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
         HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
     }
-
     
+    if(cfg->BindOnce("DisableCloudSaves", false, "Gameplay")->GetBool())
+    {
+        aml->Write(aml->GetSym(hGTASA, "UseCloudSaves"), (uintptr_t)"\x00", 1);
+    }
     
+    // Always show wanted stars even if we're not breakin the law
+    if(cfg->BindOnce("AlwaysDrawWantedStars", false, "Visual")->GetBool())
+    {
+        aml->PlaceB(pGTASA + 0x2BDF82 + 0x1, pGTASA + 0x2BDFA4 + 0x1);
+    }
+    
+    // Max mobilesc0,mobilesc1,...,mobilesc255 for us
+    int mobilescs = cfg->BindOnce("MaxLoadingScreens", 7, "Visual")->GetInt();
+    if(mobilescs > 0 && mobilescs < 256)
+    {
+        uint8_t numOfLS = (uint8_t)mobilescs;
+        aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
+        aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
+    }
+       
+        
     // JuniorDjjr, W.I.P.
     /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay")->GetBool())
     {
