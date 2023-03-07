@@ -14,6 +14,7 @@
  - Always drawable wanted stars (disabled by default)
  - Fixed PED preloading (for Improved Streaming, disabled by default)
  - A count of max loading screens can be changed now (default is 7)
+ - Fixed ped counting overflow for gang members calculating
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable

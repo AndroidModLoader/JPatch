@@ -60,6 +60,7 @@ CWeaponInfo* aWeaponInfo;
 int keys[538];
 bool *ms_bIsPlayerOnAMission;
 int *DETAILEDWATERDIST;
+int *ms_nNumGang;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -1342,6 +1343,41 @@ DECL_HOOKv(PlayerInfoProcess_Food, CPlayerInfo* info, int playerNum)
     }
 }
 
+// Peds count calculating is so much wrong for gangs!
+// This glitch is resulting in a very rare gang members appearing
+uintptr_t PedCountCalc_BackTo1, PedCountCalc_BackTo2;
+extern "C" int PedCountCalc_patch1(uint32_t pedType)
+{
+    return --ms_nNumGang[pedType - PED_TYPE_GANG1];
+}
+extern "C" int PedCountCalc_patch2(uint32_t pedType)
+{
+    return ++ms_nNumGang[pedType - PED_TYPE_GANG1];
+}
+__attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject1(void)
+{
+    asm volatile(
+        "BL PedCountCalc_patch1\n"
+        "PUSH {R0}\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "BX R12\n"
+    :: "r" (PedCountCalc_BackTo1));
+}
+__attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject2(void)
+{
+    asm volatile(
+        "BL PedCountCalc_patch2\n"
+        "PUSH {R0}\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "BX R12\n"
+    :: "r" (PedCountCalc_BackTo2));
+}
+
+
 // Buoyancy testing
 DECL_HOOKv(PedBu, CPed* p)
 {
@@ -1462,6 +1498,7 @@ extern "C" void OnModLoad()
     SET_TO(windowSize,              aml->GetSym(hGTASA, "windowSize"));
     SET_TO(ms_bIsPlayerOnAMission,  aml->GetSym(hGTASA, "_ZN10CPedGroups22ms_bIsPlayerOnAMissionE"));
     SET_TO(DETAILEDWATERDIST,       aml->GetSym(hGTASA, "DETAILEDWATERDIST"));
+    SET_TO(ms_nNumGang,             aml->GetSym(hGTASA, "_ZN11CPopulation11ms_nNumGangE"));
     // Variables End   //
     
     // Animated textures
@@ -2213,7 +2250,15 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
         aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
     }
-       
+    
+    // A mistake by R* that overwrites "total num of X peds"
+    if(cfg->BindOnce("FixGangsCounterOverflow", true, "Gameplay")->GetBool())
+    {
+        PedCountCalc_BackTo1 = pGTASA + 0x4D0CC2 + 0x1;
+        PedCountCalc_BackTo2 = pGTASA + 0x4D0D0A + 0x1;
+        aml->Redirect(pGTASA + 0x4D0CAE + 0x1, (uintptr_t)PedCountCalc_inject1);
+        aml->Redirect(pGTASA + 0x4D0CF6 + 0x1, (uintptr_t)PedCountCalc_inject2);
+    }
         
     // JuniorDjjr, W.I.P.
     /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay")->GetBool())
