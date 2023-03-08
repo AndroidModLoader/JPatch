@@ -61,6 +61,8 @@ int keys[538];
 bool *ms_bIsPlayerOnAMission;
 int *DETAILEDWATERDIST;
 int *ms_nNumGang;
+CPolyBunch* aPolyBunches;
+CBaseModelInfo** ms_modelInfoPtrs;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -190,6 +192,7 @@ bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
 CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
 CObject* (*CreateObject)(int mdlIdx, bool create);
+C2dEffect* (*Get2dEffect)(CBaseModelInfo*, int);
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -1062,12 +1065,21 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 // Light shadows from poles
 uintptr_t ProcessLightsForEntity_BackTo;
 float fLightDist = 40.0f;
-extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
+inline bool IsEffOffsetNormal(float c)
+{
+    return c < 256.0f && c > -256.0f;
+}
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector& vecEffPos)
 {
     if(bDoLight && eff->light.m_fShadowSize != 0)
     {
-        CVector a;
-        TransformFromObjectSpace(ent, a, eff->m_vecPosn);
+        //CVector a;
+        //TransformFromObjectSpace(ent, a, eff->m_vecPosn);
+        
+        CVector& a = ent->GetPosition();
+        //CVector a(pos.x + eff->m_vecPosn.x, pos.y + eff->m_vecPosn.y, pos.z + eff->m_vecPosn.z);
+        //logger->Info("PoleLight %d, %f %f %f", (int)ent->m_nModelIndex, vecEffPos.x, vecEffPos.y, vecEffPos.z);
+        
         float intensity = ((float)eff->light.m_nShadowColorMultiplier / 255.0f) * 0.1f * *fSpriteBrightness;
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
         StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &a, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
@@ -1085,6 +1097,7 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
         "LDR R1, [SP, #28]\n"
         "LDR R2, [SP, #20]\n"
         "LDR R3, [SP, #12]\n"
+        //"LDR R4, [SP, #0x150+0xC0+44]\n"
         "BL ProcessLightsForEntity_patch\n");
     asm volatile(
         "MOV R12, %0\n"
@@ -1116,6 +1129,30 @@ DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
     }
     emu_TextureSetDetailTexture(texture, tilingScale);
     *textureDetail = 1;
+}
+
+// Static shadows
+DECL_HOOKv(RenderStaticShadows, bool a1)
+{
+    for(int i = 0; i < 0xFF; ++i)
+    {
+        aStaticShadows_NEW[i].m_bRendered = false;
+    }
+    
+    RenderStaticShadows(a1);
+}
+DECL_HOOKv(InitShadows)
+{
+    static CPolyBunch bunchezTail[1024];
+    
+    InitShadows();
+    for(int i = 0; i < 1023; ++i)
+    {
+        bunchezTail[i].pNext = &bunchezTail[i+1];
+    }
+    
+    bunchezTail[1023].pNext = NULL;
+    aPolyBunches[360-1].pNext = &bunchezTail[0];
 }
 
 // ClimbDie
@@ -1457,6 +1494,7 @@ extern "C" void OnModLoad()
     SET_TO(BrightLightsInit,        aml->GetSym(hGTASA, "_ZN13CBrightLights4InitEv"));
     SET_TO(BrightLightsRender,      aml->GetSym(hGTASA, "_ZN13CBrightLights6RenderEv"));
     SET_TO(CreateObject,            aml->GetSym(hGTASA, "_ZN7CObject6CreateEib"));
+    SET_TO(Get2dEffect,             aml->GetSym(hGTASA, "_ZN14CBaseModelInfo11Get2dEffectEi"));
     SET_TO(RpAnimBlendClumpGetAssociation,aml->GetSym(hGTASA, "_Z30RpAnimBlendClumpGetAssociationP7RpClumpPKc"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
@@ -1499,7 +1537,9 @@ extern "C" void OnModLoad()
     SET_TO(ms_bIsPlayerOnAMission,  aml->GetSym(hGTASA, "_ZN10CPedGroups22ms_bIsPlayerOnAMissionE"));
     SET_TO(DETAILEDWATERDIST,       aml->GetSym(hGTASA, "DETAILEDWATERDIST"));
     SET_TO(ms_nNumGang,             aml->GetSym(hGTASA, "_ZN11CPopulation11ms_nNumGangE"));
-    // Variables End   //
+    SET_TO(aPolyBunches,            aml->GetSym(hGTASA, "_ZN8CShadows12aPolyBunchesE"));
+    SET_TO(ms_modelInfoPtrs,        aml->GetSym(hGTASA, "_ZN10CModelInfo16ms_modelInfoPtrsE"));
+    // Variables End //
     
     // Animated textures
     if(cfg->BindOnce("EnableAnimatedTextures", true, "Visual")->GetBool())
@@ -2054,10 +2094,23 @@ extern "C" void OnModLoad()
     if(cfg->BindOnce("BuffStaticShadowsCount", true, "Gameplay")->GetBool())
     {
         // Static shadows?
-        asShadowsStored_NEW = new CRegisteredShadow[0xFF];
-        aStaticShadows_NEW = new CStaticShadow[0xFF];
+        asShadowsStored_NEW = new CRegisteredShadow[0xFF]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * 0xFF);
+        aStaticShadows_NEW = new CStaticShadow[0xFF] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * 0xFF);
         aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
         aml->Write(pGTASA + 0x6798EC, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        //aml->Write(pGTASA + 0x676F44, (uintptr_t)&pEmptyBunchList, sizeof(void*));
+        //aml->Write(pGTASA + 0x678F8C, (uintptr_t)&aPolyBunches, sizeof(void*));
+        
+        /*const int bunchesCount = (int)(0xFF * 7.5f);
+        aPolyBunches = new CPolyBunch[bunchesCount];
+        memset(aPolyBunches, 0, sizeof(CPolyBunch) * bunchesCount);
+        for(int i = 0; i < bunchesCount-1; ++i)
+        {
+            aPolyBunches[i].pNext = &aPolyBunches[i+1];
+        }
+        aPolyBunches[bunchesCount-1].pNext = NULL;
+        pEmptyBunchList = &aPolyBunches[0];
+        aml->PlaceB(pGTASA + 0x5B88CE + 0x1, pGTASA + 0x5B89C4 + 0x1);*/
 
         // Registered Shadows:
         // CShadows::StoreShadowToBeRendered
@@ -2089,16 +2142,20 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x5BB8AA, (uintptr_t)"\xFF", 1);
         // CShadows::UpdateStaticShadows
         aml->Write(pGTASA + 0x5BD2EC, (uintptr_t)"\xFF", 1);
+        
+        HOOK(RenderStaticShadows, aml->GetSym(hGTASA, "_ZN8CShadows19RenderStaticShadowsEb"));
+        HOOK(InitShadows, aml->GetSym(hGTASA, "_ZN8CShadows4InitEv"));
     }
 
     // Move shadows closer to the ground
     if(cfg->BindOnce("MoveShadowsToTheGround", true, "Visual")->GetBool())
     {
-        aml->Unprot(pGTASA + 0x5A224C, sizeof(float)); *(float*)(pGTASA + 0x5A224C) = -0.013f;
-        aml->Unprot(pGTASA + 0x5B3ED4, sizeof(float)); *(float*)(pGTASA + 0x5B3ED4) = 0.013f;
-        aml->Unprot(pGTASA + 0x5BB80C, sizeof(float)); *(float*)(pGTASA + 0x5BB80C) = 0.013f;
-        aml->Unprot(pGTASA + 0x5BC188, sizeof(float)); *(float*)(pGTASA + 0x5BC188) = 0.013f;
-        aml->Unprot(pGTASA + 0x5E03D0, sizeof(float)); *(float*)(pGTASA + 0x5E03D0) = 0.013f;
+        float fH = cfg->BindOnce("MoveShadowsToTheGround_Height", 0.02f, "Visual")->GetFloat();
+        aml->Unprot(pGTASA + 0x5A224C, sizeof(float)); *(float*)(pGTASA + 0x5A224C) = -fH;
+        aml->Unprot(pGTASA + 0x5B3ED4, sizeof(float)); *(float*)(pGTASA + 0x5B3ED4) = fH;
+        aml->Unprot(pGTASA + 0x5BB80C, sizeof(float)); *(float*)(pGTASA + 0x5BB80C) = fH;
+        aml->Unprot(pGTASA + 0x5BC188, sizeof(float)); *(float*)(pGTASA + 0x5BC188) = fH;
+        aml->Unprot(pGTASA + 0x5E03D0, sizeof(float)); *(float*)(pGTASA + 0x5E03D0) = fH;
     }
 
     // Radar
