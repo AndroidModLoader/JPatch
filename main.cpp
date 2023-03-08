@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.3.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -1138,7 +1138,6 @@ DECL_HOOKv(RenderStaticShadows, bool a1)
     {
         aStaticShadows_NEW[i].m_bRendered = false;
     }
-    
     RenderStaticShadows(a1);
 }
 DECL_HOOKv(InitShadows)
@@ -1150,7 +1149,6 @@ DECL_HOOKv(InitShadows)
     {
         bunchezTail[i].pNext = &bunchezTail[i+1];
     }
-    
     bunchezTail[1023].pNext = NULL;
     aPolyBunches[360-1].pNext = &bunchezTail[0];
 }
@@ -1443,7 +1441,6 @@ extern "C" const char* OnUpdaterURLRequested()
 extern "C" void OnModLoad()
 {
     logger->SetTag("JPatch");
-    logger->Info("Doing patching");
     
     //aml->PatchForThumb(true); // Auto but may be enabled to be sure
     
@@ -2315,6 +2312,12 @@ extern "C" void OnModLoad()
         PedCountCalc_BackTo2 = pGTASA + 0x4D0D0A + 0x1;
         aml->Redirect(pGTASA + 0x4D0CAE + 0x1, (uintptr_t)PedCountCalc_inject1);
         aml->Redirect(pGTASA + 0x4D0CF6 + 0x1, (uintptr_t)PedCountCalc_inject2);
+    }
+    
+    // Some kind of "Sprint Everywhere"
+    if(cfg->BindOnce("SprintOnAnySurface", true, "Gameplay")->GetBool())
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c12CantSprintOnEj"), (uintptr_t)ret0);
     }
         
     // JuniorDjjr, W.I.P.

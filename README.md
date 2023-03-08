@@ -4,17 +4,17 @@
  
  **GTA:SA**
 
- **Since v1.3.1 (W.I.P.)**
+ **Since v1.4 (W.I.P.)**
  - Finally fixed BuffDistForLightCoronas!
- - Fixed peds are not speaking
- - Always draw wanted stars
- - Fix ped conversations are gone
+ - Fixed peds are not speaking closer to the game end
+ - Always draw wanted stars (disabled by default)
  - Rotor blur by peepo (W.I.P.)
  - Cloud saves can be disabled (disabled by default)
  - Always drawable wanted stars (disabled by default)
  - Fixed PED preloading (for Improved Streaming, disabled by default)
  - A count of max loading screens can be changed now (default is 7)
  - Fixed ped counting overflow for gang members calculating
+ - Sprinting on any surface is allowed
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable
