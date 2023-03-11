@@ -63,6 +63,7 @@ int *DETAILEDWATERDIST;
 int *ms_nNumGang;
 CPolyBunch* aPolyBunches;
 CBaseModelInfo** ms_modelInfoPtrs;
+CRGBA* ms_vehicleColourTable;
 
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
@@ -193,6 +194,10 @@ void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const Rw
 CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
 CObject* (*CreateObject)(int mdlIdx, bool create);
 C2dEffect* (*Get2dEffect)(CBaseModelInfo*, int);
+void (*RwFrameForAllObjects)(RwFrame*, RwObject* (*)(RwObject*, void*), void*);
+RwObject* (*GetCurrentAtomicObjectCB)(RwObject*, void*);
+void (*RpGeometryForAllMaterials)(RpGeometry*, RpMaterial* (*)(RpMaterial*, void*), void*);
+
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -280,7 +285,7 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
 // FOV
 DECL_HOOKv(SetFOV, float factor, bool unused)
 {
-    if(TheCamera->m_bIsInCutscene)
+    if(TheCamera->m_WideScreenOn)
     {
         *ms_fFOV = factor;
     }
@@ -743,7 +748,7 @@ DECL_HOOK(float, FindGroundZ2D, float x, float y)
     CColPoint colp;
     CEntity* hitEnt;
     return ProcessVerticalLine(CVector(x, y, (float)(FINDGROUNDZ_DIST)), -(float)(FINDGROUNDZ_DIST), colp, hitEnt, true, false, false,
-           (*bRunningCutscene || TheCamera->m_bIsInCutscene || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL) ? colp.m_vecPoint.z : NOTFOUND_RETURN;
+           (*bRunningCutscene || TheCamera->m_WideScreenOn || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL) ? colp.m_vecPoint.z : NOTFOUND_RETURN;
 }
 DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity** ent)
 {
@@ -756,7 +761,7 @@ DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity
     CColPoint colp;
     CEntity* hitEnt;
     if(ProcessVerticalLine(CVector(x, y, z), z > FINDGROUNDZ_DIST ? -(float)(FINDGROUNDZ_DIST) : -z, colp, hitEnt, true, false, false, 
-      (*bRunningCutscene || TheCamera->m_bIsInCutscene || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL))
+      (*bRunningCutscene || TheCamera->m_WideScreenOn || TheCamera->m_pTargetEntity != NULL || !TheCamera->m_vecGameCamPosFixed.IsZero()) ? false : true, true, false, NULL))
     {
         if(result) *result = true;
         if(ent) *ent = hitEnt;
@@ -1412,6 +1417,97 @@ __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject2(void)
     :: "r" (PedCountCalc_BackTo2));
 }
 
+// Camera/sniper zooming patch
+uintptr_t CamZoomProc_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
+{
+    asm volatile(
+        "PUSH {R0-R11}\n"
+        "VMOV S4, %0\n"
+        "VMIN.F32 D1, D1, D2\n"
+    :: "r" (100.0f)); // 10.0F
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0-R11}\n"
+        "BX R12\n"
+    :: "r" (CamZoomProc_BackTo));
+}
+
+RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
+{
+    mat->color = *(RwRGBA*)data;
+    return mat;
+}
+RpMaterial* GetCarColorCB(RpMaterial* mat, void* data)
+{
+    *(RwRGBA*)data = mat->color;
+    return mat;
+}
+void SetComponentColor(RwFrame* frame, CRGBA& clr)
+{
+    RpAtomic* atomic = NULL;
+    RpGeometry* geometry = NULL;
+    RwFrameForAllObjects(frame, GetCurrentAtomicObjectCB, &atomic);
+    if(atomic)
+    {
+        geometry = atomic->geometry;
+        geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
+        
+        // CRGBA col;
+        // RpGeometryForAllMaterials(self->m_pRwAtomic->geometry, GetCarColorCB, &col);
+        // RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
+        logger->Info("RpMaterialList %d", geometry->matList.numMaterials);
+    }
+}
+DECL_HOOKv(SetComponentVisibility, CAutomobile* self, RwFrame* nodeFrame, eAtomicComponentFlag visibility)
+{
+    if(visibility == ATOMIC_IS_DAM_STATE)
+    {
+        CVehicleModelInfo* vi = (CVehicleModelInfo*)ms_modelInfoPtrs[self->m_nModelIndex];
+    
+        vi->m_nCurrentPrimaryColor = self->m_nPrimaryColor;
+        vi->m_nCurrentSecondaryColor = self->m_nSecondaryColor;
+        vi->m_nCurrentTertiaryColor = self->m_nTertiaryColor;
+        vi->m_nCurrentQuaternaryColor = self->m_nQuaternaryColor;
+    }
+    SetComponentVisibility(self, nodeFrame, visibility);
+            
+    /*if(visibility != ATOMIC_IS_DAM_STATE) return;
+    
+    eSomeMaxs compNum = (eSomeMaxs)-1;
+    for(uint8_t i = 0; i < MAX_CAR_NODES; ++i)
+    {
+        if(nodeFrame == self->m_CarNodes[i]) { compNum = (eSomeMaxs)i; break; }
+    }
+    if(compNum == (eSomeMaxs)-1) return;
+    
+    switch(compNum)
+    {
+        default: break;
+        
+        case CAR_DOOR_RF:
+        case CAR_DOOR_RR:
+        case CAR_DOOR_LF:
+        case CAR_DOOR_LR:
+            SetComponentColor(nodeFrame, ms_vehicleColourTable[self->m_nPrimaryColor]);
+            break;
+    }*/
+}
+DECL_HOOKv(PreRenderCar, CAutomobile* self)
+{
+    PreRenderCar(self);
+    
+    RwFrame* node = NULL;
+    for(int i = 0; i < MAX_CAR_NODES; ++i)
+    {
+        node = self->m_CarNodes[i];
+        if(!node) continue;
+        
+        CRGBA clr(128,128,255);
+        //SetComponentColor(node, clr);
+    }
+}
+
 
 // Buoyancy testing
 DECL_HOOKv(PedBu, CPed* p)
@@ -1493,6 +1589,9 @@ extern "C" void OnModLoad()
     SET_TO(CreateObject,            aml->GetSym(hGTASA, "_ZN7CObject6CreateEib"));
     SET_TO(Get2dEffect,             aml->GetSym(hGTASA, "_ZN14CBaseModelInfo11Get2dEffectEi"));
     SET_TO(RpAnimBlendClumpGetAssociation,aml->GetSym(hGTASA, "_Z30RpAnimBlendClumpGetAssociationP7RpClumpPKc"));
+    SET_TO(RwFrameForAllObjects,    aml->GetSym(hGTASA, "_Z20RwFrameForAllObjectsP7RwFramePFP8RwObjectS2_PvES3_"));
+    SET_TO(GetCurrentAtomicObjectCB,aml->GetSym(hGTASA, "_Z24GetCurrentAtomicObjectCBP8RwObjectPv"));
+    SET_TO(RpGeometryForAllMaterials,aml->GetSym(hGTASA, "_Z25RpGeometryForAllMaterialsP10RpGeometryPFP10RpMaterialS2_PvES3_"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
@@ -1536,6 +1635,7 @@ extern "C" void OnModLoad()
     SET_TO(ms_nNumGang,             aml->GetSym(hGTASA, "_ZN11CPopulation11ms_nNumGangE"));
     SET_TO(aPolyBunches,            aml->GetSym(hGTASA, "_ZN8CShadows12aPolyBunchesE"));
     SET_TO(ms_modelInfoPtrs,        aml->GetSym(hGTASA, "_ZN10CModelInfo16ms_modelInfoPtrsE"));
+    SET_TO(ms_vehicleColourTable,   aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo21ms_vehicleColourTableE"));
     // Variables End //
     
     // Animated textures
@@ -2320,6 +2420,25 @@ extern "C" void OnModLoad()
         aml->Redirect(aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c12CantSprintOnEj"), (uintptr_t)ret0);
     }
         
+    aml->Unprot(pGTASA + 0x3C51E8, sizeof(float));
+    *(float*)(pGTASA + 0x3C51E8) = 10000.0f * (1.0f / cfg->BindOnce("CameraZoomingSpeed", 2.5f, "Gameplay")->GetFloat());
+    
+    aml->Unprot(pGTASA + 0x3C51F0, sizeof(float));
+    *(float*)(pGTASA + 0x3C51F0) = cfg->BindOnce("MinimalCameraZoomingFOV", 70.0f, "Gameplay")->GetFloat();
+    
+    if(cfg->BindOnce("DamagedComponentsColorFix", true, "Visual")->GetBool())
+    {
+        HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
+        //HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
+    }
+    
+    /*aml->Unprot(pGTASA + 0x5B05B4, sizeof(float));
+    *(float*)(pGTASA + 0x5B05B4) = 0.9f; // 0.9f*/
+    
+    //CamZoomProc_BackTo = pGTASA + 0x3C505C + 0x1;
+    //aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)CamZoomProc_inject);
+    
+    
     // JuniorDjjr, W.I.P.
     /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay")->GetBool())
     {

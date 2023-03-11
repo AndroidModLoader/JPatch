@@ -8,13 +8,16 @@
  - Finally fixed BuffDistForLightCoronas!
  - Fixed peds are not speaking closer to the game end
  - Always draw wanted stars (disabled by default)
- - Rotor blur by peepo (W.I.P.)
+ - Rotor blur *by Peepo*
  - Cloud saves can be disabled (disabled by default)
  - Always drawable wanted stars (disabled by default)
  - Fixed PED preloading (for Improved Streaming, disabled by default)
  - A count of max loading screens can be changed now (default is 7)
  - Fixed ped counting overflow for gang members calculating
  - Sprinting on any surface is allowed
+ - Damaged components should not be colored by the previously damaged vehicle of that type (W.I.P.)
+ - Camera/Sniper zooming is faster and can be adjusted to be even faster!
+ - Minimal FOV for Camera is adjustable (default is 70, set it to 90 or bigger if you need "fish eye" in a camera)
 
  **Since v1.3**
  - VitaPort: Fixed cheats hashtable
@@ -27,7 +30,7 @@
  - A bit darker HUD colours (disabled by default)
  - Aiming with Country Rifle is now in 3rd person
  - Force the game's inner check always return that we have only touch (disabled by default)
- - Fixed ped animation after being attacked with parachute (inspired by Alexander Polyak)
+ - Fixed ped animation after being attacked with parachute (inspired *by Alexander Polyak*)
  - MixSets: Hostile gangs
  - Adjustable detailed water draw distance (known as water quadrant fix)
  - Peepo: Traffic lights fix
@@ -45,7 +48,7 @@
  **Since v1.2.3**
  - Goddamn static light shadows from PC!
  - Bumped a limit of static shadows!
- - Fixed green textures (moved from SkyGfx)
+ - Fixed green textures (moved from SkyGfx Mobile)
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
  
  **Since v1.2.1**
