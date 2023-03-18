@@ -9,7 +9,7 @@
  - Fixed peds are not speaking closer to the game end
  - Always draw wanted stars (disabled by default)
  - Rotor blur *by Peepo*
- - Cloud saves can be disabled (disabled by default)
+ - Cloud saves can be disabled (NOT disabled by default)
  - Always drawable wanted stars (disabled by default)
  - Fixed PED preloading (for Improved Streaming, disabled by default)
  - A count of max loading screens can be changed now (default is 7)

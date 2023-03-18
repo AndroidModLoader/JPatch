@@ -1438,12 +1438,7 @@ RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
     mat->color = *(RwRGBA*)data;
     return mat;
 }
-RpMaterial* GetCarColorCB(RpMaterial* mat, void* data)
-{
-    *(RwRGBA*)data = mat->color;
-    return mat;
-}
-void SetComponentColor(RwFrame* frame, CRGBA& clr)
+void SetComponentColor(CVehicle* self, RwFrame* frame)
 {
     RpAtomic* atomic = NULL;
     RpGeometry* geometry = NULL;
@@ -1456,21 +1451,30 @@ void SetComponentColor(RwFrame* frame, CRGBA& clr)
         // CRGBA col;
         // RpGeometryForAllMaterials(self->m_pRwAtomic->geometry, GetCarColorCB, &col);
         // RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
-        logger->Info("RpMaterialList %d", geometry->matList.numMaterials);
+        // logger->Info("RpMaterialList %d", geometry->matList.numMaterials);
+        geometry->matList.materials[0]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nPrimaryColor];
+        geometry->matList.materials[1]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nSecondaryColor];
     }
+}
+DECL_HOOKv(ChooseVehicleColour, CVehicleModelInfo* self, uint8_t& prim, uint8_t& sec, uint8_t& tert, uint8_t& quat, int32_t variationShift)
+{
+    ChooseVehicleColour(self, prim, sec, tert, quat, variationShift);
+    
+    self->m_nCurrentPrimaryColor = prim;
+    self->m_nCurrentSecondaryColor = sec;
+    self->m_nCurrentTertiaryColor = tert;
+    self->m_nCurrentQuaternaryColor = quat;
 }
 DECL_HOOKv(SetComponentVisibility, CAutomobile* self, RwFrame* nodeFrame, eAtomicComponentFlag visibility)
 {
-    if(visibility == ATOMIC_IS_DAM_STATE)
-    {
-        CVehicleModelInfo* vi = (CVehicleModelInfo*)ms_modelInfoPtrs[self->m_nModelIndex];
-    
-        vi->m_nCurrentPrimaryColor = self->m_nPrimaryColor;
+    CVehicleModelInfo* vi = (CVehicleModelInfo*)ms_modelInfoPtrs[self->m_nModelIndex];
+    vi->m_currentColor = self->m_color;
+        /*vi->m_nCurrentPrimaryColor = self->m_nPrimaryColor;
         vi->m_nCurrentSecondaryColor = self->m_nSecondaryColor;
         vi->m_nCurrentTertiaryColor = self->m_nTertiaryColor;
-        vi->m_nCurrentQuaternaryColor = self->m_nQuaternaryColor;
-    }
+        vi->m_nCurrentQuaternaryColor = self->m_nQuaternaryColor;*/
     SetComponentVisibility(self, nodeFrame, visibility);
+    
             
     /*if(visibility != ATOMIC_IS_DAM_STATE) return;
     
@@ -1489,7 +1493,7 @@ DECL_HOOKv(SetComponentVisibility, CAutomobile* self, RwFrame* nodeFrame, eAtomi
         case CAR_DOOR_RR:
         case CAR_DOOR_LF:
         case CAR_DOOR_LR:
-            SetComponentColor(nodeFrame, ms_vehicleColourTable[self->m_nPrimaryColor]);
+            SetComponentColor(self, nodeFrame);
             break;
     }*/
 }
@@ -1498,13 +1502,14 @@ DECL_HOOKv(PreRenderCar, CAutomobile* self)
     PreRenderCar(self);
     
     RwFrame* node = NULL;
-    for(int i = 0; i < MAX_CAR_NODES; ++i)
+    for(int i = CAR_DOOR_RF; i <= CAR_DOOR_LR; ++i)
     {
         node = self->m_CarNodes[i];
+        //logger->Info("car 0x%08X, comp 0x%X 0x%08X", self, i, node);
         if(!node) continue;
         
-        CRGBA clr(128,128,255);
-        //SetComponentColor(node, clr);
+        //CRGBA clr(128,128,255);
+        SetComponentColor(self, node);
     }
 }
 
@@ -1540,10 +1545,10 @@ extern "C" void OnModLoad()
     
     //aml->PatchForThumb(true); // Auto but may be enabled to be sure
     
-    cfg->BindOnce("Author", "", "About")->SetString("[-=KILL MAN=-]");
-    cfg->BindOnce("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS, Peepo");
-    cfg->BindOnce("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg");
-    cfg->BindOnce("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch");
+    cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]"); cfg->ClearLast();
+    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS, Peepo"); cfg->ClearLast();
+    cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg"); cfg->ClearLast();
+    cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch"); cfg->ClearLast();
     cfg->Save();
 
     pGTASA = aml->GetLib("libGTASA.so");
@@ -1639,13 +1644,13 @@ extern "C" void OnModLoad()
     // Variables End //
     
     // Animated textures
-    if(cfg->BindOnce("EnableAnimatedTextures", true, "Visual")->GetBool())
+    if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
     {
         aml->Write(aml->GetSym(hGTASA, "RunUVAnim"), (uintptr_t)"\x01", 1);
     }
 
     // Vertex weight
-    if(cfg->BindOnce("FixVertexWeight", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixVertexWeight", true, "Visual"))
     {
         aml->Write(pGTASA + 0x1C8064, (uintptr_t)"\x01", 1);
         aml->Write(pGTASA + 0x1C8082, (uintptr_t)"\x01", 1);
@@ -1653,7 +1658,7 @@ extern "C" void OnModLoad()
 
     // Fix moon!
     // War Drum moment: cannot get Alpha testing to work
-    /*if(cfg->BindOnce("MoonPhases", true, "Visual")->GetBool())
+    /*if(cfg->BindOnce("MoonPhases", true, "Visual"))
     {
         //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
         MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
@@ -1663,7 +1668,7 @@ extern "C" void OnModLoad()
     };*/
 
     // Fix sky multitude
-    if(cfg->BindOnce("FixSkyMultitude", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixSkyMultitude", true, "Visual"))
     {
         aml->Unprot(pGTASA + 0x59FB8C, 2*sizeof(float));
         *(float*)(pGTASA + 0x59FB8C) = -10.0f;
@@ -1671,37 +1676,37 @@ extern "C" void OnModLoad()
     }
 
     // Fix vehicles backlights light state
-    if(cfg->BindOnce("FixCarsBacklightLightState", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixCarsBacklightLightState", true, "Visual"))
     {
         aml->Write(pGTASA + 0x591272, (uintptr_t)"\x02", 1);
         aml->Write(pGTASA + 0x59128E, (uintptr_t)"\x02", 1);
     }
 
     // Limit sand/dust particles on bullet impact (they are EXTREMELY dropping FPS)
-    if(cfg->BindOnce("LimitSandDustBulletParticles", true, "Visual")->GetBool())
+    if(cfg->GetBool("LimitSandDustBulletParticles", true, "Visual"))
     {
         AddBulletImpactFx_BackTo = pGTASA + 0x36478E + 0x1;
         aml->Redirect(pGTASA + 0x36477C + 0x1, (uintptr_t)AddBulletImpactFx_inject);
-        if(cfg->BindOnce("LimitSandDustBulletParticlesWithSparkles", false, "Visual")->GetBool())
+        if(cfg->GetBool("LimitSandDustBulletParticlesWithSparkles", false, "Visual"))
         {
             nLimitWithSparkles = BULLETFX_SPARK;
         }
     }
 
     // Do not set primary color to the white on vehicles paintjob
-    if(cfg->BindOnce("PaintJobDontSetPrimaryToWhite", true, "Visual")->GetBool())
+    if(cfg->GetBool("PaintJobDontSetPrimaryToWhite", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x582328, 2);
     }
 
     // Fix walking while rifle-aiming
-    if(cfg->BindOnce("FixAimingWalkRifle", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixAimingWalkRifle", true, "Gameplay"))
     {
         HOOKPLT(ControlGunMove, pGTASA + 0x66F9D0);
     }
 
     // Fix slow swimming speed
-    if(cfg->BindOnce("SwimmingSpeedFix", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("SwimmingSpeedFix", true, "Gameplay"))
     {
         SwimmingResistanceBack_BackTo = pGTASA + 0x53BD3A + 0x1;
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
@@ -1709,37 +1714,37 @@ extern "C" void OnModLoad()
     }
 
     // Fix stealable items sucking
-    if(cfg->BindOnce("ClampObjectToStealDist", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("ClampObjectToStealDist", true, "Gameplay"))
     {
         aml->Write(pGTASA + 0x40B162, (uintptr_t)"\xB7\xEE\x00\x0A", 4);
     }
 
     // Fix broken basketball minigame by placing the save icon away from it
-    if(cfg->BindOnce("MaddDoggMansionSaveFix", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("MaddDoggMansionSaveFix", true, "SCMFixes"))
     {
         HOOKPLT(GenerateNewPickup_MaddDogg, pGTASA + 0x674DE4);
     }
 
     // Fix broken basketball minigame by placing the save icon away from it
-    if(cfg->BindOnce("FixStarBribeInSFBuilding", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("FixStarBribeInSFBuilding", true, "SCMFixes"))
     {
         HOOKPLT(GenerateNewPickup_SFBribe, pGTASA + 0x674DE4);
     }
 
     // Fix rifle pickup that stuck inside the stadium
-    if(cfg->BindOnce("FixSFStadiumRiflePickup", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("FixSFStadiumRiflePickup", true, "SCMFixes"))
     {
         HOOKPLT(GenerateNewPickup_SFRiflePickup, pGTASA + 0x674DE4);
     }
 
     // Remove jetpack leaving on widget press while in air?
-    if(cfg->BindOnce("DisableDropJetPackInAir", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("DisableDropJetPackInAir", true, "Gameplay"))
     {
         HOOKPLT(DropJetPackTask, pGTASA + 0x675AA8);
     }
 
     // Dont stop the car before leaving it
-    if(cfg->BindOnce("ImmediatelyLeaveTheCar", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("ImmediatelyLeaveTheCar", true, "Gameplay"))
     {
         aml->PlaceNOP(pGTASA + 0x409A18, 3);
         aml->Redirect(pGTASA + 0x409A6C + 0x1, (uintptr_t)ImmLeaveCar_inject);
@@ -1749,14 +1754,14 @@ extern "C" void OnModLoad()
     }
 
     // Bring back penalty when CJ dies!
-    if(cfg->BindOnce("WeaponPenaltyIfDied", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("WeaponPenaltyIfDied", true, "Gameplay"))
     {
         DiedPenalty_BackTo = pGTASA + 0x3088E0 + 0x1;
         aml->Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_inject);
     }
 
     // Fix emergency vehicles
-    if(cfg->BindOnce("FixEmergencyVehicles", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixEmergencyVehicles", true, "Gameplay"))
     {
         EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
         aml->Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
@@ -1766,14 +1771,14 @@ extern "C" void OnModLoad()
     }
 
     // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
-    if(cfg->BindOnce("FixCutsceneFOV", false, "Visual")->GetBool())
+    if(cfg->GetBool("FixCutsceneFOV", false, "Visual"))
     {
         HOOKPLT(SetFOV, pGTASA + 0x673DDC);
     }
 
     // Fix red marker that cannot be placed in a menu on ultrawide screens
     // Kinda trashy fix...
-    if(cfg->BindOnce("FixRedMarkerUnplaceable", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixRedMarkerUnplaceable", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x2A9E60, sizeof(float));
         *(float*)(pGTASA + 0x2A9E60) /= 1.2f;
@@ -1782,14 +1787,14 @@ extern "C" void OnModLoad()
     }
 
     // Dont set player on fire when he's on burning BMX (MTA:SA)
-    if(cfg->BindOnce("DontBurnPlayerOnBurningBMX", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("DontBurnPlayerOnBurningBMX", true, "Gameplay"))
     {
         aml->PlaceB(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
     }
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
     // Causes crash and completely useless
-    //if(cfg->BindOnce("DesiredNumOfCarsLoadedBuff", true, "Gameplay")->GetBool())
+    //if(cfg->BindOnce("DesiredNumOfCarsLoadedBuff", true, "Gameplay"))
     //{
     //    *(unsigned char*)(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE")) = 50; // Game hardcoded to 50 max (lazy to fix crashes for patches below)
     //    aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
@@ -1797,7 +1802,7 @@ extern "C" void OnModLoad()
     //}
 
     // THROWN projectiles throw more accurately (MTA:SA)
-    if(cfg->BindOnce("ThrownProjectilesAccuracy", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("ThrownProjectilesAccuracy", true, "Gameplay"))
     {
         aml->PlaceB(pGTASA + 0x5DBBC8 + 0x1, pGTASA + 0x5DBD0C + 0x1);
     }
@@ -1806,41 +1811,41 @@ extern "C" void OnModLoad()
     // that was causing a crash - spent ages debugging, the crash happens if you create 40 or 
     // so vehicles that catch fire (upside down) then delete them, repeating a few times.
     // (MTA:SA)
-    if(cfg->BindOnce("GetCompositeMatrixFixPossibleCrash", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("GetCompositeMatrixFixPossibleCrash", true, "Gameplay"))
     {
         aml->PlaceNOP(pGTASA + 0x395E6A, 7);
     }
 
     // Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it (MTA:SA)
-    if(cfg->BindOnce("DontGiveCarHealthFromBurningPed", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("DontGiveCarHealthFromBurningPed", true, "Gameplay"))
     {
         aml->PlaceNOP(pGTASA + 0x3F1CAC, 0xD);
     }
 
     // Increase intensity of vehicle tail light corona (MTA:SA)
     // Is this even working on Android?
-    if(cfg->BindOnce("IncreaseTailLightIntensity", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("IncreaseTailLightIntensity", true, "Gameplay"))
     {
         aml->Write(pGTASA + 0x591016, (uintptr_t)"\xF0", 1);
     }
 
     // Cinematic vehicle camera on double tap
-    if(cfg->BindOnce("CinematicCameraOnDoubleTap", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("CinematicCameraOnDoubleTap", true, "Gameplay"))
     {
         HOOKPLT(PlayerInfoProcess_Cinematic, pGTASA + 0x673E84);
     }
     
     // Fix Skimmer plane ( https://github.com/XMDS )
-    if (cfg->BindOnce("SkimmerPlaneFix", true, "Gameplay")->GetBool())
+    if (cfg->GetBool("SkimmerPlaneFix", true, "Gameplay"))
     {
         SkimmerWaterResistance_BackTo = pGTASA + 0x589ADC + 0x1;
         aml->Redirect(pGTASA + 0x589AD4 + 0x1, (uintptr_t)SkimmerWaterResistance_inject);
     }
 
     // Buff streaming
-    if(cfg->BindOnce("BuffStreamingMem", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffStreamingMem", true, "Gameplay"))
     {
-        int wantsMB = cfg->BindOnce("BuffStreamingMem_CountMB", 512, "Gameplay")->GetInt();
+        int wantsMB = cfg->GetInt("BuffStreamingMem_CountMB", 512, "Gameplay");
         if(wantsMB >= 20)
         {
             aml->PlaceNOP(pGTASA + 0x46BE18, 1);
@@ -1854,11 +1859,11 @@ extern "C" void OnModLoad()
     }
 
     // Buff streaming (dynamic)
-    bDynStreamingMem = cfg->BindOnce("DynamicStreamingMem", true, "Gameplay")->GetBool();
-    fDynamicStreamingMemPercentage = 0.001f * cfg->BindOnce("DynamicStreamingMem_Percentage", 80, "Gameplay")->GetInt();
+    bDynStreamingMem = cfg->GetBool("DynamicStreamingMem", true, "Gameplay");
+    fDynamicStreamingMemPercentage = 0.001f * cfg->GetInt("DynamicStreamingMem_Percentage", 80, "Gameplay");
 
     // Buff planes max height
-    if(cfg->BindOnce("BuffPlanesMaxHeight", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffPlanesMaxHeight", true, "Gameplay"))
     {
         float* heights;
         aml->Unprot(pGTASA + 0x585674, sizeof(float)*7);
@@ -1870,27 +1875,27 @@ extern "C" void OnModLoad()
     }
 
     // Buff jetpack max height
-    if(cfg->BindOnce("BuffJetpackMaxHeight", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffJetpackMaxHeight", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x5319D0, sizeof(float));
         *(float*)(pGTASA + 0x5319D0) *= 2.0f;
     }
 
     // 44100 Hz Audio support (without a mod OpenAL Update) (is this working?)
-    if(cfg->BindOnce("Allow44100HzAudio", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Allow44100HzAudio", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x613E0A, sizeof(int));
         *(int*)(pGTASA + 0x613E0A) = 44100;
     }
 
     // Disable GTA vehicle detachment at rotation awkwardness
-    if(cfg->BindOnce("FixVehicleDetachmentAtRot", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixVehicleDetachmentAtRot", true, "Visual"))
     {
         aml->PlaceB(pGTASA + 0x407344 + 0x1, pGTASA + 0x407016 + 0x1);
     }
 
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
-    if(cfg->BindOnce("FixMissingShootBtnForSWAT", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixMissingShootBtnForSWAT", true, "Gameplay"))
     {
         GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
         GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
@@ -1898,27 +1903,27 @@ extern "C" void OnModLoad()
     }
 
     // Just a fuzzy seek. Tell MPG123 to not load useless data.
-    if(cfg->BindOnce("FuzzySeek", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FuzzySeek", true, "Gameplay"))
     {
         HOOKPLT(mpg123_param, pGTASA + 0x66F3D4);
     }
 
     // Fix water cannon on a high fps
-    if(cfg->BindOnce("FixHighFPSWaterCannons", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixHighFPSWaterCannons", true, "Gameplay"))
     {
         HOOKPLT(WaterCannonRender, pGTASA + 0x67432C);
         HOOKPLT(WaterCannonUpdate, pGTASA + 0x6702EC);
     }
 
     // Fix moving objects on a high fps (through the scripts)
-    if(cfg->BindOnce("FixHighFPSOpcode034E", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("FixHighFPSOpcode034E", true, "SCMFixes"))
     {
         ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
         aml->Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
     }
 
     // Fix pushing force
-    if(cfg->BindOnce("FixPhysicalPushForce", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
     {
         PhysicalApplyCollision_BackTo = pGTASA + 0x402B72 + 0x1;
         aml->Redirect(pGTASA + 0x402B68 + 0x1, (uintptr_t)PhysicalApplyCollision_inject);
@@ -1926,7 +1931,7 @@ extern "C" void OnModLoad()
 
     // Can now rotate the camera inside the heli/plane?
     // https://github.com/TheOfficialFloW/gtasa_vita/blob/6417775e182b0c8b789cc9a0c1161e6f1b43814f/loader/main.c#L736
-    if(cfg->BindOnce("UnstuckHeliCamera", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("UnstuckHeliCamera", true, "Gameplay"))
     {
         aml->Write(pGTASA + 0x3C0866, (uintptr_t)"\x00\x20\x00\xBF", 4);
         aml->Write(pGTASA + 0x3C1518, (uintptr_t)"\x00\x20\x00\xBF", 4);
@@ -1936,20 +1941,20 @@ extern "C" void OnModLoad()
     }
 
     // Classic CJ shadow
-    if(cfg->BindOnce("FixClassicCJShadow", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixClassicCJShadow", true, "Gameplay"))
     {
         aml->PlaceNOP(pGTASA + 0x5B86C4, 7);
     }
 
     // Car Slowdown Fix
-    if(cfg->BindOnce("FixCarSlowdownHighFPS", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixCarSlowdownHighFPS", true, "Gameplay"))
     {
         SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + 0x6777C8)) + 4); // FLA
         HOOKPLT(ProcessVehicleWheel, pGTASA + 0x66FC7C);
     }
 
     // Heli rotor speed fix
-    if(cfg->BindOnce("FixHeliRotorSpeedHighFPS", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixHeliRotorSpeedHighFPS", true, "Visual"))
     {
         aml->Unprot(pGTASA + 0x572604, sizeof(float)*5);
         SET_TO(fRotorFinalSpeed, pGTASA + 0x572604);
@@ -1959,7 +1964,7 @@ extern "C" void OnModLoad()
     }
 
     // Give more space for opcodes 038D+038F
-    if(cfg->BindOnce("FixOpcodes038D/F", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("FixOpcodes038D/F", true, "SCMFixes"))
     {
         aml->Unprot(pGTASA + 0x678EAC, sizeof(void*));
         *(uintptr_t*)(pGTASA + 0x678EAC) = (uintptr_t)pNewScriptSprites;
@@ -1978,32 +1983,32 @@ extern "C" void OnModLoad()
     }
 
     // RE3: Fix R* optimization that prevents peds to spawn
-    if(cfg->BindOnce("Re3_PedSpawnDeoptimize", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Re3_PedSpawnDeoptimize", true, "Gameplay"))
     {
         aml->Write(pGTASA + 0x3F40E8, (uintptr_t)"\x03", 1);
     }
 
     // RE3: Make cars and peds to not despawn when you look away
-    if(cfg->BindOnce("Re3_ExtOffscreenDespRange", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Re3_ExtOffscreenDespRange", true, "Gameplay"))
     {
         aml->PlaceB(pGTASA + 0x2EC660 + 0x1, pGTASA + 0x2EC6D6 + 0x1); // Vehicles
         aml->PlaceB(pGTASA + 0x4CE4EA + 0x1, pGTASA + 0x4CE55C + 0x1); // Peds
     }
 
     // RE3: Do not remove locked cars
-    if(cfg->BindOnce("Re3_DontRemoveLockedCars", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Re3_DontRemoveLockedCars", true, "Gameplay"))
     {
         HOOKPLT(PossiblyRemoveVehicle_Re3, pGTASA + 0x6736E4);
     }
 
     // RE3: Correct clouds rotating speed
-    if(cfg->BindOnce("Re3_CloudsRotationHighFPS", true, "Visual")->GetBool())
+    if(cfg->GetBool("Re3_CloudsRotationHighFPS", true, "Visual"))
     {
         HOOKPLT(CloudsUpdate_Re3, pGTASA + 0x670358);
     }
 
     // RE3: multiple instances of semaphore fix
-    if(cfg->BindOnce("Re3_CdStreamMultipleInst", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Re3_CdStreamMultipleInst", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x26C0DA, 4);
         aml->Write(pGTASA + 0x2C97DC, (uintptr_t)"\x00\x23", 2);
@@ -2012,19 +2017,19 @@ extern "C" void OnModLoad()
     }
 
     // RE3: Fix a lil mistake in AskForObjectToBeRenderedInGlass
-    if(cfg->BindOnce("Re3_InGlassRenderedPlus1", true, "Visual")->GetBool())
+    if(cfg->GetBool("Re3_InGlassRenderedPlus1", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5AC61C, (uintptr_t)"\x1F", 1);
     }
 
     // RE3: Free the space for an object in a pool by deleting temp objects if there is no space
-    if(cfg->BindOnce("Re3_FreePlaceInObjectPool", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("Re3_FreePlaceInObjectPool", true, "Gameplay"))
     {
         HOOKPLT(Object_New, pGTASA + 0x6726EC);
     }
 
     // Lower threads sleeping timer
-    if(cfg->BindOnce("LowerThreadsSleeping", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("LowerThreadsSleeping", true, "Gameplay"))
     {
         aml->Write(pGTASA + 0x1D248E, (uintptr_t)"\x08", 1);
         aml->Write(pGTASA + 0x266D3A, (uintptr_t)"\x08", 1);
@@ -2033,20 +2038,20 @@ extern "C" void OnModLoad()
     }
 
     // Dont kill peds when jacking their car, monster!
-    if(cfg->BindOnce("DontKillPedsOnCarJacking", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("DontKillPedsOnCarJacking", true, "Gameplay"))
     {
         aml->PlaceB(pGTASA + 0x4F5FC4 + 0x1, pGTASA + 0x4F5FD6 + 0x1);
     }
 
     // Colored zone names are back
-    if(cfg->BindOnce("ColoredZoneNames", true, "Visual")->GetBool())
+    if(cfg->GetBool("ColoredZoneNames", true, "Visual"))
     {
         ColoredZoneNames_BackTo = pGTASA + 0x438404 + 0x1;
         aml->Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
     }
 
     // Bigger max count of peds
-    if(cfg->BindOnce("BuffMaxPedsCount", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))
     {
         *(int*)aml->GetSym(hGTASA, "_ZN11CPopulation20MaxNumberOfPedsInUseE") = 0x23;
         aml->Write(pGTASA + 0x3F4DE0, (uintptr_t)"\x23", 1);
@@ -2056,14 +2061,14 @@ extern "C" void OnModLoad()
     }
 
     // Bigger max count of cars
-    if(cfg->BindOnce("BuffMaxCarsCount", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffMaxCarsCount", true, "Gameplay"))
     {
         *(int*)aml->GetSym(hGTASA, "_ZN8CCarCtrl20MaxNumberOfCarsInUseE") = 0x14;
         aml->Write(pGTASA + 0x3F4DD2, (uintptr_t)"\x14", 1);
     }
 
     // Frick your "improved characters models", War Dumb
-    if(cfg->BindOnce("FixPedSpecInShaders", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixPedSpecInShaders", true, "Visual"))
     {
         aml->Write(pGTASA + 0x1CE2F0, (uintptr_t)"\x40\x46\x00\xBF", 4);
         aml->Write(pGTASA + 0x1CEDC4, (uintptr_t)"\x40\xF2\x40\x60", 4);
@@ -2072,14 +2077,14 @@ extern "C" void OnModLoad()
     }
 
     // Tells "FindGroundZ" functions that we need can teleport on objects too
-    if(cfg->BindOnce("IncludeObjectsForFindZ", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("IncludeObjectsForFindZ", true, "Gameplay"))
     {
         HOOKPLT(FindGroundZ2D, pGTASA + 0x66EDB8);
         HOOKPLT(FindGroundZ3D, pGTASA + 0x67022C);
     }
 
     // RE3: 
-    //if(cfg->BindOnce("Re3_WetRoadsReflections", true, "Visual")->GetBool())
+    //if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     //{
     //    //RoadReflections_BackTo1 = pGTASA + 0x5A2E30 + 0x1;
     //    //RoadReflections_BackTo2 = pGTASA + 0x5A2EA6 + 0x1;
@@ -2094,7 +2099,7 @@ extern "C" void OnModLoad()
     //}
 
     // Helicopter's rotor blur
-    if(cfg->BindOnce("HeliRotorBlur", true, "Visual")->GetBool())
+    if(cfg->GetBool("HeliRotorBlur", true, "Visual"))
     {
         SET_TO(compa1, pGTASA + 0x572D2E);
         SET_TO(compa2, pGTASA + 0x572D4E);
@@ -2114,9 +2119,9 @@ extern "C" void OnModLoad()
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
     
     // Preload LOD models
-    bPreloadLOD = cfg->BindOnce("IS_PreloadLODs", false, "Gameplay")->GetBool();
-    bPreloadAnim = cfg->BindOnce("IS_PreloadAnims", false, "Gameplay")->GetBool();
-    bPreloadPed = cfg->BindOnce("PreloadPeds", true, "Gameplay")->GetBool();
+    bPreloadLOD = cfg->GetBool("IS_PreloadLODs", false, "Gameplay");
+    bPreloadAnim = cfg->GetBool("IS_PreloadAnims", false, "Gameplay");
+    bPreloadPed = cfg->GetBool("IS_PreloadPeds", false, "Gameplay");
     if(bPreloadLOD || bPreloadAnim || bPreloadPed || bDynStreamingMem)
     {
         HOOKPLT(GameProcess, pGTASA + 0x66FE58);
@@ -2132,12 +2137,12 @@ extern "C" void OnModLoad()
             InitPools_BackTo = pGTASA + 0x40CC8A + 0x1;
         }
     }
-    bUnloadUnusedModels = cfg->BindOnce("IS_UnloadUnusedModels", true, "Gameplay")->GetBool();
+    bUnloadUnusedModels = cfg->GetBool("IS_UnloadUnusedModels", true, "Gameplay");
     if(bUnloadUnusedModels)
     {
-        bDontUnloadInCutscenes = !cfg->BindOnce("IS_UnloadUnusedModels_InCutscene", false, "Gameplay")->GetBool();
-        fRemoveUnusedStreamMemPercentage = 0.001f * cfg->BindOnce("IS_UnloadUnusedModels_Percentage", 80, "Gameplay")->GetInt();
-        nRemoveUnusedInterval = cfg->BindOnce("IS_UnloadUnusedModels_Interval", 60, "Gameplay")->GetInt();
+        bDontUnloadInCutscenes = !cfg->GetBool("IS_UnloadUnusedModels_InCutscene", false, "Gameplay");
+        fRemoveUnusedStreamMemPercentage = 0.001f * cfg->GetInt("IS_UnloadUnusedModels_Percentage", 80, "Gameplay");
+        nRemoveUnusedInterval = cfg->GetInt("IS_UnloadUnusedModels_Interval", 60, "Gameplay");
 
         if(fRemoveUnusedStreamMemPercentage < 0.001f ||
            fRemoveUnusedStreamMemPercentage > 0.99f  ||
@@ -2148,13 +2153,13 @@ extern "C" void OnModLoad()
     }
 
     // Fix color picker widget
-    if(cfg->BindOnce("FixColorPicker", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixColorPicker", true, "Visual"))
     {
         HOOKPLT(GetColorPickerValue, pGTASA + 0x6645C4);
     }
 
     // Bigger distance for light coronas
-    if(cfg->BindOnce("BuffDistForLightCoronas", true, "Visual")->GetBool())
+    if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5A4960, (uintptr_t)"\x00\x22\xC4\xF2\xC8\x32", 6); // CEntity::ProcessLightsForEntity
         aml->Write(pGTASA + 0x362EC6, (uintptr_t)"\x00\x20\xC4\xF2\xC8\x30", 6); // CTrafficLights::DisplayActualLight
@@ -2165,7 +2170,7 @@ extern "C" void OnModLoad()
     }
 
     // Bigger distance for light shadows
-    if(cfg->BindOnce("BuffDistForLightShadows", true, "Visual")->GetBool())
+    if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
     {
         aml->Write(pGTASA + 0x36311C, (uintptr_t)"\xC4\xF2\xF0\x21", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
         aml->Write(pGTASA + 0x3F1996, (uintptr_t)"\xC4\xF2\xF0\x21", 4); // CFireManager::Update, 40 -> 120
@@ -2173,7 +2178,7 @@ extern "C" void OnModLoad()
     }
 
     // Bring back light shadows from poles!
-    if(cfg->BindOnce("BackPolesLightShadow", true, "Visual")->GetBool())
+    if(cfg->GetBool("BackPolesLightShadow", true, "Visual"))
     {
         // CShadows::CastShadowEntityXYZ maybe the reason of broken lightshadows?
         ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
@@ -2181,14 +2186,14 @@ extern "C" void OnModLoad()
     }
 
     // Fix greenish detail tex
-    if(cfg->BindOnce("FixGreenTextures", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixGreenTextures", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x1B00B0, 5); // Dont set textureDetail variable! We'll handle it by ourselves!
         HOOK(emu_TextureSetDetailTexture, aml->GetSym(hGTASA, "_Z27emu_TextureSetDetailTexturePvj"));
     }
 
     // Bring back light shadows from poles!
-    if(cfg->BindOnce("BuffStaticShadowsCount", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
         // Static shadows?
         asShadowsStored_NEW = new CRegisteredShadow[0xFF]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * 0xFF);
@@ -2245,9 +2250,9 @@ extern "C" void OnModLoad()
     }
 
     // Move shadows closer to the ground
-    if(cfg->BindOnce("MoveShadowsToTheGround", true, "Visual")->GetBool())
+    if(cfg->GetBool("MoveShadowsToTheGround", true, "Visual"))
     {
-        float fH = cfg->BindOnce("MoveShadowsToTheGround_Height", 0.02f, "Visual")->GetFloat();
+        float fH = cfg->GetFloat("MoveShadowsToTheGround_Height", 0.02f, "Visual");
         aml->Unprot(pGTASA + 0x5A224C, sizeof(float)); *(float*)(pGTASA + 0x5A224C) = -fH;
         aml->Unprot(pGTASA + 0x5B3ED4, sizeof(float)); *(float*)(pGTASA + 0x5B3ED4) = fH;
         aml->Unprot(pGTASA + 0x5BB80C, sizeof(float)); *(float*)(pGTASA + 0x5BB80C) = fH;
@@ -2256,13 +2261,13 @@ extern "C" void OnModLoad()
     }
 
     // Radar
-    if(cfg->BindOnce("FixRadarStreaming", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixRadarStreaming", true, "Visual"))
     {
         aml->PlaceB(pGTASA + 0x44313A + 0x1, pGTASA + 0x443146 + 0x1);
     }
 
     // texture2D bias? In theory, this thing (below) is giving better FPS + better textures
-    if(cfg->BindOnce("NoShaderTextureBias", true, "Visual")->GetBool())
+    if(cfg->GetBool("NoShaderTextureBias", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5EAB20 + 52, (uintptr_t)"      ", 6);
         aml->Write(pGTASA + 0x5EAB94 + 52, (uintptr_t)"      ", 6);
@@ -2272,25 +2277,25 @@ extern "C" void OnModLoad()
     }
 
     // Sweet's roof is not that tasty anymore
-    if(cfg->BindOnce("FixClimbDying", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixClimbDying", true, "Gameplay"))
     {
         HOOKPLT(ClimbProcessPed, pGTASA + 0x66CC28);
     }
 
     // For new save only, fixes 3 bikes spawn that are inside each other
-    if(cfg->BindOnce("FixDrivingSchoolBikesSpawn", true, "SCMFixes")->GetBool())
+    if(cfg->GetBool("FixDrivingSchoolBikesSpawn", true, "SCMFixes"))
     {
         HOOKPLT(CreateCarGenerator, pGTASA + 0x672808);
     }
 
     // Fixing a crosshair position by very stupid math
-    if(cfg->BindOnce("FixCrosshair", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixCrosshair", true, "Visual"))
     {
         HOOKPLT(DrawCrosshair, pGTASA + 0x672880);
     }
 
     // Fixed cheats
-    if(cfg->BindOnce("FixCheats", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixCheats", true, "Gameplay"))
     {
         HOOKPLT(DoCheats, pGTASA + 0x675458);
         HOOKPLT(KBEvent, pGTASA + 0x6709B8);
@@ -2298,7 +2303,7 @@ extern "C" void OnModLoad()
     }
     
     // Save file loading crash fix
-    if(cfg->BindOnce("FixSaveLoadingCrash1", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixSaveLoadingCrash1", true, "Gameplay"))
     {
         HOOKPLT(EntMdlNoCreate, pGTASA + 0x673844);
     }
@@ -2306,39 +2311,39 @@ extern "C" void OnModLoad()
     // Fix Adjustable.cfg loading?
     // UPD: Introduced another glitch, so its unfixed. yet.
     // UD2: Fixed with a much better way. But another glitch arrived with X-coord shifting
-    if(cfg->BindOnce("FixAdjustableSizeLowering", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixAdjustableSizeLowering", true, "Visual"))
     {
         aml->Unprot(pGTASA + 0x28260C, sizeof(float)); *(float*)(pGTASA + 0x28260C) = 5.0f;
     }
     
     // Taxi lights (obviously)
-    if(cfg->BindOnce("TaxiLights", true, "Visual")->GetBool())
+    if(cfg->GetBool("TaxiLights", true, "Visual"))
     {
         SET_TO(SetTaxiLight, aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
         HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
     }
     
     // Minimap in interiors? Hell nah!
-    if(cfg->BindOnce("NoInteriorRadar", true, "Visual")->GetBool())
+    if(cfg->GetBool("NoInteriorRadar", true, "Visual"))
     {
         HOOKPLT(DrawRadar, pGTASA + 0x66F618);
     }
     
     // Money have 8 digits now? Exciting!
-    if(cfg->BindOnce("PCStyledMoney", false, "Visual")->GetBool())
+    if(cfg->GetBool("PCStyledMoney", false, "Visual"))
     {
         DrawMoney_BackTo = pGTASA + 0x2BD260 + 0x1;
         aml->Redirect(pGTASA + 0x2BD258 + 0x1, (uintptr_t)DrawMoney_inject);
     }
     
     // Oh no, darker hud!
-    if(cfg->BindOnce("DarkerHudColors", false, "Visual")->GetBool())
+    if(cfg->GetBool("DarkerHudColors", false, "Visual"))
     {
         SET_TO(HudColors, aml->GetSym(hGTASA, "HudColour"));
     }
     
     // Country. Rifle. Is. 3rd. Person.
-    if(cfg->BindOnce("FixCountryRifleAim", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixCountryRifleAim", true, "Gameplay"))
     {
         // YES, THATS EXTREMELY EASY TO FIX, LMAO
         // TODO: Requires a CrosshairFix and Free-aim shoot btn "duplication" fix
@@ -2346,32 +2351,32 @@ extern "C" void OnModLoad()
     }
     
     // Haha, no gejmpat!!1
-    if(cfg->BindOnce("ForceTouchControls", false, "Gameplay")->GetBool())
+    if(cfg->GetBool("ForceTouchControls", false, "Gameplay"))
     {
         aml->Redirect(aml->GetSym(hGTASA, "_ZN4CHID12GetInputTypeEv"), (uintptr_t)ret0);
     }
     
     // Fix ped conversations are gone
-    if(cfg->BindOnce("FixPedConversation", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixPedConversation", true, "Gameplay"))
     {
         aml->PlaceB(pGTASA + 0x301BFE + 0x1, pGTASA + 0x301C0E + 0x1);
     }
     
     // Equipped parachute attacked anim fix
-    if(cfg->BindOnce("EquippedParaAttackAnimFix", true, "Visual")->GetBool())
+    if(cfg->GetBool("EquippedParaAttackAnimFix", true, "Visual"))
     {
         HOOK(ComputeDamageAnim, aml->GetSym(hGTASA, "_ZN12CEventDamage17ComputeDamageAnimEP4CPedb"));
     }
     
     // MixSets-SA: Hostile gangs
-    if(cfg->BindOnce("MIX_HostileGangs", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("MIX_HostileGangs", true, "Gameplay"))
     {
         HOOKPLT(ProcessPedGroups, pGTASA + 0x670164);
         HOOKPLT(PedGroups_IsOnAMission, pGTASA + 0x670CDC);
     }
     
     // Water Quadrant
-    int dist = cfg->BindOnce("DetailedWaterDrawDistance", 48 * 5, "Visual")->GetInt();
+    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 5, "Visual");
     if(dist > 0)
     {
         if(dist < 24) dist = 24;
@@ -2379,34 +2384,34 @@ extern "C" void OnModLoad()
     }
     
     // Peepo: Fix traffic lights
-    if(cfg->BindOnce("FixTrafficLights", true, "Visual")->GetBool())
+    if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
         HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
         HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
     }
     
-    if(cfg->BindOnce("DisableCloudSaves", false, "Gameplay")->GetBool())
+    if(cfg->GetBool("DisableCloudSaves", false, "Gameplay"))
     {
         aml->Write(aml->GetSym(hGTASA, "UseCloudSaves"), (uintptr_t)"\x00", 1);
     }
     
     // Always show wanted stars even if we're not breakin the law
-    if(cfg->BindOnce("AlwaysDrawWantedStars", false, "Visual")->GetBool())
+    if(cfg->GetBool("AlwaysDrawWantedStars", false, "Visual"))
     {
         aml->PlaceB(pGTASA + 0x2BDF82 + 0x1, pGTASA + 0x2BDFA4 + 0x1);
     }
     
     // Max mobilesc0,mobilesc1,...,mobilesc255 for us
-    int mobilescs = cfg->BindOnce("MaxLoadingScreens", 7, "Visual")->GetInt();
+    int mobilescs = cfg->GetInt("MaxLoadingScreens", 7, "Visual");
     if(mobilescs > 0 && mobilescs < 256)
     {
         uint8_t numOfLS = (uint8_t)mobilescs;
-        aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
+        //aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
         aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
     }
     
     // A mistake by R* that overwrites "total num of X peds"
-    if(cfg->BindOnce("FixGangsCounterOverflow", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("FixGangsCounterOverflow", true, "Gameplay"))
     {
         PedCountCalc_BackTo1 = pGTASA + 0x4D0CC2 + 0x1;
         PedCountCalc_BackTo2 = pGTASA + 0x4D0D0A + 0x1;
@@ -2415,32 +2420,28 @@ extern "C" void OnModLoad()
     }
     
     // Some kind of "Sprint Everywhere"
-    if(cfg->BindOnce("SprintOnAnySurface", true, "Gameplay")->GetBool())
+    if(cfg->GetBool("SprintOnAnySurface", true, "Gameplay"))
     {
         aml->Redirect(aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c12CantSprintOnEj"), (uintptr_t)ret0);
     }
         
     aml->Unprot(pGTASA + 0x3C51E8, sizeof(float));
-    *(float*)(pGTASA + 0x3C51E8) = 10000.0f * (1.0f / cfg->BindOnce("CameraZoomingSpeed", 2.5f, "Gameplay")->GetFloat());
+    *(float*)(pGTASA + 0x3C51E8) = 10000.0f * (1.0f / cfg->GetFloat("CameraZoomingSpeed", 2.5f, "Gameplay"));
     
     aml->Unprot(pGTASA + 0x3C51F0, sizeof(float));
-    *(float*)(pGTASA + 0x3C51F0) = cfg->BindOnce("MinimalCameraZoomingFOV", 70.0f, "Gameplay")->GetFloat();
+    *(float*)(pGTASA + 0x3C51F0) = cfg->GetFloat("MinimalCameraZoomingFOV", 70.0f, "Gameplay");
     
-    if(cfg->BindOnce("DamagedComponentsColorFix", true, "Visual")->GetBool())
+    if(cfg->GetBool("DamagedComponentsColorFix", true, "Visual"))
     {
+        HOOK(ChooseVehicleColour, aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo19ChooseVehicleColourERhS0_S0_S0_i"));
         HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
-        //HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
+        HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
     }
     
-    /*aml->Unprot(pGTASA + 0x5B05B4, sizeof(float));
-    *(float*)(pGTASA + 0x5B05B4) = 0.9f; // 0.9f*/
-    
-    //CamZoomProc_BackTo = pGTASA + 0x3C505C + 0x1;
-    //aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)CamZoomProc_inject);
     
     
     // JuniorDjjr, W.I.P.
-    /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay")->GetBool())
+    /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay"))
     {
         HOOKPLT(PlayerInfoProcess_Food, pGTASA + 0x673E84);
     }*/
