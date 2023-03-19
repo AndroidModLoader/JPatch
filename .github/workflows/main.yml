@@ -43,3 +43,8 @@ jobs:
         local-cache: true
 
     - run: ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: compiled-libs
+        path: ./libs
