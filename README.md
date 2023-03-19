@@ -4,7 +4,10 @@
  
  **GTA:SA**
 
- **Since v1.4 (W.I.P.)**
+ **Planned/TODO (not ready or broken now)**
+ - Damaged components should not be colored by the previously damaged vehicle of that type (W.I.P.)
+ 
+**Since v1.4 (W.I.P.)**
  - Finally fixed BuffDistForLightCoronas!
  - Fixed peds are not speaking closer to the game end
  - Always draw wanted stars (disabled by default)
@@ -15,7 +18,6 @@
  - A count of max loading screens can be changed now (default is 7)
  - Fixed ped counting overflow for gang members calculating
  - Sprinting on any surface is allowed
- - Damaged components should not be colored by the previously damaged vehicle of that type (W.I.P.)
  - Camera/Sniper zooming is faster and can be adjusted to be even faster!
  - Minimal FOV for Camera is adjustable (default is 70, set it to 90 or bigger if you need "fish eye" in a camera)
 
