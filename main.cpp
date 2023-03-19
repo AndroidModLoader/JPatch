@@ -864,7 +864,6 @@ DECL_HOOKv(HeliRender, CHeli* self)
 }
 DECL_HOOKv(PlaneRender, CPlane* self)
 {
-    //logger->Info("Velma %f", self->m_fEngineSpeed);
     float fProgress = self->m_fEngineSpeed / 0.2f;
     SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
     HeliRender((CHeli*)self);
@@ -1452,8 +1451,10 @@ void SetComponentColor(CVehicle* self, RwFrame* frame)
         // RpGeometryForAllMaterials(self->m_pRwAtomic->geometry, GetCarColorCB, &col);
         // RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
         // logger->Info("RpMaterialList %d", geometry->matList.numMaterials);
-        geometry->matList.materials[0]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nPrimaryColor];
-        geometry->matList.materials[1]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nSecondaryColor];
+        
+        
+        //geometry->matList.materials[0]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nPrimaryColor];
+        //geometry->matList.materials[1]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nSecondaryColor];
     }
 }
 DECL_HOOKv(ChooseVehicleColour, CVehicleModelInfo* self, uint8_t& prim, uint8_t& sec, uint8_t& tert, uint8_t& quat, int32_t variationShift)
@@ -2111,7 +2112,7 @@ extern "C" void OnModLoad()
         aml->Unprot(pGTASA + 0x572D90, 1);
         HOOK(HeliRender, aml->GetSym(hGTASA, "_ZN5CHeli6RenderEv"));
         // Glitchy planes
-        //HOOK(PlaneRender, aml->GetSym(hGTASA, "_ZN6CPlane6RenderEv"));
+        HOOK(PlaneRender, aml->GetSym(hGTASA, "_ZN6CPlane6RenderEv"));
     }
 
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
@@ -2200,20 +2201,7 @@ extern "C" void OnModLoad()
         aStaticShadows_NEW = new CStaticShadow[0xFF] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * 0xFF);
         aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
         aml->Write(pGTASA + 0x6798EC, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
-        //aml->Write(pGTASA + 0x676F44, (uintptr_t)&pEmptyBunchList, sizeof(void*));
-        //aml->Write(pGTASA + 0x678F8C, (uintptr_t)&aPolyBunches, sizeof(void*));
         
-        /*const int bunchesCount = (int)(0xFF * 7.5f);
-        aPolyBunches = new CPolyBunch[bunchesCount];
-        memset(aPolyBunches, 0, sizeof(CPolyBunch) * bunchesCount);
-        for(int i = 0; i < bunchesCount-1; ++i)
-        {
-            aPolyBunches[i].pNext = &aPolyBunches[i+1];
-        }
-        aPolyBunches[bunchesCount-1].pNext = NULL;
-        pEmptyBunchList = &aPolyBunches[0];
-        aml->PlaceB(pGTASA + 0x5B88CE + 0x1, pGTASA + 0x5B89C4 + 0x1);*/
-
         // Registered Shadows:
         // CShadows::StoreShadowToBeRendered
         aml->Write(pGTASA + 0x5B929A, (uintptr_t)"\xFE", 1);
@@ -2431,12 +2419,13 @@ extern "C" void OnModLoad()
     aml->Unprot(pGTASA + 0x3C51F0, sizeof(float));
     *(float*)(pGTASA + 0x3C51F0) = cfg->GetFloat("MinimalCameraZoomingFOV", 70.0f, "Gameplay");
     
-    if(cfg->GetBool("DamagedComponentsColorFix", true, "Visual"))
+    // Undone and so disabled
+    /*if(cfg->GetBool("DamagedComponentsColorFix", true, "Visual"))
     {
         HOOK(ChooseVehicleColour, aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo19ChooseVehicleColourERhS0_S0_S0_i"));
         HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
         HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
-    }
+    }*/
     
     
     
