@@ -1,5 +1,7 @@
 # What am i?
  I am a little mod that wants to fix your game!
+ Need a preview version of upcoming changes? Get it there: https://github.com/AndroidModLoader/JPatch/actions
+
  Currently i can fix those things:
  
  **GTA:SA**
