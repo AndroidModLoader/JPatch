@@ -1,5 +1,9 @@
+[![AML Mod Compiler](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml)
+
 # What am i?
  I am a little mod that wants to fix your game!
+ Need a preview version of upcoming changes? Get it there: https://github.com/AndroidModLoader/JPatch/actions
+
  Currently i can fix those things:
  
  **GTA:SA**
