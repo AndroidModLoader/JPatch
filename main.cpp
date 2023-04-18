@@ -2395,7 +2395,9 @@ extern "C" void OnModLoad()
     {
         uint8_t numOfLS = (uint8_t)mobilescs;
         //aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
-        aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
+        aml->Unprot(pGTASA + 0x43AD70, sizeof(float));
+        *(float*)(pGTASA + 0x43AD70) = (float)((1.0 / 65535.0) * ((double)numOfLS / 8.0));
+        //aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
     }
     
     // A mistake by R* that overwrites "total num of X peds"
