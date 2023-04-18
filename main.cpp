@@ -845,6 +845,7 @@ DECL_HOOK(void*, RenderBufferedOneXLUSprite, float x, float y, float z, float w,
 #define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.0f - SMOOTHING_PERCENT)))
 uint8_t *compa1, *compa2;
 uint8_t *blura1, *blura2;
+uint16_t nRotorMdlIgnore;
 inline void SetRBladeAlpha(float fAlpha)
 {
     uint8_t alpha = fAlpha;
@@ -858,6 +859,12 @@ inline void SetRBladeAlpha(float fAlpha)
 }
 DECL_HOOKv(HeliRender, CHeli* self)
 {
+    if(self->m_nModelIndex == nRotorMdlIgnore)
+    {
+        SetRBladeAlpha(0);
+        HeliRender(self);
+        return;
+    }
     float fProgress = self->m_aWheelAngularVelocity[1] / 0.220484f;
     SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
     HeliRender(self);
@@ -2100,7 +2107,9 @@ extern "C" void OnModLoad()
     //}
 
     // Helicopter's rotor blur
-    if(cfg->GetBool("HeliRotorBlur", true, "Visual"))
+    bool heliblur = cfg->GetBool("HeliRotorBlur", true, "Visual");
+    bool planeblur = cfg->GetBool("PlaneRotorBlur", false, "Visual");
+    if(heliblur || planeblur)
     {
         SET_TO(compa1, pGTASA + 0x572D2E);
         SET_TO(compa2, pGTASA + 0x572D4E);
@@ -2110,9 +2119,14 @@ extern "C" void OnModLoad()
         aml->Unprot(pGTASA + 0x572D4E, 1);
         aml->Unprot(pGTASA + 0x572D70, 1);
         aml->Unprot(pGTASA + 0x572D90, 1);
-        HOOK(HeliRender, aml->GetSym(hGTASA, "_ZN5CHeli6RenderEv"));
+        
+        if(heliblur)
+        {
+            HOOK(HeliRender, aml->GetSym(hGTASA, "_ZN5CHeli6RenderEv"));
+            nRotorMdlIgnore = cfg->GetBool("HeliRotorBlur_NotMaverick", true, "Visual") ? 487 : 0;
+        }
         // Glitchy planes
-        HOOK(PlaneRender, aml->GetSym(hGTASA, "_ZN6CPlane6RenderEv"));
+        if(planeblur) HOOK(PlaneRender, aml->GetSym(hGTASA, "_ZN6CPlane6RenderEv"));
     }
 
     /* ImprovedStreaming by ThirteenAG & Junior_Djjr */
