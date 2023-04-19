@@ -9,9 +9,13 @@
  **GTA:SA**
 
  **Planned/TODO (not ready or broken now)**
- - Damaged components should not be colored by the previously damaged vehicle of that type (W.I.P.)
+ - Damaged components should not be colored by the previously damaged vehicle of that type
+ - Fix camera zoom is not that far
+
+**Since v1.4.1**
+ - Not yet!
  
-**Since v1.4 (W.I.P.)**
+**Since v1.4**
  - Finally fixed BuffDistForLightCoronas!
  - Fixed peds are not speaking closer to the game end
  - Always draw wanted stars (disabled by default)
