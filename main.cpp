@@ -1469,6 +1469,12 @@ __attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
     :: "r" (CamZoomProc_BackTo));
 }
 
+DECL_HOOK(bool, LoadTexDBThumbs, TextureDatabase* self, TextureDatabaseFormat format, bool ignored)
+{
+    if(format == DF_ETC && LoadTexDBThumbs(self, DF_DXT, ignored)) return true;
+    return LoadTexDBThumbs(self, format, ignored);
+}
+
 RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
 {
     mat->color = *(RwRGBA*)data;
@@ -2454,6 +2460,12 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("SprintOnAnySurface", true, "Gameplay"))
     {
         aml->Redirect(aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c12CantSprintOnEj"), (uintptr_t)ret0);
+    }
+    
+    // An improved ForceDXT
+    if(cfg->GetBool("ForceDXT", true, "Gameplay"))
+    {
+        HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN15TextureDatabase10LoadThumbsE21TextureDatabaseFormatb"));
     }
         
     aml->Unprot(pGTASA + 0x3C51E8, sizeof(float));
