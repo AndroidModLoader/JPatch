@@ -1389,6 +1389,36 @@ DECL_HOOKv(PlayerInfoProcess_Food, CPlayerInfo* info, int playerNum)
     }
 }
 
+// Max loading splashes
+int DoRand(int max)
+{
+    srand(time(NULL));
+    return (int)(((double)rand() / (double)RAND_MAX) * max);
+}
+uintptr_t LoadSplashes_BackTo;
+char mobilescDone[16];
+int mobilescCount = 7;
+extern "C" void LoadSplashes_patch(void)
+{
+    snprintf(mobilescDone, sizeof(mobilescDone), "mobilesc%d", DoRand(10));
+}
+__attribute__((optnone)) __attribute__((naked)) void LoadSplashes_inject(void)
+{
+    asm volatile(
+        //"ADD R5, SP, 0x58+0x40\n"
+        "ADDS R0, R4, #4\n"
+        "PUSH {R0,R2-R11}\n"
+        "BL LoadSplashes_patch\n");
+    asm volatile(
+        "MOV R1, %0\n"
+    :: "r" (&mobilescDone));
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0,R2-R11}\n"
+        "BX R12\n"
+    :: "r" (LoadSplashes_BackTo));
+}
+
 // Peds count calculating is so much wrong for gangs!
 // This glitch is resulting in a very rare gang members appearing
 uintptr_t PedCountCalc_BackTo1, PedCountCalc_BackTo2;
@@ -2403,15 +2433,12 @@ extern "C" void OnModLoad()
         aml->PlaceB(pGTASA + 0x2BDF82 + 0x1, pGTASA + 0x2BDFA4 + 0x1);
     }
     
-    // Max mobilesc0,mobilesc1,...,mobilesc255 for us
-    int mobilescs = cfg->GetInt("MaxLoadingScreens", 7, "Visual");
-    if(mobilescs > 0 && mobilescs < 256)
+    // Max mobilesc0,mobilesc1,...,mobilesc### for us
+    mobilescCount = cfg->GetInt("MaxLoadingScreens", 7, "Visual");
+    if(mobilescCount > 0 && mobilescCount != 7)
     {
-        uint8_t numOfLS = (uint8_t)mobilescs;
-        //aml->Write(pGTASA + 0x43AC1A, (uintptr_t)&numOfLS, 1);
-        aml->Unprot(pGTASA + 0x43AD70, sizeof(float));
-        *(float*)(pGTASA + 0x43AD70) = (float)((1.0 / 65535.0) * ((double)numOfLS / 8.0));
-        //aml->Write(pGTASA + 0x43ACAC, (uintptr_t)&numOfLS, 1);
+        LoadSplashes_BackTo = pGTASA + 0x43AD00 + 0x1;
+        aml->Redirect(pGTASA + 0x43ACEC + 0x1, (uintptr_t)LoadSplashes_inject);
     }
     
     // A mistake by R* that overwrites "total num of X peds"
