@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.4, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.1, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -1076,24 +1076,24 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 // Light shadows from poles
 uintptr_t ProcessLightsForEntity_BackTo;
 float fLightDist = 40.0f;
+CVector vecEffCenterTmp;
 inline bool IsEffOffsetNormal(float c)
 {
     return c < 256.0f && c > -256.0f;
 }
-extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector& vecEffPos)
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
 {
     if(bDoLight && eff->light.m_fShadowSize != 0)
     {
-        //CVector a;
-        //TransformFromObjectSpace(ent, a, eff->m_vecPosn);
+        TransformFromObjectSpace(ent, vecEffCenterTmp, eff->m_vecPosn);
         
-        CVector& a = ent->GetPosition();
-        //CVector a(pos.x + eff->m_vecPosn.x, pos.y + eff->m_vecPosn.y, pos.z + eff->m_vecPosn.z);
+        //CVector& vecEffCenterTmp = ent->GetPosition();
+        //CVector vecEffCenterTmp(pos.x + eff->m_vecPosn.x, pos.y + eff->m_vecPosn.y, pos.z + eff->m_vecPosn.z);
         //logger->Info("PoleLight %d, %f %f %f", (int)ent->m_nModelIndex, vecEffPos.x, vecEffPos.y, vecEffPos.z);
         
         float intensity = ((float)eff->light.m_nShadowColorMultiplier / 255.0f) * 0.1f * *fSpriteBrightness;
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
-        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &a, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
                            128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
     }
 }
@@ -1469,10 +1469,16 @@ __attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
     :: "r" (CamZoomProc_BackTo));
 }
 
-DECL_HOOK(bool, LoadTexDBThumbs, TextureDatabase* self, TextureDatabaseFormat format, bool ignored)
+DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
 {
-    if(format == DF_ETC && LoadTexDBThumbs(self, DF_DXT, ignored)) return true;
-    return LoadTexDBThumbs(self, format, ignored);
+    if(format == DF_Default)
+    {
+        LoadTexDBThumbs(dbName, unk, DF_DXT);
+    }
+    else
+    {
+        LoadTexDBThumbs(dbName, unk, format);
+    }
 }
 
 RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
@@ -2465,7 +2471,7 @@ extern "C" void OnModLoad()
     // An improved ForceDXT
     if(cfg->GetBool("ForceDXT", true, "Gameplay"))
     {
-        HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN15TextureDatabase10LoadThumbsE21TextureDatabaseFormatb"));
+        HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime4LoadEPKcb21TextureDatabaseFormat"));
     }
         
     aml->Unprot(pGTASA + 0x3C51E8, sizeof(float));
