@@ -776,64 +776,34 @@ DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity
 }
 
 // Road Reflections
-uintptr_t RoadReflections_BackTo1, RoadReflections_BackTo2;
-float spriteZ = 1.0f;
-bool bRenderReflectionsMode = false;
-DECL_HOOKv(RenderRefl)
+uintptr_t RoadReflections_BackTo;
+extern "C" void RoadReflections_patch(void)
 {
-    bRenderReflectionsMode = true;
-    RenderRefl();
-    bRenderReflectionsMode = false;
+    asm volatile("push {r0-r11}");
+    asm volatile("ldr r0, [sp, #0]");
+    
+    register float fll asm("r0");
+    
+    logger->Info("draw refl %f", fll);
+    
+    asm volatile("pop {r0-r11}");
 }
-DECL_HOOK(int, CalcSpriteCoords, RwV3d *in, RwV3d *out, float *outw, float *outh, bool farclip, bool smth)
-{
-    if(!bRenderReflectionsMode) return CalcSpriteCoords(in, out, outw, outh, farclip, smth);
-
-    int ret = CalcSpriteCoords(in, out, outw, outh, farclip, smth);
-    spriteZ = out->z;
-    return ret;
-}
-extern "C" int RoadReflections_patch1(const RwV3d& posn, RwV3d* out, float* w, float* h)
-{
-    int ret = SpriteCalcScreenCoors(posn, out, w, h, true, true);
-    spriteZ = out->z;
-    return ret;
-}
-__attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject1(void)
+__attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void)
 {
     asm volatile(
-        "VSTR S0, [SP,#0x128+0xC0]\n"
-        "STRD R0, R0, [SP,#0x128+0x128]\n"
-        "ADD R0, SP, #0x128+0xC8\n"
-        "push {r4-r12}\n"
-        "bl RoadReflections_patch1\n"
-        "pop {r4-r12}\n");
+        "vmul.f32 s0, s0, s28\n"
+        "vmul.f32 s17, s2, s0\n"
+        "vdiv.f32 s2, s17, s16\n"
+        "ldr r0, [sp, #0x128+0x74+0x8]\n"
+        //"bl RoadReflections_patch\n"
+    );
     asm volatile(
         "push {r0}\n");
     asm volatile(
         "mov r12, %0\n"
         "pop {r0}\n"
         "bx r12\n"
-    :: "r" (RoadReflections_BackTo1));
-}
-__attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject2(void)
-{
-    asm volatile(
-        "VDIV.F32 S2, S17, S16\n"
-        "push {r0}\n");
-    asm volatile(
-        "mov r7, %0\n"
-    :: "r" (spriteZ));
-    asm volatile(
-        "mov r12, %0\n"
-        "pop {r0}\n"
-        "bx r12\n"
-    :: "r" (RoadReflections_BackTo2));
-}
-DECL_HOOK(void*, RenderBufferedOneXLUSprite, float x, float y, float z, float w, float h, uint8_t r, uint8_t g, uint8_t b, int16_t intensity, float recipNearZ, uint8_t a11)
-{
-    if(bRenderReflectionsMode) logger->Info("RenderBufferedOneXLUSprite(%f,%f,%f,%f,%f,%d,%d,%d,%d,%f,%d",x, y, z, w, h, r, g, b, intensity, recipNearZ, a11);
-    return RenderBufferedOneXLUSprite(x, y, z, w, h, r, g, b, intensity, recipNearZ, a11);
+    :: "r" (RoadReflections_BackTo));
 }
 
 // Heli rotor blur
@@ -1400,7 +1370,7 @@ char mobilescDone[16];
 int mobilescCount = 7;
 extern "C" void LoadSplashes_patch(void)
 {
-    snprintf(mobilescDone, sizeof(mobilescDone), "mobilesc%d", DoRand(10));
+    snprintf(mobilescDone, sizeof(mobilescDone), "mobilesc%d", DoRand(mobilescCount));
 }
 __attribute__((optnone)) __attribute__((naked)) void LoadSplashes_inject(void)
 {
@@ -2143,20 +2113,12 @@ extern "C" void OnModLoad()
         HOOKPLT(FindGroundZ3D, pGTASA + 0x67022C);
     }
 
-    // RE3: 
-    //if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
-    //{
-    //    //RoadReflections_BackTo1 = pGTASA + 0x5A2E30 + 0x1;
-    //    //RoadReflections_BackTo2 = pGTASA + 0x5A2EA6 + 0x1;
-    //    //Redirect(pGTASA + 0x5A2E22 + 0x1, (uintptr_t)RoadReflections_inject1);
-    //    //Redirect(pGTASA + 0x5A2E9C + 0x1, (uintptr_t)RoadReflections_inject2);
-    //    //aml->Write(pGTASA + 0x5A2F18, (uintptr_t)"\x3A\x46", 2);
-    //    //aml->Write(pGTASA + 0x5A2EF6, (uintptr_t)"\xFF", 1);
-    //    //HOOKPLT(RenderRefl, pGTASA + 0x6738D4);
-    //    //HOOKPLT(CalcSpriteCoords, pGTASA + 0x674B3C);
-    //    //HOOKPLT(RenderBufferedOneXLUSprite, pGTASA + 0x673890);
-    // None of those are working.
-    //}
+    // RE3: Road reflections
+    if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
+    {
+        RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
+        aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_inject);
+    }
 
     // Helicopter's rotor blur
     bool heliblur = cfg->GetBool("HeliRotorBlur", true, "Visual");
