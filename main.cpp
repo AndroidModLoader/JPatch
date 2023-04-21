@@ -1469,6 +1469,7 @@ __attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
     :: "r" (CamZoomProc_BackTo));
 }
 
+// Force DXT
 DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
 {
     if(format == DF_Default)
@@ -1481,6 +1482,15 @@ DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat f
     }
 }
 
+// SunGlare
+void (*DoSunGlare)(CVehicle*);
+DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
+{
+    RenderVehicle_SunGlare(self);
+    DoSunGlare(self);
+}
+
+// Components clr fix
 RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
 {
     mat->color = *(RwRGBA*)data;
@@ -2472,6 +2482,13 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("ForceDXT", true, "Gameplay"))
     {
         HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime4LoadEPKcb21TextureDatabaseFormat"));
+    }
+    
+    // Vehicle sun glare
+    if(cfg->GetBool("VehicleSunGlare", true, "Visual"))
+    {
+        SET_TO(DoSunGlare, aml->GetSym(hGTASA, "_ZN8CVehicle10DoSunGlareEv"));
+        HOOK(RenderVehicle_SunGlare, aml->GetSym(hGTASA, "_ZN8CVehicle6RenderEv"));
     }
         
     aml->Unprot(pGTASA + 0x3C51E8, sizeof(float));
