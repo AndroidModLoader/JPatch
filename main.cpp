@@ -197,6 +197,7 @@ C2dEffect* (*Get2dEffect)(CBaseModelInfo*, int);
 void (*RwFrameForAllObjects)(RwFrame*, RwObject* (*)(RwObject*, void*), void*);
 RwObject* (*GetCurrentAtomicObjectCB)(RwObject*, void*);
 void (*RpGeometryForAllMaterials)(RpGeometry*, RpMaterial* (*)(RpMaterial*, void*), void*);
+void (*SetComponentAtomicAlpha)(RpAtomic*, int);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -206,6 +207,17 @@ inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVect
         return;
     }
     TransformPoint((RwV3d&)outPos, self->m_placement, (RwV3d&)offset);
+}
+inline CVector TransformFromObjectSpace(CEntity* ent, const CVector& offset)
+{
+    auto result = CVector();
+    if (ent->m_matrix) {
+        result = *ent->m_matrix * offset;
+        return result;
+    }
+
+    TransformPoint((RwV3d&)result, ent->m_placement, (RwV3d&)offset);
+    return result;
 }
 inline void BumpStreamingMemory(int megabytes)
 {
@@ -640,7 +652,7 @@ __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_inje
 {
     asm volatile(
         "mov r0, r9\n"
-        "ldr.w r11, [sp,#0xE0+0xAC]\n"
+        "ldr.w r11, [sp,#0xE0-0xAC]\n" // SP fixed
         "bl PhysicalApplyCollision_patch\n");
     asm volatile(
         "mov r0, %0\n"
@@ -741,7 +753,7 @@ __attribute__((optnone)) __attribute__((naked)) void ColoredZoneNames_inject(voi
 }
 
 // Find Ground Z detects objects
-#define FINDGROUNDZ_DIST 1500
+#define FINDGROUNDZ_DIST 2000
 #define NOTFOUND_RETURN 20.0f
 DECL_HOOK(float, FindGroundZ2D, float x, float y)
 {
@@ -794,7 +806,7 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void
         "vmul.f32 s0, s0, s28\n"
         "vmul.f32 s17, s2, s0\n"
         "vdiv.f32 s2, s17, s16\n"
-        "ldr r0, [sp, #0x128+0x74+0x8]\n"
+        "ldr r0, [sp, #0x128-0x74+0x8]\n" // SP fixed
         //"bl RoadReflections_patch\n"
     );
     asm volatile(
@@ -810,39 +822,67 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void
 // https://gtaforums.com/topic/703439-san-andreas-moon-and-rotor-blades-fix-for-pc/
 // Doesnt work :)
 // peepo found a way. So, actually, R* disabled it. LOL
-
 #define SMOOTHING_PERCENT 0.3f
 #define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.0f - SMOOTHING_PERCENT)))
-uint8_t *compa1, *compa2;
-uint8_t *blura1, *blura2;
 uint16_t nRotorMdlIgnore;
-inline void SetRBladeAlpha(float fAlpha)
+uintptr_t RotorBlurRender_BackTo1, RotorBlurRender_BackTo2;
+extern "C" void RotorBlurRender_patch(RpAtomic* atomic, CAutomobile* ent)
 {
-    uint8_t alpha = fAlpha;
-    if(fAlpha < 0) alpha = 0;
-    else if(fAlpha > 255) alpha = 255;
-    
-    uint8_t ralpha = 255 - alpha;
-    
-    *compa1 = ralpha; *compa2 = ralpha;
-    *blura1 = alpha; *blura2 = alpha;
+    if(!atomic) return;
+    if(ent->m_nModelIndex == nRotorMdlIgnore) SetComponentAtomicAlpha(atomic, 0);
+    else
+    {
+        int rotorVal;
+        if(ent->m_nVehicleType == VEHICLE_TYPE_PLANE)
+            rotorVal = 255.0f * SMOOTHED_VALUE(((CPlane*)ent)->m_fEngineSpeed / 0.2f);
+        else
+            rotorVal = 255.0f * SMOOTHED_VALUE(((CHeli*)ent)->m_aWheelAngularVelocity[1] / 0.220484f);
+            
+        if(rotorVal > 255) rotorVal = 255;
+        else if(rotorVal < 0) rotorVal = 0;
+        SetComponentAtomicAlpha(atomic, rotorVal);
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void RotorBlurRender_inject1(void)
+{
+    asm volatile(
+        "PUSH {R0-R11}\n"
+        "LDR R0, [SP, #0]\n"
+        "LDR R1, [SP, #16]\n"
+        "BL RotorBlurRender_patch\n"
+        "POP {R0-R11}\n"
+    );
+    asm volatile(
+        "PUSH {R0}\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "BX R12\n"
+    :: "r" (RotorBlurRender_BackTo1));
+}
+__attribute__((optnone)) __attribute__((naked)) void RotorBlurRender_inject2(void)
+{
+    asm volatile(
+        "PUSH {R0-R11}\n"
+        "LDR R0, [SP, #0]\n"
+        "LDR R1, [SP, #16]\n"
+        "BL RotorBlurRender_patch\n"
+        "POP {R0-R11}\n"
+    );
+    asm volatile(
+        "PUSH {R0}\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "BX R12\n"
+    :: "r" (RotorBlurRender_BackTo2));
 }
 DECL_HOOKv(HeliRender, CHeli* self)
 {
-    if(self->m_nModelIndex == nRotorMdlIgnore)
-    {
-        SetRBladeAlpha(0);
-        HeliRender(self);
-        return;
-    }
-    float fProgress = self->m_aWheelAngularVelocity[1] / 0.220484f;
-    SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
     HeliRender(self);
 }
 DECL_HOOKv(PlaneRender, CPlane* self)
 {
-    float fProgress = self->m_fEngineSpeed / 0.2f;
-    SetRBladeAlpha(255 * SMOOTHED_VALUE(fProgress));
     HeliRender((CHeli*)self);
 }
 
@@ -896,7 +936,7 @@ DECL_HOOKv(GameProcess)
             if(bPreloadPed) // Crashing, maybe in the future sometime
             {
                 int size = g_aPeds.size();
-                for(int i = 0; i < size; ++i)
+                for(uint16_t i = 0; i < size; ++i)
                 {
                     // The game doesnt want to load models 290-299?
                     if(g_aPeds[i] > 289) continue;
@@ -967,7 +1007,7 @@ static CSAPool* AllocatePool(size_t count, size_t size)
 /* FROM MY PROJECT ReSAMP */
 extern "C" void InitPools_patch()
 {
-    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools16ms_pColModelPoolE")) =AllocatePool(50000,  0x30);
+    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools16ms_pColModelPoolE")) = AllocatePool(50000,  0x30);
 }
 __attribute__((optnone)) __attribute__((naked)) void InitPools_inject(void)
 {
@@ -1051,15 +1091,22 @@ inline bool IsEffOffsetNormal(float c)
 {
     return c < 256.0f && c > -256.0f;
 }
-extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector* vecEffPos)
 {
     if(bDoLight && eff->light.m_fShadowSize != 0)
     {
-        TransformFromObjectSpace(ent, vecEffCenterTmp, eff->m_vecPosn);
+        logger->Info("eff pos %f %f %f", vecEffPos->x, vecEffPos->y, vecEffPos->z);
+        /*if(ent->m_nModelIndex == 1226)
+        {
+            // But why does it shift a bit while closer than 40.0F units?
+            vecEffCenterTmp = ent->GetPosition();
+        }
+        else*/
+        {
+            vecEffCenterTmp = TransformFromObjectSpace(ent, eff->m_vecPosn);
+        }
         
-        //CVector& vecEffCenterTmp = ent->GetPosition();
-        //CVector vecEffCenterTmp(pos.x + eff->m_vecPosn.x, pos.y + eff->m_vecPosn.y, pos.z + eff->m_vecPosn.z);
-        //logger->Info("PoleLight %d, %f %f %f", (int)ent->m_nModelIndex, vecEffPos.x, vecEffPos.y, vecEffPos.z);
+        //vecEffCenterTmp = vecEffPos;
         
         float intensity = ((float)eff->light.m_nShadowColorMultiplier / 255.0f) * 0.1f * *fSpriteBrightness;
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
@@ -1071,19 +1118,17 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
 {
     asm volatile(
         "MOV R0, R9\n"
-        //"MOV R10, R6\n"
         "PUSH {R1-R11}\n"
-        //"MOV R1, R8\n"
-        //"MOV R2, R10\n"
         "LDR R1, [SP, #28]\n"
         "LDR R2, [SP, #20]\n"
         "LDR R3, [SP, #12]\n"
-        //"LDR R4, [SP, #0x150+0xC0+44]\n"
+        //"LDR R4, [SP, #16]\n"
+        "ADD R4, SP, #0x150-0x90+0x2C\n"
         "BL ProcessLightsForEntity_patch\n");
     asm volatile(
         "MOV R12, %0\n"
         "POP {R1-R11}\n"
-        "LDR.W R10, [SP,#0x150+0x98]\n"
+        "LDR.W R10, [SP,#0x150-0x98]\n"
         "BX R12\n"
     :: "r" (ProcessLightsForEntity_BackTo));
 }
@@ -1627,6 +1672,7 @@ extern "C" void OnModLoad()
     SET_TO(RwFrameForAllObjects,    aml->GetSym(hGTASA, "_Z20RwFrameForAllObjectsP7RwFramePFP8RwObjectS2_PvES3_"));
     SET_TO(GetCurrentAtomicObjectCB,aml->GetSym(hGTASA, "_Z24GetCurrentAtomicObjectCBP8RwObjectPv"));
     SET_TO(RpGeometryForAllMaterials,aml->GetSym(hGTASA, "_Z25RpGeometryForAllMaterialsP10RpGeometryPFP10RpMaterialS2_PvES3_"));
+    SET_TO(SetComponentAtomicAlpha, aml->GetSym(hGTASA, "_ZN8CVehicle23SetComponentAtomicAlphaEP8RpAtomici"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     // Functions End   //
     
@@ -1888,7 +1934,7 @@ extern "C" void OnModLoad()
         }
     }
 
-    // Buff streaming (dynamic)
+    // Buff streaming memory (dynamic)
     bDynStreamingMem = cfg->GetBool("DynamicStreamingMem", true, "Gameplay");
     fDynamicStreamingMemPercentage = 0.001f * cfg->GetInt("DynamicStreamingMem_Percentage", 80, "Gameplay");
 
@@ -2106,7 +2152,7 @@ extern "C" void OnModLoad()
         aml->PlaceB(pGTASA + 0x1CF5C8 + 0x1, pGTASA + 0x1CF658 + 0x1);
     }
 
-    // Tells "FindGroundZ" functions that we need can teleport on objects too
+    // Tells "FindGroundZ" functions that we need "can teleport on objects" too
     if(cfg->GetBool("IncludeObjectsForFindZ", true, "Gameplay"))
     {
         HOOKPLT(FindGroundZ2D, pGTASA + 0x66EDB8);
@@ -2114,25 +2160,21 @@ extern "C" void OnModLoad()
     }
 
     // RE3: Road reflections
-    if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
+    /*if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     {
         RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
         aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_inject);
-    }
+    }*/
 
     // Helicopter's rotor blur
     bool heliblur = cfg->GetBool("HeliRotorBlur", true, "Visual");
     bool planeblur = cfg->GetBool("PlaneRotorBlur", false, "Visual");
     if(heliblur || planeblur)
     {
-        SET_TO(compa1, pGTASA + 0x572D2E);
-        SET_TO(compa2, pGTASA + 0x572D4E);
-        SET_TO(blura1, pGTASA + 0x572D70);
-        SET_TO(blura2, pGTASA + 0x572D90);
-        aml->Unprot(pGTASA + 0x572D2E, 1);
-        aml->Unprot(pGTASA + 0x572D4E, 1);
-        aml->Unprot(pGTASA + 0x572D70, 1);
-        aml->Unprot(pGTASA + 0x572D90, 1);
+        aml->Redirect(pGTASA + 0x572D6C + 0x1, (uintptr_t)RotorBlurRender_inject1);
+        aml->Redirect(pGTASA + 0x572D8C + 0x1, (uintptr_t)RotorBlurRender_inject2);
+        RotorBlurRender_BackTo1 = pGTASA + 0x572D76 + 0x1;
+        RotorBlurRender_BackTo2 = pGTASA + 0x572D96 + 0x1;
         
         if(heliblur)
         {
