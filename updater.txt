@@ -1,1 +1,1 @@
-myself:1.4:https://github.com/AndroidModLoader/JPatch/releases/download/1.4/libJPatch.so
+myself:1.4.1:https://github.com/AndroidModLoader/JPatch/releases/download/1.4.1/libJPatch.so

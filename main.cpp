@@ -789,17 +789,6 @@ DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity
 
 // Road Reflections
 uintptr_t RoadReflections_BackTo;
-extern "C" void RoadReflections_patch(void)
-{
-    asm volatile("push {r0-r11}");
-    asm volatile("ldr r0, [sp, #0]");
-    
-    register float fll asm("r0");
-    
-    logger->Info("draw refl %f", fll);
-    
-    asm volatile("pop {r0-r11}");
-}
 __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void)
 {
     asm volatile(
@@ -807,7 +796,6 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void
         "vmul.f32 s17, s2, s0\n"
         "vdiv.f32 s2, s17, s16\n"
         "ldr r0, [sp, #0x128-0x74+0x8]\n" // SP fixed
-        //"bl RoadReflections_patch\n"
     );
     asm volatile(
         "push {r0}\n");
@@ -1087,15 +1075,11 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 uintptr_t ProcessLightsForEntity_BackTo;
 float fLightDist = 40.0f;
 CVector vecEffCenterTmp;
-inline bool IsEffOffsetNormal(float c)
-{
-    return c < 256.0f && c > -256.0f;
-}
-extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector* vecEffPos)
+extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector vecEffPos)
 {
     if(bDoLight && eff->light.m_fShadowSize != 0)
     {
-        logger->Info("eff pos %f %f %f", vecEffPos->x, vecEffPos->y, vecEffPos->z);
+        //logger->Info("eff pos %f %f %f", vecEffCenterTmp.x, vecEffCenterTmp.y, vecEffCenterTmp.z);
         /*if(ent->m_nModelIndex == 1226)
         {
             // But why does it shift a bit while closer than 40.0F units?
@@ -1103,10 +1087,10 @@ extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int e
         }
         else*/
         {
-            vecEffCenterTmp = TransformFromObjectSpace(ent, eff->m_vecPosn);
+            //vecEffCenterTmp = TransformFromObjectSpace(ent, eff->m_vecPosn);
         }
         
-        //vecEffCenterTmp = vecEffPos;
+        //vecEffCenterTmp = *vecEffPos;
         
         float intensity = ((float)eff->light.m_nShadowColorMultiplier / 255.0f) * 0.1f * *fSpriteBrightness;
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
@@ -1118,12 +1102,19 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
 {
     asm volatile(
         "MOV R0, R9\n"
+        
+        //"ADD R12, SP, #0x190-0x90\n"
+        
         "PUSH {R1-R11}\n"
         "LDR R1, [SP, #28]\n"
         "LDR R2, [SP, #20]\n"
         "LDR R3, [SP, #12]\n"
         //"LDR R4, [SP, #16]\n"
-        "ADD R4, SP, #0x150-0x90+0x2C\n"
+        //"ADD R4, SP, #0xC0+44\n"
+        
+        //"LDMIA R12, {R4-R6}\n"
+        
+        //"ADD R4, SP, #4\n"
         "BL ProcessLightsForEntity_patch\n");
     asm volatile(
         "MOV R12, %0\n"
@@ -1131,6 +1122,16 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
         "LDR.W R10, [SP,#0x150-0x98]\n"
         "BX R12\n"
     :: "r" (ProcessLightsForEntity_BackTo));
+}
+DECL_HOOKv(AddLight, unsigned char a1, CVector a2, CVector a3, float a4, float a5, float a6, float a7, unsigned char a8, bool a9, CEntity* a10)
+{
+    // This is going to be a workaround
+    // because i dont freakin understand
+    // why does this stupid TransformPoint
+    // is failed and a position in stack
+    // is wrong, like 1 million Z. WTF
+    vecEffCenterTmp = a2;
+    AddLight(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
 }
 
 // Green-ish detail texture
@@ -2160,11 +2161,11 @@ extern "C" void OnModLoad()
     }
 
     // RE3: Road reflections
-    /*if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
+    if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     {
         RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
         aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_inject);
-    }*/
+    }
 
     // Helicopter's rotor blur
     bool heliblur = cfg->GetBool("HeliRotorBlur", true, "Visual");
@@ -2251,9 +2252,9 @@ extern "C" void OnModLoad()
     // Bring back light shadows from poles!
     if(cfg->GetBool("BackPolesLightShadow", true, "Visual"))
     {
-        // CShadows::CastShadowEntityXYZ maybe the reason of broken lightshadows?
         ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
         aml->Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
+        HOOK(AddLight, aml->GetSym(hGTASA, "_ZN12CPointLights8AddLightEh7CVectorS0_ffffhbP7CEntity"));
     }
 
     // Fix greenish detail tex

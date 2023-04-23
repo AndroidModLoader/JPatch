@@ -12,9 +12,10 @@
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
 
-**Since v1.4.1 (W.I.P.)**
+**Since v1.4.1**
  - Better ForceDXT
  - Vehicle sun glare
+ - Wet roads reflections
  
 **Since v1.4**
  - Finally fixed BuffDistForLightCoronas!
