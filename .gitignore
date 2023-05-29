@@ -396,4 +396,13 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Own
+mod/
+libs/
 *.bak
+build.ps1
+ndkpath.txt
+GTASA_ENUMS.h
+GTASA_STRUCTS.h
+RW_STRUCTS.h
