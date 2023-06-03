@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -32,6 +32,7 @@ union ScriptVariables
 /////////////////////////////////////////////////////////////////////////////
 uintptr_t pGTASA, pSC;
 void* hGTASA, *hSC;
+static constexpr float ar43 = 4.0f / 3.0f;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
 
@@ -129,6 +130,8 @@ void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
     }
     aml->Write(addr, (uintptr_t)hook, sizeof(hook));
 }
+
+float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 DECL_HOOK(bool, InitRenderWare)
 {
     if(!InitRenderWare()) return false;
@@ -155,6 +158,9 @@ DECL_HOOK(bool, InitRenderWare)
         HudColors[HUD_COLOUR_YELLOW] = CRGBA(180, 25, 29);*/
     }
     
+    fAspectCorrection = (*ms_fAspectRatio - ar43);
+    fAspectCorrectionDiv = fAspectCorrection / ar43;
+
     return true;
 }
 void (*BrightLightsInit)();
@@ -1203,11 +1209,10 @@ DECL_HOOK(int, CreateCarGenerator, float x, float y, float z, float angle, int32
 }
 
 // Fixing a crosshair by very stupid math
-static constexpr float ar43 = 4.0f/3.0f;
 DECL_HOOKv(DrawCrosshair)
 {
-    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - (*ms_fAspectRatio - ar43) * 0.01125f;
-    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + (*ms_fAspectRatio - ar43) * 0.03600f;
+    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01125f;
+    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + fAspectCorrection * 0.03600f;
     DrawCrosshair();
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
 }
@@ -1466,22 +1471,6 @@ __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject2(void)
     :: "r" (PedCountCalc_BackTo2));
 }
 
-// Camera/sniper zooming patch
-uintptr_t CamZoomProc_BackTo;
-__attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
-{
-    asm volatile(
-        "PUSH {R0-R11}\n"
-        "VMOV S4, %0\n"
-        "VMIN.F32 D1, D1, D2\n"
-    :: "r" (100.0f)); // 10.0F
-    asm volatile(
-        "MOV R12, %0\n"
-        "POP {R0-R11}\n"
-        "BX R12\n"
-    :: "r" (CamZoomProc_BackTo));
-}
-
 // Force DXT
 DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
 {
@@ -1501,6 +1490,63 @@ DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
 {
     RenderVehicle_SunGlare(self);
     DoSunGlare(self);
+}
+
+// Camera/sniper zooming patch
+uintptr_t CamZoomProc_BackTo, FixSniperZoomingDistance_BackTo, FixSniperZoomingDistance2_BackTo;
+extern "C" void CamZoomProc_patch(CCam* cam)
+{
+    cam->FOV *= fAspectCorrectionDiv;
+}
+__attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
+{
+    asm volatile(
+        "VSTR S0, [R0]\n"
+        "PUSH {R0-R11}\n"
+        "VPUSH {S0-S2}\n"
+        "LDR R0, [SP, #0x10]\n"
+        "BL CamZoomProc_patch\n");
+    asm volatile(
+        "VPOP {S0-S2}\n"
+        "MOV R12, %0\n"
+        "POP {R0-R11}\n"
+        "ADD.W R0, R1, #0x80\n"
+        "BX R12\n"
+    :: "r" (CamZoomProc_BackTo));
+}
+__attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance_inject(void)
+{
+    asm volatile(
+        "PUSH {R0}\n"
+        "VPUSH {S0-S2}\n");
+    asm volatile(
+        "VMOV.F32 S4, %0\n"
+    :: "r" (10.0f * fAspectCorrectionDiv));
+    asm volatile(
+        "VPOP {S0-S2}\n"
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "VMIN.F32 D1, D1, D2\n"
+        "VMUL.F32 S2, S6, S2\n"
+        "BX R12\n"
+    :: "r" (FixSniperZoomingDistance_BackTo));
+}
+__attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance2_inject(void)
+{
+    asm volatile(
+        "PUSH {R0}\n"
+        "VPUSH {S0-S2}\n");
+    asm volatile(
+        "VMOV.F32 S2, %0\n"
+    :: "r" (12.0f * fAspectCorrectionDiv));
+    asm volatile(
+        "VPOP {S0-S2}\n"
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "LDRH R2, [R4,#0xE]\n"
+        "VMIN.F32 D16, D0, D3\n"
+        "BX R12\n"
+    :: "r" (FixSniperZoomingDistance2_BackTo));
 }
 
 // Opcode 08F8
@@ -1593,7 +1639,6 @@ DECL_HOOKv(PreRenderCar, CAutomobile* self)
         SetComponentColor(self, node);
     }
 }
-
 
 // Buoyancy testing
 DECL_HOOKv(PedBu, CPed* p)
@@ -2503,6 +2548,30 @@ extern "C" void OnModLoad()
     
     aml->Unprot(pGTASA + 0x3C51F0, sizeof(float));
     *(float*)(pGTASA + 0x3C51F0) = cfg->GetFloat("MinimalCameraZoomingFOV", 70.0f, "Gameplay");
+
+    // Fix camera zooming
+    /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
+    {
+        CamZoomProc_BackTo = pGTASA + 0x3C5160 + 0x1;
+        //aml->Redirect(pGTASA + 0x3C5158 + 0x1, (uintptr_t)CamZoomProc_inject);
+
+        FixSniperZoomingDistance_BackTo = pGTASA + 0x3C5060 + 0x1;
+        aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)FixSniperZoomingDistance_inject);
+        FixSniperZoomingDistance2_BackTo = pGTASA + 0x3C513C + 0x1;
+        aml->Redirect(pGTASA + 0x3C5132 + 0x1, (uintptr_t)FixSniperZoomingDistance2_inject);
+    }*/
+    
+    // Removes "plis give us 5 stars plis plis"
+    if(cfg->GetBool("RemoveAskingToRate", true, "Others"))
+    {
+        aml->PlaceB(pGTASA + 0x345E9C + 0x1, pGTASA + 0x345EAE + 0x1);
+    }
+    
+    // Remove "ExtraAirResistance" flag
+    if(cfg->GetBool("NoExtraAirResistanceFlag", true, "Gameplay"))
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_ZN10CCullZones29DoExtraAirResistanceForPlayerEv"), (uintptr_t)ret0);
+    }
     
     // Fixes an opcode 08F8 which controls if the game should show you "Updated stats mate!"
     /*if(cfg->GetBool("FixOpcode08F8", true, "SCMFixes"))
@@ -2513,8 +2582,8 @@ extern "C" void OnModLoad()
     // Undone and so disabled
     /*if(cfg->GetBool("DamagedComponentsColorFix", true, "Visual"))
     {
-        HOOK(ChooseVehicleColour, aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo19ChooseVehicleColourERhS0_S0_S0_i"));
-        HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
+        //HOOK(ChooseVehicleColour, aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo19ChooseVehicleColourERhS0_S0_S0_i"));
+        //HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
         HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
     }*/
     

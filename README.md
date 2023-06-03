@@ -12,6 +12,10 @@
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
 
+**Since v1.4.2**
+ - Removed "Please rate the game" message
+ - Removed IDE flag "ExtraAirResistance"
+
 **Since v1.4.1**
  - Better ForceDXT
  - Vehicle sun glare
