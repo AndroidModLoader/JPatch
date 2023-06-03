@@ -2573,6 +2573,18 @@ extern "C" void OnModLoad()
         aml->Redirect(aml->GetSym(hGTASA, "_ZN10CCullZones29DoExtraAirResistanceForPlayerEv"), (uintptr_t)ret0);
     }
     
+    // Allow all radio tracks to be played!
+    if(cfg->GetBool("NoRadioCuts", true, "Gameplay"))
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_Z14IsRemovedTracki"), (uintptr_t)ret0);
+        aml->Redirect(pGTASA + 0x3A152A + 0x1, pGTASA + 0x3A1602 + 0x1); // QueueUpTracksForStation
+        aml->Redirect(pGTASA + 0x3A35F6 + 0x1, pGTASA + 0x3A369A + 0x1); // ChooseMusicTrackIndex
+        aml->Redirect(pGTASA + 0x3A37C2 + 0x1, pGTASA + 0x3A385E + 0x1); // ChooseIdentIndex
+        aml->Redirect(pGTASA + 0x3A3A1E + 0x1, pGTASA + 0x3A3AA2 + 0x1); // ChooseAdvertIndex
+        aml->Redirect(pGTASA + 0x3A4374 + 0x1, pGTASA + 0x3A4416 + 0x1); // ChooseTalkRadioShow
+        aml->Redirect(pGTASA + 0x3A44D6 + 0x1, pGTASA + 0x3A4562 + 0x1); // ChooseDJBanterIndexFromList
+    }
+    
     // Fixes an opcode 08F8 which controls if the game should show you "Updated stats mate!"
     /*if(cfg->GetBool("FixOpcode08F8", true, "SCMFixes"))
     {

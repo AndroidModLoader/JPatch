@@ -15,6 +15,7 @@
 **Since v1.4.2**
  - Removed "Please rate the game" message
  - Removed IDE flag "ExtraAirResistance"
+ - Implement NoRadioCuts
 
 **Since v1.4.1**
  - Better ForceDXT
