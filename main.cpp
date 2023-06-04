@@ -246,7 +246,7 @@ extern "C" void adadad(void)
 
 // Moon phases
 int moon_alphafunc, moon_vertexblend, moon_alphaval;
-uintptr_t MoonVisual_1_BackTo;
+uintptr_t MoonVisual_1_backTo;
 extern "C" void MoonVisual_1(void)
 {
     //emu_glEnable(GL_ALPHA_TEST);
@@ -272,9 +272,9 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_inject(void)
         "mov r12, %0\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (MoonVisual_1_BackTo));
+    :: "r" (MoonVisual_1_backTo));
 }
-uintptr_t MoonVisual_2_BackTo;
+uintptr_t MoonVisual_2_backTo;
 extern "C" void MoonVisual_2(void)
 {
     //emu_glAlphaFunc(GL_GREATER, 0.5f);
@@ -297,7 +297,7 @@ __attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_inject(void)
         "mov r12, %0\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (MoonVisual_2_BackTo));
+    :: "r" (MoonVisual_2_backTo));
 }
 
 // FOV
@@ -314,7 +314,7 @@ DECL_HOOKv(SetFOV, float factor, bool unused)
 }
 
 // Limit particles
-uintptr_t AddBulletImpactFx_BackTo;
+uintptr_t AddBulletImpactFx_backTo;
 unsigned int nextHeavyParticleTick = 0;
 eBulletFxType nLimitWithSparkles = BULLETFX_NOTHING;
 extern "C" eBulletFxType AddBulletImpactFx(unsigned int surfaceId)
@@ -347,7 +347,7 @@ __attribute__((optnone)) __attribute__((naked)) void AddBulletImpactFx_inject(vo
         "mov r9, r1\n"
         "mov r4, r2\n"
         "bx r12\n"
-    :: "r" (AddBulletImpactFx_BackTo));
+    :: "r" (AddBulletImpactFx_backTo));
 }
 
 // AimingRifleWalkFix
@@ -359,7 +359,7 @@ DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D)
 }
 
 // SwimSpeedFix
-uintptr_t SwimmingResistanceBack_BackTo;
+uintptr_t SwimmingResistanceBack_backTo;
 float saveStep;
 DECL_HOOKv(ProcessSwimmingResistance, void* self, CPed* ped)
 {
@@ -385,7 +385,7 @@ __attribute__((optnone)) __attribute__((naked)) void SwimmingResistanceBack_inje
         "ldr r0, [r4]\n"
         "vmul.f32 s0, s4, s0\n"
         "bx r12\n"
-    :: "r" (SwimmingResistanceBack_BackTo));
+    :: "r" (SwimmingResistanceBack_backTo));
 }
 
 // Madd Dogg's Mansion Basketball glitch
@@ -438,7 +438,7 @@ DECL_HOOK(bool, CanPedStepOutCar, CVehicle* self, bool bIgnoreSpeedUpright)
 }
 
 // Died penalty
-uintptr_t DiedPenalty_BackTo;
+uintptr_t DiedPenalty_backTo;
 extern "C" void DiedPenalty(void)
 {
     if(WorldPlayers[0].m_nMoney > 0)
@@ -456,11 +456,11 @@ __attribute__((optnone)) __attribute__((naked)) void DiedPenalty_inject(void)
         "mov r12, %0\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (DiedPenalty_BackTo));
+    :: "r" (DiedPenalty_backTo));
 }
 
 // Emergency Vehicles
-uintptr_t EmergencyVeh_BackTo;
+uintptr_t EmergencyVeh_backTo;
 __attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
 {
     asm volatile(
@@ -472,7 +472,7 @@ __attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_inject(void)
         "mov r12, %0\n"
         "pop {r0}\n"
         "bx r12\n"
-    :: "r" (EmergencyVeh_BackTo));
+    :: "r" (EmergencyVeh_backTo));
 }
 DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
@@ -508,7 +508,7 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
 
 // SkimmerPlaneFix
 // Changed the way it works, because ms_fTimeStep cannot be the same at the mod start (it is 0 at the mod start anyway)
-uintptr_t SkimmerWaterResistance_BackTo;
+uintptr_t SkimmerWaterResistance_backTo;
 extern "C" float SkimmerWaterResistance_patch(void)
 {
     return 30.0f * (*ms_fTimeStep / fMagic);
@@ -524,7 +524,7 @@ __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_inje
         "mov r12, %0\n"
         "vadd.f32 s2, s2, s8\n"
         "bx r12\n"
-    :: "r" (SkimmerWaterResistance_BackTo));
+    :: "r" (SkimmerWaterResistance_backTo));
 }
 
 // Cinematic camera
@@ -569,19 +569,19 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
 }
 
 // SWAT
-uintptr_t GetCarGunFired_BackTo; // For our usage only
-uintptr_t GetCarGunFired_BackTo1, GetCarGunFired_BackTo2; // For optimization?
+uintptr_t GetCarGunFired_backTo; // For our usage only
+uintptr_t GetCarGunFired_backTo1, GetCarGunFired_backTo2; // For optimization?
 extern "C" void GetCarGunFired_patch(void)
 {
     CVehicle* veh = FindPlayerVehicle(-1, false);
     if(veh != NULL && (veh->m_nModelIndex == 407 || veh->m_nModelIndex == 601 ||
                        veh->m_nModelIndex == 430))
     {
-        GetCarGunFired_BackTo = GetCarGunFired_BackTo1;
+        GetCarGunFired_backTo = GetCarGunFired_backTo1;
     }
     else
     {
-        GetCarGunFired_BackTo = GetCarGunFired_BackTo2;
+        GetCarGunFired_backTo = GetCarGunFired_backTo2;
     }
 }
 __attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_inject(void)
@@ -593,7 +593,7 @@ __attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_inject(void)
         "mov r12, %0\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (GetCarGunFired_BackTo));
+    :: "r" (GetCarGunFired_backTo));
 }
 
 // Fuzzy seek (im lazy to patch so lets just do this instead (because we need to inject the code))
@@ -621,7 +621,7 @@ DECL_HOOKv(WaterCannonUpdate, void* self, int frames)
 }
 
 // Moving objs (opcode 034E)
-uintptr_t ProcessCommands800To899_BackTo;
+uintptr_t ProcessCommands800To899_backTo;
 extern "C" void ProcessCommands800To899_patch(void)
 {
     float scale = 30.0f / *game_FPS;
@@ -641,11 +641,11 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessCommands800To899_inj
         "vpop {s0-s6}\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (ProcessCommands800To899_BackTo));
+    :: "r" (ProcessCommands800To899_backTo));
 }
 
 // PhysicalApplyCollision
-uintptr_t PhysicalApplyCollision_BackTo;
+uintptr_t PhysicalApplyCollision_backTo;
 extern "C" void PhysicalApplyCollision_patch(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed)
 {
     force *= *ms_fTimeStep / fMagic;
@@ -660,7 +660,7 @@ __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_inje
     asm volatile(
         "mov r0, %0\n"
         "bx r0\n"
-    :: "r" (PhysicalApplyCollision_BackTo));
+    :: "r" (PhysicalApplyCollision_backTo));
 }
 
 // Car Slowdown Fix
@@ -737,7 +737,7 @@ DECL_HOOK(CObject*, Object_New, uint32_t size)
 }
 
 // Colored zone names
-uintptr_t ColoredZoneNames_BackTo;
+uintptr_t ColoredZoneNames_backTo;
 extern "C" void ColoredZoneNames_patch(void)
 {
     CRGBA fontColor((*m_pCurrZoneInfo)->ZoneColor.red, (*m_pCurrZoneInfo)->ZoneColor.green, (*m_pCurrZoneInfo)->ZoneColor.blue, (unsigned char)(*m_ZoneFadeTimer * 0.255f));
@@ -752,7 +752,7 @@ __attribute__((optnone)) __attribute__((naked)) void ColoredZoneNames_inject(voi
         "mov r12, %0\n"
         "pop {r0-r11}\n"
         "bx r12\n"
-    :: "r" (ColoredZoneNames_BackTo));
+    :: "r" (ColoredZoneNames_backTo));
 }
 
 // Find Ground Z detects objects
@@ -791,7 +791,7 @@ DECL_HOOK(float, FindGroundZ3D, float x, float y, float z, bool* result, CEntity
 }
 
 // Road Reflections
-uintptr_t RoadReflections_BackTo;
+uintptr_t RoadReflections_backTo;
 __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void)
 {
     asm volatile(
@@ -806,7 +806,7 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void
         "mov r12, %0\n"
         "pop {r0}\n"
         "bx r12\n"
-    :: "r" (RoadReflections_BackTo));
+    :: "r" (RoadReflections_backTo));
 }
 
 // Heli rotor blur
@@ -816,7 +816,7 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_inject(void
 #define SMOOTHING_PERCENT 0.3f
 #define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.0f - SMOOTHING_PERCENT)))
 uint16_t nRotorMdlIgnore;
-uintptr_t RotorBlurRender_BackTo1, RotorBlurRender_BackTo2;
+uintptr_t RotorBlurRender_backTo1, RotorBlurRender_backTo2;
 extern "C" void RotorBlurRender_patch(RpAtomic* atomic, CAutomobile* ent)
 {
     if(!atomic) return;
@@ -849,7 +849,7 @@ __attribute__((optnone)) __attribute__((naked)) void RotorBlurRender_inject1(voi
         "MOV R12, %0\n"
         "POP {R0}\n"
         "BX R12\n"
-    :: "r" (RotorBlurRender_BackTo1));
+    :: "r" (RotorBlurRender_backTo1));
 }
 __attribute__((optnone)) __attribute__((naked)) void RotorBlurRender_inject2(void)
 {
@@ -866,7 +866,7 @@ __attribute__((optnone)) __attribute__((naked)) void RotorBlurRender_inject2(voi
         "MOV R12, %0\n"
         "POP {R0}\n"
         "BX R12\n"
-    :: "r" (RotorBlurRender_BackTo2));
+    :: "r" (RotorBlurRender_backTo2));
 }
 DECL_HOOKv(HeliRender, CHeli* self)
 {
@@ -881,7 +881,7 @@ DECL_HOOKv(PlaneRender, CPlane* self)
 #define SKIP_START_FRAMES 3
 #define ANIMBLOCK_OFFSET  25575
 
-uintptr_t LoadScene_BackTo, InitPools_BackTo, InitPools2_BackTo;
+uintptr_t LoadScene_backTo, InitPools_backTo, InitPools2_backTo;
 std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
@@ -1009,7 +1009,7 @@ __attribute__((optnone)) __attribute__((naked)) void InitPools_inject(void)
         "MOV R12, %0\n"
         "POP {R0-R11}\n"
         "BX R12\n"
-    :: "r" (InitPools_BackTo));
+    :: "r" (InitPools_backTo));
 }
 extern "C" void InitPools2_patch()
 {
@@ -1024,7 +1024,7 @@ __attribute__((optnone)) __attribute__((naked)) void InitPools2_inject(void)
         "MOV R12, %0\n"
         "POP {R0-R11}\n"
         "BX R12\n"
-    :: "r" (InitPools2_BackTo));
+    :: "r" (InitPools2_backTo));
 }
 extern "C" void LoadScene_patch(CEntity* ent)
 {
@@ -1044,7 +1044,7 @@ __attribute__((optnone)) __attribute__((naked)) void LoadScene_inject(void)
         "pop {r0-r10}\n"
         "LDR.W R11, [R9,R2,LSL#2]\n"
         "bx r12\n"
-    :: "r" (LoadScene_BackTo));
+    :: "r" (LoadScene_backTo));
 }
 
 // Colorpicker
@@ -1075,7 +1075,7 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 }
 
 // Light shadows from poles
-uintptr_t ProcessLightsForEntity_BackTo;
+uintptr_t ProcessLightsForEntity_backTo;
 float fLightDist = 40.0f;
 CVector vecEffCenterTmp;
 extern "C" void ProcessLightsForEntity_patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight, CVector vecEffPos)
@@ -1124,7 +1124,7 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_inje
         "POP {R1-R11}\n"
         "LDR.W R10, [SP,#0x150-0x98]\n"
         "BX R12\n"
-    :: "r" (ProcessLightsForEntity_BackTo));
+    :: "r" (ProcessLightsForEntity_backTo));
 }
 DECL_HOOKv(AddLight, unsigned char a1, CVector a2, CVector a3, float a4, float a5, float a6, float a7, unsigned char a8, bool a9, CEntity* a10)
 {
@@ -1278,7 +1278,7 @@ DECL_HOOKv(DrawRadar, void* self)
 }
 
 // I got the moneeeey
-uintptr_t DrawMoney_BackTo;
+uintptr_t DrawMoney_backTo;
 extern "C" const char* DrawMoney_patch(int isPositive)
 {
     static const char* positiveT = "$%08d";
@@ -1299,7 +1299,7 @@ __attribute__((optnone)) __attribute__((naked)) void DrawMoney_inject(void)
         "MOV R12, %0\n"
         "POP {R0-R11}\n"
         "BX R12\n"
-    :: "r" (DrawMoney_BackTo));
+    :: "r" (DrawMoney_backTo));
 }
 
 // Para dmg anim fix
@@ -1413,7 +1413,7 @@ int DoRand(int max)
     srand(time(NULL));
     return (int)(((double)rand() / (double)RAND_MAX) * max);
 }
-uintptr_t LoadSplashes_BackTo;
+uintptr_t LoadSplashes_backTo;
 char mobilescDone[16];
 int mobilescCount = 7;
 extern "C" void LoadSplashes_patch(void)
@@ -1434,12 +1434,12 @@ __attribute__((optnone)) __attribute__((naked)) void LoadSplashes_inject(void)
         "MOV R12, %0\n"
         "POP {R0,R2-R11}\n"
         "BX R12\n"
-    :: "r" (LoadSplashes_BackTo));
+    :: "r" (LoadSplashes_backTo));
 }
 
 // Peds count calculating is so much wrong for gangs!
 // This glitch is resulting in a very rare gang members appearing
-uintptr_t PedCountCalc_BackTo1, PedCountCalc_BackTo2;
+uintptr_t PedCountCalc_backTo1, PedCountCalc_backTo2;
 extern "C" int PedCountCalc_patch1(uint32_t pedType)
 {
     return --ms_nNumGang[pedType - PED_TYPE_GANG1];
@@ -1457,7 +1457,7 @@ __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject1(void)
         "MOV R12, %0\n"
         "POP {R0}\n"
         "BX R12\n"
-    :: "r" (PedCountCalc_BackTo1));
+    :: "r" (PedCountCalc_backTo1));
 }
 __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject2(void)
 {
@@ -1468,7 +1468,7 @@ __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_inject2(void)
         "MOV R12, %0\n"
         "POP {R0}\n"
         "BX R12\n"
-    :: "r" (PedCountCalc_BackTo2));
+    :: "r" (PedCountCalc_backTo2));
 }
 
 // Force DXT
@@ -1492,8 +1492,76 @@ DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
     DoSunGlare(self);
 }
 
+// Smaller grenade collision
+#define GRENADE_NEW_RADIUS 0.18f
+CColModel colGrenade, *ms_colModelWeapon;
+uintptr_t LoadWeaponObject_backTo;
+void (*ColModelAllocateData)(CColModel*, int, int, int, int, int, bool);
+void (*ColSphereSet)(CColSphere*, float, CVector&, uint8_t, uint8_t, uint8_t);
+DECL_HOOKv(InitTempColModels)
+{
+    InitTempColModels();
+
+    colGrenade.m_pColData = NULL;
+    colGrenade.m_level = 0;
+    colGrenade.m_hasCollisionVolumes = 0;
+    colGrenade.m_useSingleAlloc = 0;
+    colGrenade.m_deleteUncompressed = 0;
+
+    colGrenade.m_boxBound.m_vecMin = CVector(-GRENADE_NEW_RADIUS, -GRENADE_NEW_RADIUS, -GRENADE_NEW_RADIUS);
+    colGrenade.m_boxBound.m_vecMax = CVector( GRENADE_NEW_RADIUS,  GRENADE_NEW_RADIUS,  GRENADE_NEW_RADIUS);
+    colGrenade.m_sphereBound.m_vecCenter = CVector(0, 0, 0);
+    colGrenade.m_sphereBound.m_flRadius = GRENADE_NEW_RADIUS;
+
+    ColModelAllocateData(&colGrenade, 1, 0, 0, 0, 0, false);
+    ColSphereSet(&colGrenade.m_pColData->m_pSphereArray[0], colGrenade.m_sphereBound.m_flRadius * 0.75f, colGrenade.m_sphereBound.m_vecCenter, 56, 0, 255);
+}
+extern "C" CColModel* LoadWeaponObject_patch(int mdlId)
+{
+    switch(mdlId)
+    {
+        case 342:
+        case 343:
+        case 344:
+        case 363:
+            return &colGrenade;
+
+        default:
+            return ms_colModelWeapon;
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void LoadWeaponObject_inject(void)
+{
+    asm volatile(
+        "LDR R0, [SP,#0x1C]\n"
+        //"PUSH {R3-R11}\n"
+        "BL LoadWeaponObject_patch\n"
+        "MOV R1, R0\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        //"POP {R3-R11}\n"
+        "MOVS R2, #0\n"
+        "MOV R0, R6\n"
+        "BX R12\n"
+    :: "r" (LoadWeaponObject_backTo));
+}
+
+// Can now use a gun!
+float* float_4DD9E8;
+DECL_HOOKv(TaskSimpleUseGunSetMoveAnim, CTask* task, CPed* ped)
+{
+    *float_4DD9E8 = (*ms_fTimeStep / fMagic) * 0.1f;
+    TaskSimpleUseGunSetMoveAnim(task, ped);
+}
+
+/* Broken below */
+/* Broken below */
+/* Broken below */
+/* Broken below */
+/* Broken below */
+
 // Camera/sniper zooming patch
-uintptr_t CamZoomProc_BackTo, FixSniperZoomingDistance_BackTo, FixSniperZoomingDistance2_BackTo;
+uintptr_t CamZoomProc_backTo, FixSniperZoomingDistance_backTo, FixSniperZoomingDistance2_backTo;
 extern "C" void CamZoomProc_patch(CCam* cam)
 {
     cam->FOV *= fAspectCorrectionDiv;
@@ -1512,7 +1580,7 @@ __attribute__((optnone)) __attribute__((naked)) void CamZoomProc_inject(void)
         "POP {R0-R11}\n"
         "ADD.W R0, R1, #0x80\n"
         "BX R12\n"
-    :: "r" (CamZoomProc_BackTo));
+    :: "r" (CamZoomProc_backTo));
 }
 __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance_inject(void)
 {
@@ -1529,7 +1597,7 @@ __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance_in
         "VMIN.F32 D1, D1, D2\n"
         "VMUL.F32 S2, S6, S2\n"
         "BX R12\n"
-    :: "r" (FixSniperZoomingDistance_BackTo));
+    :: "r" (FixSniperZoomingDistance_backTo));
 }
 __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance2_inject(void)
 {
@@ -1546,7 +1614,7 @@ __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance2_i
         "LDRH R2, [R4,#0xE]\n"
         "VMIN.F32 D16, D0, D3\n"
         "BX R12\n"
-    :: "r" (FixSniperZoomingDistance2_BackTo));
+    :: "r" (FixSniperZoomingDistance2_backTo));
 }
 
 // Opcode 08F8
@@ -1789,8 +1857,8 @@ extern "C" void OnModLoad()
     /*if(cfg->BindOnce("MoonPhases", true, "Visual"))
     {
         //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
-        MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
-        MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
+        MoonVisual_1_backTo = pGTASA + 0x59ED90 + 0x1;
+        MoonVisual_2_backTo = pGTASA + 0x59EE4E + 0x1;
         aml->Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_inject);
         aml->Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_inject);
     };*/
@@ -1813,7 +1881,7 @@ extern "C" void OnModLoad()
     // Limit sand/dust particles on bullet impact (they are EXTREMELY dropping FPS)
     if(cfg->GetBool("LimitSandDustBulletParticles", true, "Visual"))
     {
-        AddBulletImpactFx_BackTo = pGTASA + 0x36478E + 0x1;
+        AddBulletImpactFx_backTo = pGTASA + 0x36478E + 0x1;
         aml->Redirect(pGTASA + 0x36477C + 0x1, (uintptr_t)AddBulletImpactFx_inject);
         if(cfg->GetBool("LimitSandDustBulletParticlesWithSparkles", false, "Visual"))
         {
@@ -1836,7 +1904,7 @@ extern "C" void OnModLoad()
     // Fix slow swimming speed
     if(cfg->GetBool("SwimmingSpeedFix", true, "Gameplay"))
     {
-        SwimmingResistanceBack_BackTo = pGTASA + 0x53BD3A + 0x1;
+        SwimmingResistanceBack_backTo = pGTASA + 0x53BD3A + 0x1;
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
         aml->Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
     }
@@ -1880,14 +1948,14 @@ extern "C" void OnModLoad()
     // Bring back penalty when CJ dies!
     if(cfg->GetBool("WeaponPenaltyIfDied", true, "Gameplay"))
     {
-        DiedPenalty_BackTo = pGTASA + 0x3088E0 + 0x1;
+        DiedPenalty_backTo = pGTASA + 0x3088E0 + 0x1;
         aml->Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_inject);
     }
 
     // Fix emergency vehicles
     if(cfg->GetBool("FixEmergencyVehicles", true, "Gameplay"))
     {
-        EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
+        EmergencyVeh_backTo = pGTASA + 0x3DD88C + 0x1;
         aml->Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_inject);
         HOOKPLT(SetFOV_Emergency, pGTASA + 0x673DDC);
         aml->Write(pGTASA + 0x3DD8A0, (uintptr_t)"\xB0\xEE\x42\x1A", 4); // WarDumbs are multiplying it by 0.8? Reasonable for 2013 but why didnt they remove that in 2.00?
@@ -1962,7 +2030,7 @@ extern "C" void OnModLoad()
     // Fix Skimmer plane ( https://github.com/XMDS )
     if (cfg->GetBool("SkimmerPlaneFix", true, "Gameplay"))
     {
-        SkimmerWaterResistance_BackTo = pGTASA + 0x589ADC + 0x1;
+        SkimmerWaterResistance_backTo = pGTASA + 0x589ADC + 0x1;
         aml->Redirect(pGTASA + 0x589AD4 + 0x1, (uintptr_t)SkimmerWaterResistance_inject);
     }
 
@@ -2021,8 +2089,8 @@ extern "C" void OnModLoad()
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
     if(cfg->GetBool("FixMissingShootBtnForSWAT", true, "Gameplay"))
     {
-        GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
-        GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
+        GetCarGunFired_backTo1 = pGTASA + 0x3F99E8 + 0x1;
+        GetCarGunFired_backTo2 = pGTASA + 0x3F9908 + 0x1;
         aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_inject);
     }
 
@@ -2042,14 +2110,14 @@ extern "C" void OnModLoad()
     // Fix moving objects on a high fps (through the scripts)
     if(cfg->GetBool("FixHighFPSOpcode034E", true, "SCMFixes"))
     {
-        ProcessCommands800To899_BackTo = pGTASA + 0x347866 + 0x1;
+        ProcessCommands800To899_backTo = pGTASA + 0x347866 + 0x1;
         aml->Redirect(pGTASA + 0x346E84 + 0x1, (uintptr_t)ProcessCommands800To899_inject);
     }
 
     // Fix pushing force
     if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
     {
-        PhysicalApplyCollision_BackTo = pGTASA + 0x402B72 + 0x1;
+        PhysicalApplyCollision_backTo = pGTASA + 0x402B72 + 0x1;
         aml->Redirect(pGTASA + 0x402B68 + 0x1, (uintptr_t)PhysicalApplyCollision_inject);
     }
 
@@ -2170,7 +2238,7 @@ extern "C" void OnModLoad()
     // Colored zone names are back
     if(cfg->GetBool("ColoredZoneNames", true, "Visual"))
     {
-        ColoredZoneNames_BackTo = pGTASA + 0x438404 + 0x1;
+        ColoredZoneNames_backTo = pGTASA + 0x438404 + 0x1;
         aml->Redirect(pGTASA + 0x4383D6 + 0x1, (uintptr_t)ColoredZoneNames_inject);
     }
 
@@ -2210,7 +2278,7 @@ extern "C" void OnModLoad()
     // RE3: Road reflections
     if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     {
-        RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
+        RoadReflections_backTo = pGTASA + 0x5A2EA4 + 0x1;
         aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_inject);
     }
 
@@ -2221,8 +2289,8 @@ extern "C" void OnModLoad()
     {
         aml->Redirect(pGTASA + 0x572D6C + 0x1, (uintptr_t)RotorBlurRender_inject1);
         aml->Redirect(pGTASA + 0x572D8C + 0x1, (uintptr_t)RotorBlurRender_inject2);
-        RotorBlurRender_BackTo1 = pGTASA + 0x572D76 + 0x1;
-        RotorBlurRender_BackTo2 = pGTASA + 0x572D96 + 0x1;
+        RotorBlurRender_backTo1 = pGTASA + 0x572D76 + 0x1;
+        RotorBlurRender_backTo2 = pGTASA + 0x572D96 + 0x1;
         
         if(heliblur)
         {
@@ -2246,14 +2314,14 @@ extern "C" void OnModLoad()
         HOOKPLT(GameProcess, pGTASA + 0x66FE58);
         if(bPreloadLOD)
         {
-            LoadScene_BackTo = pGTASA + 0x4691E2 + 0x1;
+            LoadScene_backTo = pGTASA + 0x4691E2 + 0x1;
             aml->Redirect(pGTASA + 0x4691D6 + 0x1, (uintptr_t)LoadScene_inject);
         }
         if(bPreloadPed)
         {
             HOOKPLT(AddPedModel, pGTASA + 0x675D98);
             aml->Redirect(pGTASA + 0x40CC20 + 0x1, (uintptr_t)InitPools_inject);
-            InitPools_BackTo = pGTASA + 0x40CC8A + 0x1;
+            InitPools_backTo = pGTASA + 0x40CC8A + 0x1;
         }
     }
     bUnloadUnusedModels = cfg->GetBool("IS_UnloadUnusedModels", true, "Gameplay");
@@ -2299,7 +2367,7 @@ extern "C" void OnModLoad()
     // Bring back light shadows from poles!
     if(cfg->GetBool("BackPolesLightShadow", true, "Visual"))
     {
-        ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
+        ProcessLightsForEntity_backTo = pGTASA + 0x5A4DA8 + 0x1;
         aml->Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_inject);
         HOOK(AddLight, aml->GetSym(hGTASA, "_ZN12CPointLights8AddLightEh7CVectorS0_ffffhbP7CEntity"));
     }
@@ -2438,7 +2506,7 @@ extern "C" void OnModLoad()
     // Money have 8 digits now? Exciting!
     if(cfg->GetBool("PCStyledMoney", false, "Visual"))
     {
-        DrawMoney_BackTo = pGTASA + 0x2BD260 + 0x1;
+        DrawMoney_backTo = pGTASA + 0x2BD260 + 0x1;
         aml->Redirect(pGTASA + 0x2BD258 + 0x1, (uintptr_t)DrawMoney_inject);
     }
     
@@ -2511,15 +2579,15 @@ extern "C" void OnModLoad()
     mobilescCount = cfg->GetInt("MaxLoadingScreens", 7, "Visual");
     if(mobilescCount > 0 && mobilescCount != 7)
     {
-        LoadSplashes_BackTo = pGTASA + 0x43AD00 + 0x1;
+        LoadSplashes_backTo = pGTASA + 0x43AD00 + 0x1;
         aml->Redirect(pGTASA + 0x43ACEC + 0x1, (uintptr_t)LoadSplashes_inject);
     }
     
     // A mistake by R* that overwrites "total num of X peds"
     if(cfg->GetBool("FixGangsCounterOverflow", true, "Gameplay"))
     {
-        PedCountCalc_BackTo1 = pGTASA + 0x4D0CC2 + 0x1;
-        PedCountCalc_BackTo2 = pGTASA + 0x4D0D0A + 0x1;
+        PedCountCalc_backTo1 = pGTASA + 0x4D0CC2 + 0x1;
+        PedCountCalc_backTo2 = pGTASA + 0x4D0D0A + 0x1;
         aml->Redirect(pGTASA + 0x4D0CAE + 0x1, (uintptr_t)PedCountCalc_inject1);
         aml->Redirect(pGTASA + 0x4D0CF6 + 0x1, (uintptr_t)PedCountCalc_inject2);
     }
@@ -2548,18 +2616,6 @@ extern "C" void OnModLoad()
     
     aml->Unprot(pGTASA + 0x3C51F0, sizeof(float));
     *(float*)(pGTASA + 0x3C51F0) = cfg->GetFloat("MinimalCameraZoomingFOV", 70.0f, "Gameplay");
-
-    // Fix camera zooming
-    /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
-    {
-        CamZoomProc_BackTo = pGTASA + 0x3C5160 + 0x1;
-        //aml->Redirect(pGTASA + 0x3C5158 + 0x1, (uintptr_t)CamZoomProc_inject);
-
-        FixSniperZoomingDistance_BackTo = pGTASA + 0x3C5060 + 0x1;
-        aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)FixSniperZoomingDistance_inject);
-        FixSniperZoomingDistance2_BackTo = pGTASA + 0x3C513C + 0x1;
-        aml->Redirect(pGTASA + 0x3C5132 + 0x1, (uintptr_t)FixSniperZoomingDistance2_inject);
-    }*/
     
     // Removes "plis give us 5 stars plis plis"
     if(cfg->GetBool("RemoveAskingToRate", true, "Others"))
@@ -2585,6 +2641,77 @@ extern "C" void OnModLoad()
         aml->Redirect(pGTASA + 0x3A44D6 + 0x1, pGTASA + 0x3A4562 + 0x1); // ChooseDJBanterIndexFromList
     }
     
+    // Make the grenade's collision smaller. Will this nade fit in this hole now?
+    if(cfg->GetBool("SmallerGrenadeCollision", true, "Gameplay"))
+    {
+        HOOK(InitTempColModels, aml->GetSym(hGTASA, "_ZN14CTempColModels10InitialiseEv"));
+        aml->Redirect(pGTASA + 0x4697CA + 0x1, (uintptr_t)LoadWeaponObject_inject);
+        LoadWeaponObject_backTo = pGTASA + 0x4697D4 + 0x1;
+        SET_TO(ColModelAllocateData, aml->GetSym(hGTASA, "_ZN9CColModel12AllocateDataEiiiiib"));
+        SET_TO(ColSphereSet, aml->GetSym(hGTASA, "_ZN10CColSphere3SetEfRK7CVectorhhh"));
+        SET_TO(ms_colModelWeapon, aml->GetSym(hGTASA, "_ZN14CTempColModels17ms_colModelWeaponE"));
+    }
+    
+    // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
+    if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
+    {
+        aml->Redirect(pGTASA + 0x5D991E + 0x1, pGTASA + 0x5D9A04 + 0x1);
+    }
+    
+    // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
+    if(cfg->GetBool("MTA_FixIceFloor", true, "Gameplay"))
+    {
+        aml->Redirect(pGTASA + 0x4A1C3C + 0x1, pGTASA + 0x4A1C4E + 0x1);
+    }
+
+    // Can now use a gun!
+    if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
+    {
+        aml->Unprot(pGTASA + 0x4DD9E8, sizeof(float));
+        SET_TO(float_4DD9E8, pGTASA + 0x4DD9E8);
+        HOOK(TaskSimpleUseGunSetMoveAnim, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
+    }
+
+    // AllowLicensePlatesForAllCars
+    if(cfg->GetBool("AllowLicensePlatesForAllCars", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x5822E6, 3);
+        aml->PlaceNOP(pGTASA + 0x582398, 3);
+    }
+
+    // Game is checking if HP is < 1.0 but it may be lower!
+    if(cfg->GetBool("AllowCrouchWith1HP", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x54316C, (uintptr_t)"\xB4", 1);
+    }
+
+    // Show muzzle flash for the last bullet in magazine
+    if(cfg->GetBool("MuzzleFlashForLastBullet", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x4DDCCA, 10);
+    }
+
+    // Renders shadows on all surfaces -> disables a flag
+    if(cfg->GetBool("DrawShadowsOnAllSurfaces", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x5BAE23, (uintptr_t)"\x00", 1);
+    }
+
+    // No SetClumpAlpha for ped
+    //aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+
+    // Fix camera zooming
+    /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
+    {
+        CamZoomProc_backTo = pGTASA + 0x3C5160 + 0x1;
+        //aml->Redirect(pGTASA + 0x3C5158 + 0x1, (uintptr_t)CamZoomProc_inject);
+
+        FixSniperZoomingDistance_backTo = pGTASA + 0x3C5060 + 0x1;
+        aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)FixSniperZoomingDistance_inject);
+        FixSniperZoomingDistance2_backTo = pGTASA + 0x3C513C + 0x1;
+        aml->Redirect(pGTASA + 0x3C5132 + 0x1, (uintptr_t)FixSniperZoomingDistance2_inject);
+    }*/
+    
     // Fixes an opcode 08F8 which controls if the game should show you "Updated stats mate!"
     /*if(cfg->GetBool("FixOpcode08F8", true, "SCMFixes"))
     {
@@ -2607,4 +2734,5 @@ extern "C" void OnModLoad()
     
     //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
     //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
+    // Michelle date: CTaskSimpleCarSetPedInAsPassenger?
 }
