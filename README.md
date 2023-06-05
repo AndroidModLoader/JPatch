@@ -19,7 +19,6 @@
  - Smaller grenades collision
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
  - MTA: Fix slippery floor
- - Another fix for aiming + walking
  - Allow license plates to render on all vehicles
  - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
  - Show muzzle flash for the last bullet
