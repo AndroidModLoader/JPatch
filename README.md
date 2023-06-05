@@ -24,6 +24,7 @@
  - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
  - Show muzzle flash for the last bullet
  - Disable a flag to allow shadows to be drawed on all surfaces
+ - Weapon spread fix
 
 **Since v1.4.1**
  - Better ForceDXT

@@ -1554,6 +1554,14 @@ DECL_HOOKv(TaskSimpleUseGunSetMoveAnim, CTask* task, CPed* ped)
     TaskSimpleUseGunSetMoveAnim(task, ped);
 }
 
+// Spread fix
+float *fPlayerAimRotRate;
+DECL_HOOK(bool, FireInstantHit, CWeapon *self, CEntity *a2, CVector *a3, CVector *a4, CEntity *a5, CVector *a6, CVector *a7, int a8, int a9)
+{
+    *fPlayerAimRotRate = (rand() * 2.0f * M_PI) / (float)RAND_MAX;
+    return FireInstantHit(self, a2, a3, a4, a5, a6, a7, a8, a9);
+}
+
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -2695,6 +2703,13 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("DrawShadowsOnAllSurfaces", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5BAE23, (uintptr_t)"\x00", 1);
+    }
+
+    // Spread fix
+    if(cfg->GetBool("WeaponSpreadFix", true, "Gameplay"))
+    {
+        SET_TO(fPlayerAimRotRate, aml->GetSym(hGTASA, "fPlayerAimRotRate"));
+        HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
     }
 
     // No SetClumpAlpha for ped
