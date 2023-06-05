@@ -2673,12 +2673,12 @@ extern "C" void OnModLoad()
     }
 
     // Can now use a gun!
-    if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
+    /*if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x4DD9E8, sizeof(float));
         SET_TO(float_4DD9E8, pGTASA + 0x4DD9E8);
         HOOK(TaskSimpleUseGunSetMoveAnim, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
-    }
+    }*/
 
     // AllowLicensePlatesForAllCars
     if(cfg->GetBool("AllowLicensePlatesForAllCars", true, "Visual"))
