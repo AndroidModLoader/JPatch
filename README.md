@@ -13,7 +13,7 @@
  - Fix camera zoom is not that far
 
 **Since v1.4.2.1**
- - Fixed broken CrosshairFix after v1.4.2
+ - Fixed broken CrosshairFix after v1.4.2, fix for Country Rifle
  - Changed the values of CrosshairFix so it's more correct
  - Fixed the Country Rifle camera in 3rd person
 
@@ -57,7 +57,6 @@
  - Taxi lights are activated
  - No minimap in interiors
  - PC-like money in HUD (disabled by default)
- - A bit darker HUD colours (disabled by default)
  - Aiming with Country Rifle is now in 3rd person
  - Force the game's inner check always return that we have only touch (disabled by default)
  - Fixed ped animation after being attacked with parachute (inspired *by Alexander Polyak*)

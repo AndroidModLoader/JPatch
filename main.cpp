@@ -56,7 +56,6 @@ ScriptVariables* ScriptParams;
 CLinkList<AlphaObjectInfo>* m_alphaList;
 CPool<CObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
-CRGBA* HudColors = NULL;
 CWeaponInfo* aWeaponInfo;
 int keys[538];
 bool *ms_bIsPlayerOnAMission;
@@ -132,31 +131,30 @@ void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
 }
 
 float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
+CRGBA OwnHudColour[HUD_COLOUR_COUNT];
 DECL_HOOK(bool, InitRenderWare)
 {
     if(!InitRenderWare()) return false;
     
     bIsRWReady = true;
     
-    if(HudColors != NULL) // Darker colors
-    {
-        HudColors[HUD_COLOUR_RED] = CRGBA(166, 23, 26); //CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_GREEN] = CRGBA(47, 91, 38); //CRGBA(54, 104, 44);
-        /*HudColors[HUD_COLOUR_DARK_BLUE] = CRGBA(50, 60, 127);
-        HudColors[HUD_COLOUR_LIGHT_BLUE] = CRGBA(172, 203, 241);
-        HudColors[HUD_COLOUR_LIGHT_GRAY] = CRGBA(225, 225, 225);*/
-        HudColors[HUD_COLOUR_WHITE] = CRGBA(225, 225, 225); //CRGBA(255, 255, 255);
-        /*HudColors[HUD_COLOUR_BLACK] = CRGBA(0, 0, 0);
-        HudColors[HUD_COLOUR_GOLD] = CRGBA(144, 98, 16);
-        HudColors[HUD_COLOUR_PURPLE] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_DARK_GRAY] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_DARK_RED] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_DARK_GREEN] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_CREAM] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_NIGHT_BLUE] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_BLUE] = CRGBA(180, 25, 29);
-        HudColors[HUD_COLOUR_YELLOW] = CRGBA(180, 25, 29);*/
-    }
+    OwnHudColour[HUD_COLOUR_RED] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_GREEN] = CRGBA(54, 104, 44);
+    OwnHudColour[HUD_COLOUR_DARK_BLUE] = CRGBA(50, 60, 127);
+    OwnHudColour[HUD_COLOUR_LIGHT_BLUE] = CRGBA(172, 203, 241);
+    OwnHudColour[HUD_COLOUR_LIGHT_GRAY] = CRGBA(225, 225, 225);
+    OwnHudColour[HUD_COLOUR_WHITE] = CRGBA(255, 255, 255);
+    OwnHudColour[HUD_COLOUR_BLACK] = CRGBA(0, 0, 0);
+    OwnHudColour[HUD_COLOUR_GOLD] = CRGBA(144, 98, 16);
+    OwnHudColour[HUD_COLOUR_PURPLE] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_DARK_GRAY] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_DARK_RED] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_DARK_GREEN] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_CREAM] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_NIGHT_BLUE] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_BLUE] = CRGBA(180, 25, 29);
+    OwnHudColour[HUD_COLOUR_YELLOW] = CRGBA(180, 25, 29);
+
     return true;
 }
 DECL_HOOKv(CalculateAspectRatio)
@@ -1214,16 +1212,21 @@ DECL_HOOK(int, CreateCarGenerator, float x, float y, float z, float angle, int32
 float fWideScreenWidthScale, fWideScreenHeightScale;
 DECL_HOOKv(DrawCrosshair)
 {
-    CPlayerPed* player = WorldPlayers[0].m_pPed;
-    if(player->m_Weapons[player->m_byteCurrentWeaponSlot].m_nType == WEAPON_COUNTRYRIFLE)
-    {
-        DrawCrosshair();
-        return;
-    }
     static constexpr float XSVal = 1024.0f / 1920.0f; // prev. 0.530, now it's 0.533333..3
     static constexpr float YSVal = 768.0f / 1920.0f; // unchanged :p
 
-    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01115; // 0.01125f;
+    CPlayerPed* player = WorldPlayers[0].m_pPed;
+    if(player->m_Weapons[player->m_byteCurrentWeaponSlot].m_nType == WEAPON_COUNTRYRIFLE)
+    {
+        // Weirdo logic but ok
+        float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - 0.84f * ar43 * 0.01115f; // 0.01125f;
+        float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + 0.84f * ar43 * 0.038f; // 0.03600f;
+        DrawCrosshair();
+        *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
+        return;
+    }
+
+    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01115f; // 0.01125f;
     float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + fAspectCorrection * 0.038f; // 0.03600f;
     DrawCrosshair();
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
@@ -1320,6 +1323,17 @@ __attribute__((optnone)) __attribute__((naked)) void DrawMoney_inject(void)
         "POP {R0-R11}\n"
         "BX R12\n"
     :: "r" (DrawMoney_backTo));
+}
+
+// Hud colours
+DECL_HOOK(int, GetIntColour, void*, eHudColours i)
+{
+    CRGBA& clr = OwnHudColour[i];
+    return ((clr.b) | 0xFF) + (((clr.g) << 16) | 0xFF) + (((clr.r) << 24) | 0xFF);
+}
+DECL_HOOK(CRGBA, GetRGBA, CRGBA& ret, void* self, eHudColours i) // how the arguments look like that?!
+{
+    return (ret = OwnHudColour[i]);
 }
 
 // Para dmg anim fix
@@ -2540,17 +2554,17 @@ extern "C" void OnModLoad()
         aml->Redirect(pGTASA + 0x2BD258 + 0x1, (uintptr_t)DrawMoney_inject);
     }
     
-    // Oh no, darker hud!
-    if(cfg->GetBool("DarkerHudColors", false, "Visual"))
-    {
-        SET_TO(HudColors, aml->GetSym(hGTASA, "HudColour"));
-    }
+    // Idk how to fix it, yet
+    //if(cfg->GetBool("ReColors", true, "Visual"))
+    //{
+    //    HOOK(GetIntColour, aml->GetSym(hGTASA, "_ZN11CHudColours12GetIntColourEh"));
+    //    HOOK(GetRGBA, aml->GetSym(hGTASA, "_ZN11CHudColours7GetRGBAEh"));
+    //}
     
     // Country. Rifle. Is. 3rd. Person.
     if(cfg->GetBool("FixCountryRifleAim", true, "Gameplay"))
     {
         // YES, THATS EXTREMELY EASY TO FIX, LMAO
-        // TODO: Requires a CrosshairFix and Free-aim shoot btn "duplication" fix
         aml->PlaceNOP(pGTASA + 0x5378C0, 3);
         //aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\xFF", 1);
         aml->Write(pGTASA + 0x53813C, (uintptr_t)"\xFF", 1); // 
