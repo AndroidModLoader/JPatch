@@ -12,6 +12,11 @@
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
 
+**Since v1.4.2.1**
+ - Fixed broken CrosshairFix after v1.4.2
+ - Changed the values of CrosshairFix so it's more correct
+ - Fixed the Country Rifle camera in 3rd person
+
 **Since v1.4.2**
  - Removed "Please rate the game" message
  - Removed IDE flag "ExtraAirResistance"

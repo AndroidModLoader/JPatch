@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2.1, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -157,11 +157,13 @@ DECL_HOOK(bool, InitRenderWare)
         HudColors[HUD_COLOUR_BLUE] = CRGBA(180, 25, 29);
         HudColors[HUD_COLOUR_YELLOW] = CRGBA(180, 25, 29);*/
     }
-    
-    fAspectCorrection = (*ms_fAspectRatio - ar43);
-    fAspectCorrectionDiv = fAspectCorrection / ar43;
-
     return true;
+}
+DECL_HOOKv(CalculateAspectRatio)
+{
+    CalculateAspectRatio();
+    fAspectCorrection = (*ms_fAspectRatio - ar43);
+    fAspectCorrectionDiv = *ms_fAspectRatio / ar43;
 }
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();
@@ -1209,12 +1211,30 @@ DECL_HOOK(int, CreateCarGenerator, float x, float y, float z, float angle, int32
 }
 
 // Fixing a crosshair by very stupid math
+float fWideScreenWidthScale, fWideScreenHeightScale;
 DECL_HOOKv(DrawCrosshair)
 {
-    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01125f;
-    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + fAspectCorrection * 0.03600f;
+    CPlayerPed* player = WorldPlayers[0].m_pPed;
+    if(player->m_Weapons[player->m_byteCurrentWeaponSlot].m_nType == WEAPON_COUNTRYRIFLE)
+    {
+        DrawCrosshair();
+        return;
+    }
+    static constexpr float XSVal = 1024.0f / 1920.0f; // prev. 0.530, now it's 0.533333..3
+    static constexpr float YSVal = 768.0f / 1920.0f; // unchanged :p
+
+    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01115; // 0.01125f;
+    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + fAspectCorrection * 0.038f; // 0.03600f;
     DrawCrosshair();
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
+}
+
+DECL_HOOKv(CalculateAspectRatio_CrosshairFix)
+{
+    CalculateAspectRatio_CrosshairFix();
+
+    fWideScreenWidthScale = 640.0f / (*ms_fAspectRatio * 448.0f);
+    fWideScreenHeightScale = 448.0 / 448.0f;
 }
 
 // Cheats!
@@ -1550,7 +1570,7 @@ __attribute__((optnone)) __attribute__((naked)) void LoadWeaponObject_inject(voi
 float* float_4DD9E8;
 DECL_HOOKv(TaskSimpleUseGunSetMoveAnim, CTask* task, CPed* ped)
 {
-    *float_4DD9E8 = (*ms_fTimeStep / fMagic) * 0.1f;
+    *float_4DD9E8 = (fMagic) * (0.1f / *ms_fTimeStep);
     TaskSimpleUseGunSetMoveAnim(task, ped);
 }
 
@@ -1597,7 +1617,7 @@ __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance_in
         "VPUSH {S0-S2}\n");
     asm volatile(
         "VMOV.F32 S4, %0\n"
-    :: "r" (10.0f * fAspectCorrectionDiv));
+    :: "r" (10.0f / fAspectCorrectionDiv));
     asm volatile(
         "VPOP {S0-S2}\n"
         "MOV R12, %0\n"
@@ -1614,7 +1634,7 @@ __attribute__((optnone)) __attribute__((naked)) void FixSniperZoomingDistance2_i
         "VPUSH {S0-S2}\n");
     asm volatile(
         "VMOV.F32 S2, %0\n"
-    :: "r" (12.0f * fAspectCorrectionDiv));
+    :: "r" (12.0f / fAspectCorrectionDiv));
     asm volatile(
         "VPOP {S0-S2}\n"
         "MOV R12, %0\n"
@@ -1801,6 +1821,7 @@ extern "C" void OnModLoad()
     SET_TO(RpGeometryForAllMaterials,aml->GetSym(hGTASA, "_Z25RpGeometryForAllMaterialsP10RpGeometryPFP10RpMaterialS2_PvES3_"));
     SET_TO(SetComponentAtomicAlpha, aml->GetSym(hGTASA, "_ZN8CVehicle23SetComponentAtomicAlphaEP8RpAtomici"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
+    HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
     
     // Variables Start //
@@ -2474,6 +2495,7 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("FixCrosshair", true, "Visual"))
     {
         HOOKPLT(DrawCrosshair, pGTASA + 0x672880);
+        //HOOK(CalculateAspectRatio_CrosshairFix, aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     }
 
     // Fixed cheats
@@ -2529,7 +2551,9 @@ extern "C" void OnModLoad()
     {
         // YES, THATS EXTREMELY EASY TO FIX, LMAO
         // TODO: Requires a CrosshairFix and Free-aim shoot btn "duplication" fix
-        aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\xFF", 1);
+        aml->PlaceNOP(pGTASA + 0x5378C0, 3);
+        //aml->Write(pGTASA + 0x5378C0, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTASA + 0x53813C, (uintptr_t)"\xFF", 1); // 
     }
     
     // Haha, no gejmpat!!1
@@ -2673,12 +2697,12 @@ extern "C" void OnModLoad()
     }
 
     // Can now use a gun!
-    /*if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
+    if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x4DD9E8, sizeof(float));
         SET_TO(float_4DD9E8, pGTASA + 0x4DD9E8);
         HOOK(TaskSimpleUseGunSetMoveAnim, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
-    }*/
+    }
 
     // AllowLicensePlatesForAllCars
     if(cfg->GetBool("AllowLicensePlatesForAllCars", true, "Visual"))
@@ -2709,7 +2733,7 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("WeaponSpreadFix", true, "Gameplay"))
     {
         SET_TO(fPlayerAimRotRate, aml->GetSym(hGTASA, "fPlayerAimRotRate"));
-        HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
+        HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN7CWeapon14FireInstantHitEP7CEntityP7CVectorS3_S1_S3_S3_bb"));
     }
 
     // No SetClumpAlpha for ped
@@ -2719,7 +2743,7 @@ extern "C" void OnModLoad()
     /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
     {
         CamZoomProc_backTo = pGTASA + 0x3C5160 + 0x1;
-        //aml->Redirect(pGTASA + 0x3C5158 + 0x1, (uintptr_t)CamZoomProc_inject);
+        aml->Redirect(pGTASA + 0x3C5158 + 0x1, (uintptr_t)CamZoomProc_inject);
 
         FixSniperZoomingDistance_backTo = pGTASA + 0x3C5060 + 0x1;
         aml->Redirect(pGTASA + 0x3C5054 + 0x1, (uintptr_t)FixSniperZoomingDistance_inject);
