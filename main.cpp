@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2.1, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2.2, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -157,12 +157,14 @@ DECL_HOOK(bool, InitRenderWare)
 
     return true;
 }
-DECL_HOOKv(CalculateAspectRatio)
+#define fAspectCorrection (*ms_fAspectRatio - ar43)
+#define fAspectCorrectionDiv (*ms_fAspectRatio / ar43)
+/*DECL_HOOKv(CalculateAspectRatio)
 {
     CalculateAspectRatio();
     fAspectCorrection = (*ms_fAspectRatio - ar43);
     fAspectCorrectionDiv = *ms_fAspectRatio / ar43;
-}
+}*/
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();
 void (*emu_glEnable)(GLenum);
@@ -1835,7 +1837,7 @@ extern "C" void OnModLoad()
     SET_TO(RpGeometryForAllMaterials,aml->GetSym(hGTASA, "_Z25RpGeometryForAllMaterialsP10RpGeometryPFP10RpMaterialS2_PvES3_"));
     SET_TO(SetComponentAtomicAlpha, aml->GetSym(hGTASA, "_ZN8CVehicle23SetComponentAtomicAlphaEP8RpAtomici"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
-    HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
+    //HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
     
     // Variables Start //
@@ -2748,6 +2750,12 @@ extern "C" void OnModLoad()
     {
         SET_TO(fPlayerAimRotRate, aml->GetSym(hGTASA, "fPlayerAimRotRate"));
         HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN7CWeapon14FireInstantHitEP7CEntityP7CVectorS3_S1_S3_S3_bb"));
+    }
+
+    // Fixes farclip glitch with wall (wardumb be like)
+    if(cfg->GetBool("FixFogWall", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x5EB9D9, (uintptr_t)"\x31\x2E\x30\x30", 4);
     }
 
     // No SetClumpAlpha for ped
