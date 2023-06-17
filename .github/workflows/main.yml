@@ -12,9 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - uses: actions/checkout@v3
+    - name: Checkout repository...
+      uses: actions/checkout@v3
 
-    - name: Download AndroidModLoader`s mod template
+    - name: Download AndroidModLoader`s mod template...
       uses: wei/wget@v1
       with:
         args: -O ./AML_src.zip https://github.com/RusJJ/AndroidModLoader/archive/refs/heads/main.zip
@@ -27,7 +28,7 @@ jobs:
       run: |
         eval `ssh-agent -s`
         ssh-add - <<< '${{ secrets.SSH }}'
-        git clone https://github.com/RusJJ/GTASAAndroid_Structs ./structs
+        git clone https://RusJJ@github.com/RusJJ/GTASAAndroid_Structs ./structs
         mv ./structs/* ./
 
     - name: Install Android NDK (r24)...
