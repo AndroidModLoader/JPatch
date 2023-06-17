@@ -29,8 +29,12 @@ jobs:
     - run: unzip ./AML_src.zip
 
     - run: mv ./AndroidModLoader-main/mod ./mod
+    
+    - run: eval `ssh-agent -s`
+    
+    - run: ssh-add - <<< '${{ secrets.SSH }}'
 
-    - run: git clone https://RusJJ:${{secrets.SECRET_TOKEN}}@github.com/RusJJ/GTASAAndroid_Structs ./structs
+    - run: git clone https://github.com/RusJJ/GTASAAndroid_Structs ./structs
 
     - run: mv ./structs/* ./
 
