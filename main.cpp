@@ -2647,7 +2647,7 @@ extern "C" void OnModLoad()
     }
     
     // An improved ForceDXT
-    if(cfg->GetBool("ForceDXT", true, "Gameplay"))
+    if(cfg->GetBool("ForceLoadDXT", false, "Gameplay"))
     {
         HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime4LoadEPKcb21TextureDatabaseFormat"));
     }
