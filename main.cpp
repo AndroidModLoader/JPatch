@@ -14,7 +14,7 @@
 
 #include "GTASA_STRUCTS.h"
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.2.2, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.4.3, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
@@ -2756,6 +2756,12 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("FixFogWall", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5EB9D9, (uintptr_t)"\x31\x2E\x30\x30", 4);
+    }
+
+    // Fixes Corona sprites stretching at foggy weather
+    if(cfg->GetBool("FixCoronasStretching", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x5A27EC, (uintptr_t)"\xB0\xEE\x44\x0A", 4);
     }
 
     // No SetClumpAlpha for ped

@@ -12,6 +12,12 @@
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
 
+**Since v1.4.3**
+ - Fixed coronas stretching while the weather is foggy
+
+**Since v1.4.2.2**
+ - Fixed wall behind the fog (use default shaders!)
+
 **Since v1.4.2.1**
  - Fixed broken CrosshairFix after v1.4.2, fix for Country Rifle
  - Changed the values of CrosshairFix so it's more correct
