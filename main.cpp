@@ -1598,6 +1598,13 @@ DECL_HOOK(bool, FireInstantHit, CWeapon *self, CEntity *a2, CVector *a3, CVector
     return FireInstantHit(self, a2, a3, a4, a5, a6, a7, a8, a9);
 }
 
+// IS_CHAR_DEAD fix
+DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
+{
+    if(ped->m_fHealth <= 0.0f && ped->m_Weapons[ped->m_byteCurrentWeaponSlot].m_nType != eWeaponType::WEAPON_PARACHUTE) return true;
+    return RunningScript_IsPedDead(script, ped);
+}
+
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -2762,6 +2769,12 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("FixCoronasStretching", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5A27EC, (uintptr_t)"\xB0\xEE\x44\x0A", 4);
+    }
+
+    // JuniorDjjr: Fix IS_CHAR_DEAD returning false even if health is 0.0
+    if(cfg->GetBool("FixIsCharDead0HP", true, "SCMFixes"))
+    {
+        HOOK(RunningScript_IsPedDead, aml->GetSym(hGTASA, "_ZN14CRunningScript9IsPedDeadEP4CPed"));
     }
 
     // No SetClumpAlpha for ped
