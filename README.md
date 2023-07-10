@@ -14,6 +14,7 @@
 
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy
+ - Fix for peds changing their lighting when weapon in hands
 
 **Since v1.4.2.2**
  - Fixed wall behind the fog (use default shaders!)

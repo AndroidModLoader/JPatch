@@ -2780,7 +2780,7 @@ extern "C" void OnModLoad()
     // No SetClumpAlpha for ped (probably fixes the problem with player's lighting when holding a weapon)
     if(cfg->GetBool("NOPPedSetClumpAlpha", true, "Visual"))
     {
-        //aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+        aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
     }
 
     // Fix camera zooming
