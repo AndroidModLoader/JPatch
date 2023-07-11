@@ -2777,11 +2777,16 @@ extern "C" void OnModLoad()
         HOOK(RunningScript_IsPedDead, aml->GetSym(hGTASA, "_ZN14CRunningScript9IsPedDeadEP4CPed"));
     }
 
-    // No SetClumpAlpha for ped (probably fixes the problem with player's lighting when holding a weapon)
-    if(cfg->GetBool("NOPPedSetClumpAlpha", true, "Visual"))
+    //if(cfg->GetBool("RandomText", false, "RandomText"))
     {
-        aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+        // Do Nothing?
     }
+
+    // No SetClumpAlpha for ped (probably fixes the problem with player's lighting when holding a weapon)
+    //if(cfg->GetBool("NOPPedSetClumpAlpha", true, "Visual"))
+    //{
+    //    aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+    //}
 
     // Fix camera zooming
     /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
