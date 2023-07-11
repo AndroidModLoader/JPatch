@@ -54,7 +54,7 @@ MobileMenu *gMobileMenu;
 CWidget** m_pWidgets;
 ScriptVariables* ScriptParams;
 CLinkList<AlphaObjectInfo>* m_alphaList;
-CPool<CObject>** pObjectPool;
+CPool<CCutsceneObject>** pObjectPool;
 CZoneInfo** m_pCurrZoneInfo;
 CWeaponInfo* aWeaponInfo;
 int keys[538];
@@ -1605,6 +1605,46 @@ DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
     return RunningScript_IsPedDead(script, ped);
 }
 
+// In-Water jump resistance fix
+uintptr_t WaterJumpResistance_backTo;
+extern "C" float WaterJumpResistance_patch(void)
+{
+    return powf(0.9f, *ms_fTimeStep);
+}
+__attribute__((optnone)) __attribute__((naked)) void WaterJumpResistance_inject(void)
+{
+    // original code
+    asm volatile(
+        "VMOV.F32 S18, #-1.0\n"
+        "STR R5, [SP,#8]\n"
+        "ADD.W R4, R8, #0x14\n");
+
+    asm volatile(
+        "PUSH {R0-R4, R6-R11}\n"
+        //"MOV R0, R5\n"
+        "BL WaterJumpResistance_patch\n");
+
+    asm volatile("VPUSH {S8}\nVMOV.F32 S8, R0");
+
+    asm volatile(
+        "VLDR S0, [R5, #0x48]\n"
+        "VMUL.F32 S0, S0, S8\n");
+    asm volatile(
+        "VLDR S2, [R5, #0x4C]\n"
+        "VMUL.F32 S2, S2, S8\n");
+    asm volatile(
+        "VLDR S4, [R5, #0x50]\n"
+        "VMUL.F32 S4, S4, S8\n");
+
+    asm volatile("VPOP {S8}");
+
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0-R4, R6-R11}\n"
+        "BX R12\n"
+    :: "r" (WaterJumpResistance_backTo));
+}
+
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -2777,16 +2817,11 @@ extern "C" void OnModLoad()
         HOOK(RunningScript_IsPedDead, aml->GetSym(hGTASA, "_ZN14CRunningScript9IsPedDeadEP4CPed"));
     }
 
-    //if(cfg->GetBool("RandomText", false, "RandomText"))
-    {
-        // Do Nothing?
-    }
-
     // No SetClumpAlpha for ped (probably fixes the problem with player's lighting when holding a weapon)
-    //if(cfg->GetBool("NOPPedSetClumpAlpha", true, "Visual"))
-    //{
-    //    aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
-    //}
+    if(cfg->GetBool("FixPlayerLighting", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+    }
 
     // Fix camera zooming
     /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
@@ -2823,4 +2858,7 @@ extern "C" void OnModLoad()
     //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
     //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
     // Michelle date: CTaskSimpleCarSetPedInAsPassenger?
+
+    //WaterJumpResistance_backTo = pGTASA + 0x53BD14 + 0x1;
+    //aml->Redirect(pGTASA + 0x53BAE4 + 0x1, (uintptr_t)WaterJumpResistance_inject); 
 }
