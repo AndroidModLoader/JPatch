@@ -46,6 +46,9 @@ CStaticShadow* aStaticShadows_NEW;
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+#define GetTimeStep() (*ms_fTimeStep)
+#define GetTimeStepInSeconds() (*ms_fTimeStep / 50.0f)
+
 CPlayerInfo* WorldPlayers;
 CIntVector2D* windowSize;
 CCamera* TheCamera;
@@ -200,12 +203,15 @@ void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
 bool (*StoreStaticShadow)(uint32_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
 CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
+CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociationU)(RpClump*, uint32_t);
 CObject* (*CreateObject)(int mdlIdx, bool create);
 C2dEffect* (*Get2dEffect)(CBaseModelInfo*, int);
 void (*RwFrameForAllObjects)(RwFrame*, RwObject* (*)(RwObject*, void*), void*);
 RwObject* (*GetCurrentAtomicObjectCB)(RwObject*, void*);
 void (*RpGeometryForAllMaterials)(RpGeometry*, RpMaterial* (*)(RpMaterial*, void*), void*);
 void (*SetComponentAtomicAlpha)(RpAtomic*, int);
+void (*ApplyMoveForce)(CPhysical*,float,float,float);
+bool (*GetWaterLevel)(CVector, float&, bool, CVector*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -237,13 +243,7 @@ inline void BumpStreamingMemory(int megabytes)
 /////////////////////////////////////////////////////////////////////////////
 extern "C" void adadad(void)
 {
-    asm("MOV R0, #10000");
-    asm("MOV R5, R0");
-    //asm("MOV R5, #10000");
-    asm("MOVW R0, #0x8B80");
-    asm("MOVT R0, #0x8");
-    
-    
+    asm("VMOV S6, S0");
 } // This one is used internally by myself. Helps me to get patched values.
 
 // Moon phases
@@ -360,34 +360,164 @@ DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D)
     *ms_fTimeStep = save;
 }
 
-// SwimSpeedFix
-uintptr_t SwimmingResistanceBack_backTo;
-float saveStep;
-DECL_HOOKv(ProcessSwimmingResistance, void* self, CPed* ped)
+// Water physics fix
+// https://github.com/gta-reversed/gta-reversed-modern/blob/163ddc6ab22181004afd57e017618d9e3953a734/source/game_sa/Tasks/TaskTypes/TaskSimpleSwim.cpp#L440
+#define SWIMSPEED_FIX
+DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
 {
-    saveStep = *ms_fTimeStep;
-    if(ped->m_nPedType == PED_TYPE_PLAYER1) *ms_fTimeStep *= 0.8954f/fMagic;
-    else *ms_fTimeStep *= 1.14f/fMagic;
-    ProcessSwimmingResistance(self, ped);
-    *ms_fTimeStep = saveStep;
-}
-extern "C" void SwimmingResistanceBack(void)
-{
-    *ms_fTimeStep = saveStep;
-}
-__attribute__((optnone)) __attribute__((naked)) void SwimmingResistanceBack_inject(void)
-{
-    asm volatile(
-        "push {r0-r11}\n"
-        "bl SwimmingResistanceBack\n");
-    asm volatile(
-        "mov r12, %0\n"
-        "pop {r0-r11}\n"
-        "vldr s4, [r0]\n"
-        "ldr r0, [r4]\n"
-        "vmul.f32 s0, s4, s0\n"
-        "bx r12\n"
-    :: "r" (SwimmingResistanceBack_backTo));
+    float fSubmergeZ = -1.0f;
+    CVector vecPedMoveSpeed{};
+
+    switch (task->m_nSwimState)
+    {
+        case SWIM_TREAD:
+        case SWIM_SPRINT:
+        case SWIM_SPRINTING: {
+            float fAnimBlendSum = 0.0f;
+            float fAnimBlendDifference = 1.0f;
+
+            CAnimBlendAssociation* animSwimBreast = RpAnimBlendClumpGetAssociationU(ped->m_pRwClump, ANIM_ID_SWIM_BREAST);
+            if (animSwimBreast) {
+                fAnimBlendSum = 0.4f * animSwimBreast->m_fBlendAmount;
+                fAnimBlendDifference = 1.0f - animSwimBreast->m_fBlendAmount;
+            }
+
+            CAnimBlendAssociation* animSwimCrawl = RpAnimBlendClumpGetAssociationU(ped->m_pRwClump, ANIM_ID_SWIM_CRAWL);
+            if (animSwimCrawl) {
+                fAnimBlendSum += 0.2f * animSwimCrawl->m_fBlendAmount;
+                fAnimBlendDifference -= animSwimCrawl->m_fBlendAmount;
+            }
+            if (fAnimBlendDifference < 0.0f) {
+                fAnimBlendDifference = 0.0f;
+            }
+
+            fSubmergeZ = fAnimBlendDifference * 0.55f + fAnimBlendSum;
+
+            vecPedMoveSpeed =  ped->m_vecAnimMovingShiftLocal.x * ped->GetRight();
+            vecPedMoveSpeed += ped->m_vecAnimMovingShiftLocal.y * ped->GetForward();
+            break;
+        }
+        case SWIM_DIVE_UNDERWATER: {
+            vecPedMoveSpeed =  ped->m_vecAnimMovingShiftLocal.x * ped->GetRight();
+            vecPedMoveSpeed += ped->m_vecAnimMovingShiftLocal.y * ped->GetForward();
+
+            auto animSwimDiveUnder = RpAnimBlendClumpGetAssociationU(ped->m_pRwClump, ANIM_ID_SWIM_DIVE_UNDER);
+            if (animSwimDiveUnder) {
+                vecPedMoveSpeed.z = animSwimDiveUnder->m_fCurrentTime / animSwimDiveUnder->m_pAnimBlendHierarchy->m_fTotalTime * 
+                #ifndef SWIMSPEED_FIX
+                    -0.1f;
+                #else
+                    (-0.1f * (*ms_fTimeStep / fMagic));
+                #endif
+            }
+            break;
+        }
+        case SWIM_UNDERWATER_SPRINTING: {
+            vecPedMoveSpeed   =  ped->m_vecAnimMovingShiftLocal.x * ped->GetRight();
+            vecPedMoveSpeed   += cosf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y * ped->GetForward();
+            vecPedMoveSpeed.z += (sinf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y + 0.01f)
+            #ifdef SWIMSPEED_FIX
+                / (*ms_fTimeStep / fMagic)
+            #endif
+            ;
+            break;
+        }
+        case SWIM_BACK_TO_SURFACE: {
+            auto animClimb = RpAnimBlendClumpGetAssociationU(ped->m_pRwClump, ANIM_ID_CLIMB_JUMP);
+            if (!animClimb)
+                animClimb = RpAnimBlendClumpGetAssociationU(ped->m_pRwClump, ANIM_ID_SWIM_JUMPOUT);
+
+            if (animClimb) {
+                if (animClimb->m_pAnimBlendHierarchy->m_fTotalTime > animClimb->m_fCurrentTime &&
+                    (animClimb->m_fBlendAmount >= 1.0f || animClimb->m_fBlendDelta > 0.0f)
+                ) {
+                    float fMoveForceZ = GetTimeStep() * ped->m_fMass * 0.3f * 0.008f;
+                    ApplyMoveForce(ped, 0.0f, 0.0f, fMoveForceZ);
+                }
+            }
+            return;
+        }
+        default: {
+            return;
+        }
+    }
+
+    float fTheTimeStep = powf(0.9f, GetTimeStep());
+    vecPedMoveSpeed *= (1.0f - fTheTimeStep)
+    #ifdef SWIMSPEED_FIX
+        * (fMagic / *ms_fTimeStep)
+    #endif
+    ;
+    ped->m_vecMoveSpeed *= fTheTimeStep;
+    ped->m_vecMoveSpeed += vecPedMoveSpeed;
+
+    auto& pedPos = ped->GetPosition();
+    bool bUpdateRotationX = true;
+    CVector vecCheckWaterLevelPos = GetTimeStep() * ped->m_vecMoveSpeed + pedPos;
+    float fWaterLevel = 0.0f;
+    if (!GetWaterLevel(vecCheckWaterLevelPos, fWaterLevel, true, NULL)) {
+        fSubmergeZ = -1.0f;
+        bUpdateRotationX = false;
+    } else {
+        if (task->m_nSwimState != SWIM_UNDERWATER_SPRINTING || task->m_fStateChanger < 0.0f) {
+            bUpdateRotationX = false;
+        } else {
+            if (pedPos.z + 0.65f > fWaterLevel && task->m_fRotationX > 0.7854f) {
+                task->m_nSwimState = SWIM_TREAD;
+                task->m_fStateChanger = 0.0f;
+                bUpdateRotationX = false;
+            }
+        }
+    }
+
+    if (bUpdateRotationX) {
+        if (task->m_fRotationX >= 0.0f) {
+            if (pedPos.z + 0.65f <= fWaterLevel) {
+                if (task->m_fStateChanger <= 0.001f)
+                    task->m_fStateChanger = 0.0f;
+                else
+                    task->m_fStateChanger *= 0.95f;
+            } else {
+                float fMinimumSpeed = 0.05f * 0.5f;
+                if (task->m_fStateChanger > fMinimumSpeed) {
+                    task->m_fStateChanger *= 0.95f;
+                }
+                if (task->m_fStateChanger < fMinimumSpeed) {
+                    task->m_fStateChanger += GetTimeStepInSeconds() / 10.0f;
+                    task->m_fStateChanger = std::min(fMinimumSpeed, task->m_fStateChanger);
+                }
+                task->m_fRotationX += GetTimeStep() * task->m_fStateChanger;
+                fSubmergeZ = (0.55f - 0.2f) * (task->m_fRotationX * 4.0f / PI) * 0.75f + 0.2f;
+            }
+        } else {
+            if (pedPos.z - sin(task->m_fRotationX) + 0.65f <= fWaterLevel) {
+                if (task->m_fStateChanger > 0.001f)
+                    task->m_fStateChanger *= 0.95f;
+                else
+                    task->m_fStateChanger = 0.0f;
+            } else {
+                task->m_fStateChanger += GetTimeStepInSeconds() / 10.0f;
+                task->m_fStateChanger = std::min(task->m_fStateChanger, 0.05f);
+            }
+            task->m_fRotationX += GetTimeStep() * task->m_fStateChanger;
+        }
+    }
+
+    if (fSubmergeZ > 0.0f) {
+        fWaterLevel -= fSubmergeZ + pedPos.z;
+        float fTimeStepMoveSpeedZ = fWaterLevel / GetTimeStep();
+        float fTimeStep = GetTimeStep() * 0.1f;
+        fTimeStepMoveSpeedZ = std::clamp(fTimeStepMoveSpeedZ, -fTimeStep, fTimeStep);
+        fTimeStepMoveSpeedZ -= ped->m_vecMoveSpeed.z;
+        fTimeStep = GetTimeStepInSeconds();
+        fTimeStepMoveSpeedZ = std::clamp(fTimeStepMoveSpeedZ, -fTimeStep, fTimeStep);
+        ped->m_vecMoveSpeed.z += fTimeStepMoveSpeedZ;
+    }
+
+    if (pedPos.z < -69.0f) {
+        pedPos.z = -69.0f;
+        ped->m_vecMoveSpeed.z = std::max(ped->m_vecMoveSpeed.z, 0.0f);
+    }
 }
 
 // Madd Dogg's Mansion Basketball glitch
@@ -717,14 +847,14 @@ DECL_HOOK(void*, OS_ThreadLaunch, void* threadFn, void* a1, uint32_t a2, char co
 // Free objects pool
 DECL_HOOK(CObject*, Object_New, uint32_t size)
 {
-    CPool<CObject> *objPool = (*pObjectPool);
-    CObject *obj = objPool->New();
+    auto objPool = (*pObjectPool);
+    auto obj = objPool->New();
     if (!obj)
     {
         int size = objPool->GetSize();
         for (int i = 0; i < size; ++i)
         {
-            CObject *existing = objPool->GetAt(i);
+            auto existing = objPool->GetAt(i);
             if (existing && existing->m_nObjectType == OBJECT_TEMPORARY)
             {
                 int32_t handle = objPool->GetIndex(existing);
@@ -1605,46 +1735,6 @@ DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
     return RunningScript_IsPedDead(script, ped);
 }
 
-// In-Water jump resistance fix
-uintptr_t WaterJumpResistance_backTo;
-extern "C" float WaterJumpResistance_patch(void)
-{
-    return powf(0.9f, *ms_fTimeStep);
-}
-__attribute__((optnone)) __attribute__((naked)) void WaterJumpResistance_inject(void)
-{
-    // original code
-    asm volatile(
-        "VMOV.F32 S18, #-1.0\n"
-        "STR R5, [SP,#8]\n"
-        "ADD.W R4, R8, #0x14\n");
-
-    asm volatile(
-        "PUSH {R0-R4, R6-R11}\n"
-        //"MOV R0, R5\n"
-        "BL WaterJumpResistance_patch\n");
-
-    asm volatile("VPUSH {S8}\nVMOV.F32 S8, R0");
-
-    asm volatile(
-        "VLDR S0, [R5, #0x48]\n"
-        "VMUL.F32 S0, S0, S8\n");
-    asm volatile(
-        "VLDR S2, [R5, #0x4C]\n"
-        "VMUL.F32 S2, S2, S8\n");
-    asm volatile(
-        "VLDR S4, [R5, #0x50]\n"
-        "VMUL.F32 S4, S4, S8\n");
-
-    asm volatile("VPOP {S8}");
-
-    asm volatile(
-        "MOV R12, %0\n"
-        "POP {R0-R4, R6-R11}\n"
-        "BX R12\n"
-    :: "r" (WaterJumpResistance_backTo));
-}
-
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -1799,18 +1889,7 @@ DECL_HOOKv(PreRenderCar, CAutomobile* self)
     }
 }
 
-// Buoyancy testing
-DECL_HOOKv(PedBu, CPed* p)
-{
-    //PedBu(p);
-    logger->Info("ped buo");
-}
-DECL_HOOKv(AMF, CPhysical* target, CVector force)
-{
-    //AMF(target, CVector(force.x,force.y,-10.f*force.z));
-    logger->Info("force %f", force.z);
-}
-
+// Social Club
 DECL_HOOK(void*, SC_EnterSocial)
 {
     logger->Info("SC_EnterSocial 0x%08X", SC_EnterSocial());
@@ -1879,10 +1958,13 @@ extern "C" void OnModLoad()
     SET_TO(CreateObject,            aml->GetSym(hGTASA, "_ZN7CObject6CreateEib"));
     SET_TO(Get2dEffect,             aml->GetSym(hGTASA, "_ZN14CBaseModelInfo11Get2dEffectEi"));
     SET_TO(RpAnimBlendClumpGetAssociation,aml->GetSym(hGTASA, "_Z30RpAnimBlendClumpGetAssociationP7RpClumpPKc"));
+    SET_TO(RpAnimBlendClumpGetAssociationU,aml->GetSym(hGTASA, "_Z30RpAnimBlendClumpGetAssociationP7RpClumpj"));
     SET_TO(RwFrameForAllObjects,    aml->GetSym(hGTASA, "_Z20RwFrameForAllObjectsP7RwFramePFP8RwObjectS2_PvES3_"));
     SET_TO(GetCurrentAtomicObjectCB,aml->GetSym(hGTASA, "_Z24GetCurrentAtomicObjectCBP8RwObjectPv"));
     SET_TO(RpGeometryForAllMaterials,aml->GetSym(hGTASA, "_Z25RpGeometryForAllMaterialsP10RpGeometryPFP10RpMaterialS2_PvES3_"));
     SET_TO(SetComponentAtomicAlpha, aml->GetSym(hGTASA, "_ZN8CVehicle23SetComponentAtomicAlphaEP8RpAtomici"));
+    SET_TO(ApplyMoveForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
+    SET_TO(GetWaterLevel,           aml->GetSym(hGTASA, "_ZN11CWaterLevel13GetWaterLevelEfffPfbP7CVector"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     //HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
@@ -1946,7 +2028,7 @@ extern "C" void OnModLoad()
 
     // Fix moon!
     // War Drum moment: cannot get Alpha testing to work
-    /*if(cfg->BindOnce("MoonPhases", true, "Visual"))
+    /*if(cfg->GetBool("MoonPhases", true, "Visual"))
     {
         //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
         MoonVisual_1_backTo = pGTASA + 0x59ED90 + 0x1;
@@ -1993,12 +2075,10 @@ extern "C" void OnModLoad()
         HOOKPLT(ControlGunMove, pGTASA + 0x66F9D0);
     }
 
-    // Fix slow swimming speed
-    if(cfg->GetBool("SwimmingSpeedFix", true, "Gameplay"))
+    // Fix water physics
+    if(cfg->GetBool("FixWaterPhysics", true, "Gameplay"))
     {
-        SwimmingResistanceBack_backTo = pGTASA + 0x53BD3A + 0x1;
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
-        aml->Redirect(pGTASA + 0x53BD30 + 0x1, (uintptr_t)SwimmingResistanceBack_inject);
     }
 
     // Fix stealable items sucking
@@ -2078,7 +2158,7 @@ extern "C" void OnModLoad()
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
     // Causes crash and completely useless
-    //if(cfg->BindOnce("DesiredNumOfCarsLoadedBuff", true, "Gameplay"))
+    //if(cfg->GetBool("DesiredNumOfCarsLoadedBuff", true, "Gameplay"))
     //{
     //    *(unsigned char*)(aml->GetSym(hGTASA, "_ZN10CStreaming24desiredNumVehiclesLoadedE")) = 50; // Game hardcoded to 50 max (lazy to fix crashes for patches below)
     //    aml->PlaceNOP(pGTASA + 0x46BE1E, 1);
@@ -2850,15 +2930,10 @@ extern "C" void OnModLoad()
     }*/
     
     // JuniorDjjr, W.I.P.
-    /*if(cfg->BindOnce("FoodEatingModelFix", true, "Gameplay"))
+    /*if(cfg->GetBool("FoodEatingModelFix", true, "Gameplay"))
     {
         HOOKPLT(PlayerInfoProcess_Food, pGTASA + 0x673E84);
     }*/
     
-    //HOOK(PedBu, aml->GetSym(hGTASA, "_ZN4CPed15ProcessBuoyancyEv"));
-    //HOOK(AMF, aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
     // Michelle date: CTaskSimpleCarSetPedInAsPassenger?
-
-    //WaterJumpResistance_backTo = pGTASA + 0x53BD14 + 0x1;
-    //aml->Redirect(pGTASA + 0x53BAE4 + 0x1, (uintptr_t)WaterJumpResistance_inject); 
 }
