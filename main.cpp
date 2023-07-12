@@ -212,6 +212,7 @@ void (*RpGeometryForAllMaterials)(RpGeometry*, RpMaterial* (*)(RpMaterial*, void
 void (*SetComponentAtomicAlpha)(RpAtomic*, int);
 void (*ApplyMoveForce)(CPhysical*,float,float,float);
 bool (*GetWaterLevel)(CVector, float&, bool, CVector*);
+CTask* (*GetTaskSwim)(CPedIntelligence*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -1735,6 +1736,36 @@ DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
     return RunningScript_IsPedDead(script, ped);
 }
 
+// Sprint button after aiming and dropping to the water
+DECL_HOOK(bool, IsTargetingActiveForPlayer, CCamera* self, CPlayerPed* p)
+{
+    if(!p)
+    {
+        switch(self->PlayerWeaponMode.Mode)
+        {
+            case 7:
+            case 8:
+            case 0x22:
+            case 0x2D:
+            case 0x2E:
+            case 0x33:
+            case 0x41:
+                return true;
+        }
+    }
+    else
+    {
+        if(GetTaskSwim(p->m_pIntelligence)) return false; // Fixed part
+        if(p->m_pTarget || p->m_pPlayerData->m_bFreeAiming) return true;
+    }
+    return false;
+}
+DECL_HOOK(bool, IsTargetingActive, CCamera* self)
+{
+    CPlayerPed* p = FindPlayerPed(-1);
+    return HookOf_IsTargetingActiveForPlayer(self, p);
+}
+
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -1965,6 +1996,7 @@ extern "C" void OnModLoad()
     SET_TO(SetComponentAtomicAlpha, aml->GetSym(hGTASA, "_ZN8CVehicle23SetComponentAtomicAlphaEP8RpAtomici"));
     SET_TO(ApplyMoveForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
     SET_TO(GetWaterLevel,           aml->GetSym(hGTASA, "_ZN11CWaterLevel13GetWaterLevelEfffPfbP7CVector"));
+    SET_TO(GetTaskSwim,             aml->GetSym(hGTASA, "_ZNK16CPedIntelligence11GetTaskSwimEv"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     //HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
@@ -2901,6 +2933,13 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("FixPlayerLighting", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+    }
+
+    // Sprint button after aiming and dropping to the water
+    if(cfg->GetBool("FixSprintButtonSwimDisappear", true, "Gameplay"))
+    {
+        HOOKPLT(IsTargetingActiveForPlayer, pGTASA + 0x6708F0);
+        HOOKPLT(IsTargetingActive, pGTASA + 0x674718);
     }
 
     // Fix camera zooming

@@ -17,6 +17,7 @@
  - Fix for peds changing their lighting when weapon in hands
  - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
  - Fixed water physics (includes swimming speed fix)
+ - Sprint button after aiming and dropping to the water is always visible
 
 **Since v1.4.2.2**
  - Fixed wall behind the fog (use default shaders!)
