@@ -1715,11 +1715,12 @@ __attribute__((optnone)) __attribute__((naked)) void LoadWeaponObject_Inject(voi
 
 // Slippery floor!
 uintptr_t IceFloor_BackTo1, IceFloor_BackTo2;
-extern "C" uintptr_t IceFloor_Patch(CPed* p, CPhysical* groundphy)
+extern "C" uintptr_t IceFloor_Patch(CPed* p)
 {
     if(p->IsDead())
     {
-        if(!groundphy->m_pAttachedTo && (groundphy->m_nPhysicalFlags & 0xC) != 4)
+        CPhysical* groundphy = p->m_pGroundPhysical;
+        if(!(!groundphy || groundphy->m_pAttachedTo || (groundphy->m_nPhysicalFlags & 0xC) == 4))
         {
             return IceFloor_BackTo2; // continue code execution
         }
@@ -1729,13 +1730,14 @@ extern "C" uintptr_t IceFloor_Patch(CPed* p, CPhysical* groundphy)
 __attribute__((optnone)) __attribute__((naked)) void IceFloor_Inject(void)
 {
     asm volatile(
-        "PUSH {R0-R11}\n"
-        "LDR R0, [SP, #0x10]\n"
-        "LDR R1, [SP, #0x0]\n"
+        "PUSH {R0-R3, R5-R11}\n"
+        "VPUSH {S0}\n"
+        "MOV R0, R4\n"
         "BL IceFloor_Patch\n");
     asm volatile(
         "MOV R12, R0\n"
-        "POP {R0-R11}\n"
+        "VPOP {S0}\n"
+        "POP {R0-R3, R5-R11}\n"
         "BX R12\n");
 }
 
@@ -1765,24 +1767,21 @@ DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
 // Sprint button after aiming and dropping to the water
 DECL_HOOK(bool, IsTargetingActiveForPlayer, CCamera* self, CPlayerPed* p)
 {
-    if(!p)
-    {
-        switch(self->PlayerWeaponMode.Mode)
-        {
-            case 7:
-            case 8:
-            case 0x22:
-            case 0x2D:
-            case 0x2E:
-            case 0x33:
-            case 0x41:
-                return true;
-        }
-    }
-    else
+    if(p)
     {
         if(GetTaskSwim(p->m_pIntelligence)) return false; // Fixed part
         if(p->m_pTarget || p->m_pPlayerData->m_bFreeAiming) return true;
+    }
+    switch(self->PlayerWeaponMode.Mode)
+    {
+        case 0x07:
+        case 0x08:
+        case 0x22:
+        case 0x2D:
+        case 0x2E:
+        case 0x33:
+        case 0x41:
+            return true;
     }
     return false;
 }
