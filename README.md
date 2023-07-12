@@ -11,10 +11,12 @@
  **Planned/TODO (not ready or broken now)**
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
+ - FoodEatingFix by JuniorDjjr
+ - Moon phases (probably far away...)
+ - Michelle dating fix
 
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy
- - Fix for peds changing their lighting when weapon in hands
  - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
  - Fixed water physics (includes swimming speed fix)
  - Sprint button after aiming and dropping to the water is always visible
@@ -33,7 +35,7 @@
  - Implement NoRadioCuts
  - Smaller grenades collision
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
- - MTA: Fix slippery floor
+ - MTA: Fix slippery floor (improved in 1.4.3)
  - Allow license plates to render on all vehicles
  - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
  - Show muzzle flash for the last bullet
