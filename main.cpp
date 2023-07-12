@@ -1714,31 +1714,29 @@ __attribute__((optnone)) __attribute__((naked)) void LoadWeaponObject_Inject(voi
 }
 
 // Slippery floor!
-uintptr_t IceFloor_BackTo, IceFloor_BackTo1, IceFloor_BackTo2;
-extern "C" void IceFloor_Patch(CPed* p, CPhysical* groundphy)
+uintptr_t IceFloor_BackTo1, IceFloor_BackTo2;
+extern "C" uintptr_t IceFloor_Patch(CPed* p, CPhysical* groundphy)
 {
     if(p->IsDead())
     {
         if(!groundphy->m_pAttachedTo && (groundphy->m_nPhysicalFlags & 0xC) != 4)
         {
-            IceFloor_BackTo = IceFloor_BackTo2; // continue code execution
-            return;
+            return IceFloor_BackTo2; // continue code execution
         }
     }
-    IceFloor_BackTo = IceFloor_BackTo1; // skip the code
+    return IceFloor_BackTo1; // skip the code
 }
 __attribute__((optnone)) __attribute__((naked)) void IceFloor_Inject(void)
 {
     asm volatile(
         "PUSH {R0-R11}\n"
-        "LDR R0, [SP, #10]\n"
-        "LDR R1, [SP, #0]\n"
+        "LDR R0, [SP, #0x10]\n"
+        "LDR R1, [SP, #0x0]\n"
         "BL IceFloor_Patch\n");
     asm volatile(
-        "MOV R12, %0\n"
+        "MOV R12, R0\n"
         "POP {R0-R11}\n"
-        "BX R12\n"
-    :: "r" (IceFloor_BackTo));
+        "BX R12\n");
 }
 
 // Can now use a gun!
