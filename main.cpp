@@ -452,6 +452,10 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     ped->m_vecMoveSpeed *= fTheTimeStep;
     ped->m_vecMoveSpeed += vecPedMoveSpeed;
 
+    #ifdef SWIMSPEED_FIX
+        if(ped->IsPlayer()) ped->m_vecMoveSpeed *= 1.25f;
+    #endif
+
     auto& pedPos = ped->GetPosition();
     bool bUpdateRotationX = true;
     CVector vecCheckWaterLevelPos = GetTimeStep() * ped->m_vecMoveSpeed + pedPos;
