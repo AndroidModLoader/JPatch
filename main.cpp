@@ -68,10 +68,12 @@ CPolyBunch* aPolyBunches;
 CBaseModelInfo** ms_modelInfoPtrs;
 CRGBA* ms_vehicleColourTable;
 
+CTaskComplexSequence* ms_taskSequence;
+CRunningScript** pActiveScripts;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
-int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail;
+int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
 uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable;
 static uint32_t CCheat__m_aCheatHashKeys[] = { 
@@ -213,6 +215,11 @@ void (*SetComponentAtomicAlpha)(RpAtomic*, int);
 void (*ApplyMoveForce)(CPhysical*,float,float,float);
 bool (*GetWaterLevel)(CVector, float&, bool, CVector*);
 CTask* (*GetTaskSwim)(CPedIntelligence*);
+CTask* (*TaskConstructor)();
+void (*TaskStartNamedAnim)(CTask*, const char* animName, const char* animGroupName, uint32_t animFlags, float blendDelta, int32_t endTime, bool bDontInterrupt, bool bRunInSequence, bool bOffsetPed, bool bHoldLastFrame);
+void (*SetTask)(CTaskManager*, CTask*, int, bool);
+bool (*TaskComplexSequenceAddTask)(CTaskComplexSequence*, CTask*);
+CAnimBlendAssociation* (*BlendAnimation)(RpClump* clump, AssocGroupId groupId, AnimationId animId, float clumpAssocBlendData);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -979,7 +986,7 @@ __attribute__((optnone)) __attribute__((naked)) void RoadReflections_Inject(void
 // Doesnt work :)
 // peepo found a way. So, actually, R* disabled it. LOL
 #define SMOOTHING_PERCENT 0.3f
-#define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.0f - SMOOTHING_PERCENT)))
+#define SMOOTHED_VALUE(_VAL)    (_VAL<SMOOTHING_PERCENT ? 0 : (_VAL / (1.01f - SMOOTHING_PERCENT)))
 uint16_t nRotorMdlIgnore;
 uintptr_t RotorBlurRender_BackTo1, RotorBlurRender_BackTo2;
 extern "C" void RotorBlurRender_Patch(RpAtomic* atomic, CAutomobile* ent)
@@ -1823,6 +1830,63 @@ DECL_HOOK(bool, IsTargetingActive, CCamera* self)
     return HookOf_IsTargetingActiveForPlayer(self, p);
 }
 
+// ParaLand Anim fix
+DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
+{
+    CPed* ped = self->m_pPed;
+    if(ped->m_Weapons[ped->m_byteCurrentWeaponSlot].m_nType == eWeaponType::WEAPON_PARACHUTE)
+    {
+        auto anim = RpAnimBlendClumpGetAssociation(ped->m_pRwClump, "FALL_front");
+        if(anim != NULL)
+        {
+            CTask* task = TaskConstructor();
+            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", 0x08 | 0x10 | 0x40 | 0x80, 7.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+            SetTask(&ped->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_EVENT_RESPONSE_TEMP, false);
+        }
+    }
+    PlayerInfoProcess_ParachuteAnim(self, playerNum);
+}
+
+// Boat radio animation
+uintptr_t BoatRadio_BackTo;
+extern "C" CAnimBlendAssociation* BoatRadio_Patch(RpClump* p)
+{
+    if(RpAnimBlendClumpGetAssociationU(p, ANIM_ID_DRIVE_BOAT)) return NULL;
+    return BlendAnimation(p, ANIM_GROUP_DEFAULT, ANIM_ID_CAR_TUNE_RADIO, 4.0);
+}
+__attribute__((optnone)) __attribute__((naked)) void BoatRadio_Inject(void)
+{
+    asm volatile(
+        "BL BoatRadio_Patch\n"
+        "PUSH {R0}\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+        "BX R12\n"
+    :: "r" (BoatRadio_BackTo));
+}
+
+// MixSets
+uintptr_t DuckAnyWeapon_BackTo1, DuckAnyWeapon_BackTo2;
+extern "C" uintptr_t DuckAnyWeapon_Patch(CWeaponInfo* info, CPed* ped)
+{
+    if(info->m_nWeaponFire == WEAPON_FIRE_MELEE ||
+       /*info->m_nWeaponFire == WEAPON_FIRE_USE ||
+       (ped->m_Weapons[ped->m_byteCurrentWeaponSlot].m_nType | 2) == 43 ||
+       (info->bCrouchFire ||*/ // original code
+       info->m_eAnimGroup != ANIM_GROUP_FLAME || info->m_eAnimGroup != ANIM_GROUP_ROCKET) // MIX
+        return DuckAnyWeapon_BackTo1;
+    return DuckAnyWeapon_BackTo2;
+}
+__attribute__((optnone)) __attribute__((naked)) void DuckAnyWeapon_Inject(void)
+{
+    asm volatile(
+        "MOV R0, R5\n"
+        "MOV R1, R4\n"
+        "BL DuckAnyWeapon_Patch\n"
+        "BX R0\n");
+}
+
 /* Broken below */
 /* Broken below */
 /* Broken below */
@@ -2054,11 +2118,18 @@ extern "C" void OnModLoad()
     SET_TO(ApplyMoveForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
     SET_TO(GetWaterLevel,           aml->GetSym(hGTASA, "_ZN11CWaterLevel13GetWaterLevelEfffPfbP7CVector"));
     SET_TO(GetTaskSwim,             aml->GetSym(hGTASA, "_ZNK16CPedIntelligence11GetTaskSwimEv"));
+    SET_TO(TaskConstructor,         aml->GetSym(hGTASA, "_ZN5CTasknwEj"));
+    SET_TO(TaskStartNamedAnim,      aml->GetSym(hGTASA, "_ZN23CTaskSimpleRunNamedAnimC2EPKcS1_ifibbbb"));
+    SET_TO(SetTask,                 aml->GetSym(hGTASA, "_ZN12CTaskManager7SetTaskEP5CTaskib"));
+    SET_TO(TaskComplexSequenceAddTask, aml->GetSym(hGTASA, "_ZN20CTaskComplexSequence7AddTaskEP5CTask"));
+    SET_TO(BlendAnimation,          aml->GetSym(hGTASA, "_ZN12CAnimManager14BlendAnimationEP7RpClump12AssocGroupId11AnimationIdf"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     //HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
     
     // Variables Start //
+    SET_TO(ms_taskSequence,         aml->GetSym(hGTASA, "_ZN14CTaskSequences15ms_taskSequenceE"));
+    SET_TO(pActiveScripts,          aml->GetSym(hGTASA, "_ZN11CTheScripts14pActiveScriptsE"));
     SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
     SET_TO(WorldPlayers,            *(void**)(pGTASA + 0x6783C8)); // Patched CWorld::Players will work now!
     SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
@@ -2088,6 +2159,7 @@ extern "C" void OnModLoad()
     SET_TO(fSpriteBrightness,       pGTASA + 0x966590);
     SET_TO(detailTexturesStorage,   aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE") + 8); // pGTASA + 0x6BD1D8
     SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
+    SET_TO(ms_iActiveSequence,      aml->GetSym(hGTASA, "_ZN14CTaskSequences18ms_iActiveSequenceE"));
     SET_TO(RasterExtOffset,         aml->GetSym(hGTASA, "RasterExtOffset"));
     SET_TO(m_f3rdPersonCHairMultX,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultXE"));
     SET_TO(m_f3rdPersonCHairMultY,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultYE"));
@@ -2997,6 +3069,35 @@ extern "C" void OnModLoad()
     {
         HOOKPLT(IsTargetingActiveForPlayer, pGTASA + 0x6708F0);
         HOOKPLT(IsTargetingActive, pGTASA + 0x674718);
+    }
+
+    // Guess by the name
+    if(cfg->GetBool("FixParachuteLandingAnim", true, "Visual"))
+    {
+        HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x673E84);
+    }
+
+    // FX particles distance multiplier!
+    float fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
+    if(fxMultiplier != 1 && fxMultiplier > 0.1)
+    {
+        aml->Unprot(pGTASA + 0x368C7C, sizeof(float)); *(float*)(pGTASA + 0x368C7C) = 0.015625 * fxMultiplier;
+        aml->Unprot(pGTASA + 0x36EC34, sizeof(float)); *(float*)(pGTASA + 0x36EC34) = 0.00390625 * fxMultiplier;
+    }
+
+    // A long awaiting radio animation... Why do you need it so bad?
+    if(cfg->GetBool("BoatRadioAnimationFix", true, "Visual"))
+    {
+        BoatRadio_BackTo = pGTASA + 0x58C230 + 0x1;
+        aml->Redirect(pGTASA + 0x58C224 + 0x1, (uintptr_t)BoatRadio_Inject);
+    }
+
+    // MixSets' DuckAnyWeapon
+    if(cfg->GetBool("MIX_DuckAnyWeapon", true, "Gameplay"))
+    {
+        DuckAnyWeapon_BackTo1 = pGTASA + 0x543714 + 0x1; // ret 1
+        DuckAnyWeapon_BackTo2 = pGTASA + 0x54376A + 0x1; // ret 0
+        aml->Redirect(pGTASA + 0x5436EC + 0x1, (uintptr_t)DuckAnyWeapon_Inject);
     }
 
     // Fix camera zooming

@@ -20,6 +20,10 @@
  - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
  - Fixed water physics (includes swimming speed fix)
  - Sprint button after aiming and dropping to the water is always visible
+ - Parachute landing animation fix
+ - FX particles draw distance scaler (default is x2.5)
+ - Boat radio antenna animation
+ - MixSets: Crouch with any weapons
 
 **Since v1.4.2.2**
  - Fixed wall behind the fog (use default shaders!)
@@ -35,7 +39,7 @@
  - Implement NoRadioCuts
  - Smaller grenades collision
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
- - MTA: Fix slippery floor (improved in 1.4.3)
+ - MTA: Fix slippery floor (improved in v1.4.3)
  - Allow license plates to render on all vehicles
  - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
  - Show muzzle flash for the last bullet
