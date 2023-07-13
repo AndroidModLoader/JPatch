@@ -521,6 +521,35 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     }
 }
 
+uintptr_t ProcessBuoyancy_BackTo;
+extern "C" float ProcessBuoyancy_Patch(CPhysical* physical)
+{
+    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED)
+    {
+        CPed* ped = (CPed*)physical;
+        if (ped->IsPlayer()) // we only need this for player, due to swim bug
+        {
+            return (1.0f + ((*ms_fTimeStep / fMagic) / 1.5f)) * (*ms_fTimeStep / fMagic);
+        }
+    }
+    return *ms_fTimeStep;
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessBuoyancy_Inject(void)
+{
+    asm volatile(
+        "MOV R0, R4\n"
+        "BL ProcessBuoyancy_Patch\n"
+        "PUSH {R0}\n"
+        "VLDR S0, [R4,#0x6C]\n"
+        "VLDR S2, [R4,#0xBC]\n"
+        "VMUL.F32 S0, S2, S0\n");
+    asm volatile(
+        "MOV R12, %0\n"
+        "POP {R0}\n"
+    :: "r" (ProcessBuoyancy_BackTo));
+    asm volatile("VMOV S2, R0\nBX R12\n");
+}
+
 // Madd Dogg's Mansion Basketball glitch
 DECL_HOOK(ScriptHandle, GenerateNewPickup_MaddDogg, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
 {
@@ -865,7 +894,7 @@ DECL_HOOK(CObject*, Object_New, uint32_t size)
                 return obj;
             }
         }
-	}
+    }
     return obj;
 }
 
@@ -2136,6 +2165,8 @@ extern "C" void OnModLoad()
     if(cfg->GetBool("FixWaterPhysics", true, "Gameplay"))
     {
         HOOKPLT(ProcessSwimmingResistance, pGTASA + 0x66E584);
+        ProcessBuoyancy_BackTo = pGTASA + 0x56F946 + 0x1;
+        aml->Redirect(pGTASA + 0x56F930 + 0x1, (uintptr_t)ProcessBuoyancy_Inject);
     }
 
     // Fix stealable items sucking
