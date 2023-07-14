@@ -400,6 +400,7 @@ FodyWeavers.xsd
 # Own
 mod/
 libs/
+.vscode/
 *.bak
 build.ps1
 ndkpath.txt

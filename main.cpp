@@ -1851,6 +1851,19 @@ DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
     PlayerInfoProcess_ParachuteAnim(self, playerNum);
 }
 
+// Unused detonator anim
+DECL_HOOKv(UseDetonator, CEntity* ent)
+{
+    UseDetonator(ent);
+
+    if(ent->m_nType == eEntityType::ENTITY_TYPE_PED)
+    {
+        CTask* task = TaskConstructor();
+        TaskStartNamedAnim(task, "BOMBER", "DETONATOR", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+        SetTask(&((CPed*)ent)->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_PRIMARY, false);
+    }
+}
+
 // Boat radio animation
 uintptr_t BoatRadio_BackTo;
 extern "C" CAnimBlendAssociation* BoatRadio_Patch(RpClump* p)
@@ -3143,5 +3156,12 @@ extern "C" void OnModLoad()
     //if(cfg->GetBool("FixPlayerLighting", true, "Visual"))
     //{
     //    aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
+    //}
+
+    // Detonator unused anim?
+    // This should work but this animation is not in the files!
+    //if(cfg->GetBool("UnusedDetonatorAnim", true, "Visual"))
+    //{
+    //    HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
     //}
 }
