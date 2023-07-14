@@ -220,6 +220,7 @@ void (*TaskStartNamedAnim)(CTask*, const char* animName, const char* animGroupNa
 void (*SetTask)(CTaskManager*, CTask*, int, bool);
 bool (*TaskComplexSequenceAddTask)(CTaskComplexSequence*, CTask*);
 CAnimBlendAssociation* (*BlendAnimation)(RpClump* clump, AssocGroupId groupId, AnimationId animId, float clumpAssocBlendData);
+CAnimBlendAssociation* (*RpAnimBlendGetNextAssociation)(CAnimBlendAssociation *pAssociation);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -1839,9 +1840,12 @@ DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
         auto anim = RpAnimBlendClumpGetAssociation(ped->m_pRwClump, "FALL_front");
         if(anim != NULL)
         {
+            anim->m_bitsFlag |= ANIMATION_FREEZE_LAST_FRAME;
+            anim->m_fBlendDelta = -1000.0f;
+
             CTask* task = TaskConstructor();
-            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", 0x08 | 0x10 | 0x40 | 0x80, 6.0f, -1, true, *ms_iActiveSequence > -1, false, false);
-            SetTask(&ped->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_EVENT_RESPONSE_TEMP, false);
+            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL | ANIMATION_TRANSLATE_Y | ANIMATION_TRANSLATE_X, 10.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+            SetTask(&ped->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_PRIMARY, false);
         }
     }
     PlayerInfoProcess_ParachuteAnim(self, playerNum);
@@ -2123,6 +2127,7 @@ extern "C" void OnModLoad()
     SET_TO(SetTask,                 aml->GetSym(hGTASA, "_ZN12CTaskManager7SetTaskEP5CTaskib"));
     SET_TO(TaskComplexSequenceAddTask, aml->GetSym(hGTASA, "_ZN20CTaskComplexSequence7AddTaskEP5CTask"));
     SET_TO(BlendAnimation,          aml->GetSym(hGTASA, "_ZN12CAnimManager14BlendAnimationEP7RpClump12AssocGroupId11AnimationIdf"));
+    SET_TO(RpAnimBlendGetNextAssociation, aml->GetSym(hGTASA, "_Z29RpAnimBlendGetNextAssociationP21CAnimBlendAssociation"));
     HOOKPLT(InitRenderWare,         pGTASA + 0x66F2D0);
     //HOOK(CalculateAspectRatio,      aml->GetSym(hGTASA, "_ZN5CDraw20CalculateAspectRatioEv"));
     // Functions End   //
