@@ -1840,7 +1840,7 @@ DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
         if(anim != NULL)
         {
             CTask* task = TaskConstructor();
-            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", 0x08 | 0x10 | 0x40 | 0x80, 7.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", 0x08 | 0x10 | 0x40 | 0x80, 6.0f, -1, true, *ms_iActiveSequence > -1, false, false);
             SetTask(&ped->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_EVENT_RESPONSE_TEMP, false);
         }
     }
