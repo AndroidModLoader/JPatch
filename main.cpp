@@ -3061,7 +3061,7 @@ extern "C" void OnModLoad()
     // JuniorDjjr: Fix IS_CHAR_DEAD returning false even if health is 0.0
     if(cfg->GetBool("FixIsCharDead0HP", true, "SCMFixes"))
     {
-        HOOK(RunningScript_IsPedDead, aml->GetSym(hGTASA, "_ZN14CRunningScript9IsPedDeadEP4CPed"));
+        HOOKPLT(RunningScript_IsPedDead, pGTASA + 0x670D10);
     }
 
     // Sprint button after aiming and dropping to the water
