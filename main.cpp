@@ -23,7 +23,7 @@
 
 MYMODCFG(net.rusjj.jpatch, JPatch, 1.5, RusJJ)
 BEGIN_DEPLIST()
-    ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.3)
+    ADD_DEPENDENCY_VER(net.rusjj.aml, 1.0.2.1)
 END_DEPLIST()
 
 union ScriptVariables
@@ -125,22 +125,6 @@ static uint32_t CCheat__m_aCheatHashKeys[] = {
 /////////////////////////////////////////////////////////////////////////////
 int ret0(int a, ...) { return 0; } // Generic
 int ret1(int a, ...) { return 1; } // Generic
-void RedirectToRegister(unsigned char reg, uintptr_t addr, uintptr_t to)
-{
-    if(!addr) return;
-    uintptr_t hook[2] = {(uintptr_t)(0x10000000*reg + 0x0000F8DF), to}; // idk
-    if(addr & 1)
-    {
-        addr &= ~1;
-        if (addr & 2)
-        {
-            aml->PlaceNOP(addr, 1); 
-            addr += 2;
-        }
-        //hook[0] = 0x10000000*reg + 0x0000F8DF;
-    }
-    aml->Write(addr, (uintptr_t)hook, sizeof(hook));
-}
 
 float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 CRGBA OwnHudColour[HUD_COLOUR_COUNT];
@@ -621,7 +605,7 @@ extern "C" void OnModLoad()
         *(float*)(pGTASA + 0x5319D0) *= 2.0f;
     }
 
-    // 44100 Hz Audio support (without a mod OpenAL Update) (is this working?)
+    // 44100 Hz Audio support (without a mod OpenAL Update but works with it anyway)
     if(cfg->GetBool("Allow44100HzAudio", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x613E0A, sizeof(int));
@@ -1311,6 +1295,13 @@ extern "C" void OnModLoad()
         DuckAnyWeapon_BackTo1 = pGTASA + 0x543714 + 0x1; // ret 1
         DuckAnyWeapon_BackTo2 = pGTASA + 0x54376A + 0x1; // ret 0
         aml->Redirect(pGTASA + 0x5436EC + 0x1, (uintptr_t)DuckAnyWeapon_Inject);
+    }
+
+    // BengbuGuards' idea
+    if(cfg->GetBool("FixSecondSiren", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x590133, "\x20\x00\xBF\x00\xBF", 5);
+        aml->PlaceNOP(pGTASA + 0x590168, 2);
     }
 
     // Fix camera zooming

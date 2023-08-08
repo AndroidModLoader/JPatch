@@ -973,7 +973,7 @@ typedef bool (*IsWTouched)(CWidget*);
 DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 {
     static float prevVal = 0.0f;
-    if((*(IsWTouched*)(self->vtable + 80))(self) != false) // IsTouched
+    if((*(IsWTouched*)(self->vtable() + 80))(self) != false) // IsTouched
     {
         CVector2D v; GetTouchPosition(&v, self->cachedPosNum);
         
