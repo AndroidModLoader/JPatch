@@ -1300,8 +1300,8 @@ extern "C" void OnModLoad()
     // BengbuGuards' idea
     if(cfg->GetBool("FixSecondSiren", true, "Gameplay"))
     {
-        aml->Write(pGTASA + 0x590133, "\x20\x00\xBF\x00\xBF", 5);
-        aml->PlaceNOP(pGTASA + 0x590168, 2);
+        aml->PlaceNOP(pGTASA + 0x590134 + 0x1, 2);
+        aml->PlaceNOP(pGTASA + 0x590168 + 0x1, 2);
     }
 
     // Fix camera zooming
