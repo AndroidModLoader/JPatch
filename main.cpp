@@ -1300,8 +1300,14 @@ extern "C" void OnModLoad()
     // BengbuGuards' idea
     if(cfg->GetBool("FixSecondSiren", true, "Gameplay"))
     {
-        aml->PlaceNOP(pGTASA + 0x590134 + 0x1, 2);
-        aml->PlaceNOP(pGTASA + 0x590168 + 0x1, 2);
+        aml->Write(pGTASA + 0x590132, (uintptr_t)"\xAF\xF3\x00\x80\x00\x21",6);
+        aml->Write(pGTASA + 0x590168, (uintptr_t)"\xAF\xF3\x00\x80",4);
+    }
+
+    // https://cookieplmonster.github.io/2018/05/27/vehicle-anims-silentpatch/
+    if(cfg->GetBool("BoatRotatingRadarFix", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x6107D9, (uintptr_t)"\0\0\0",3);
     }
 
     // Fix camera zooming
