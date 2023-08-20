@@ -216,6 +216,7 @@ bool (*TaskComplexSequenceAddTask)(CTaskComplexSequence*, CTask*);
 CAnimBlendAssociation* (*BlendAnimation)(RpClump* clump, AssocGroupId groupId, AnimationId animId, float clumpAssocBlendData);
 CAnimBlendAssociation* (*RpAnimBlendGetNextAssociation)(CAnimBlendAssociation *pAssociation);
 
+
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -1313,11 +1314,17 @@ extern "C" void OnModLoad()
         aml->Write8(pGTASA + 0x6107D9, 0x00); // Animation name: boat_moving_hi -> boat_moving
     }
 
-    // Disables backface culling for object with transparent textures
-    if(cfg->GetBool("NoBFCullingForTransparents", true, "Visual"))
+    // Fix airbubbles from the jaw (CJ is breathing with his ass, lololololol)
+    if(cfg->GetBool("AirBubblesFromJaw", true, "Visual"))
     {
-        aml->Write8(pGTASA + 0x40FC64, 0x00);
+        aml->Write(pGTASA + 0x53C4A0, "\xD0\xED\x8C\x0B\xD0\xF8\x38\x02", 8);
     }
+
+    // Disables backface culling for object with transparent textures
+    /*if(cfg->GetBool("NoBFCullingForTransparents", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x40FC64, 0x01);
+    }*/
 
     // Fix camera zooming
     /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))
