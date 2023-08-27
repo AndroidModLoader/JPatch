@@ -13,12 +13,15 @@
 #include <GLES2/gl2platform.h>
 
 #ifdef AML32
+    #include "AArch64_ModHelper/Thumbv7_ASMHelper.h"
     #include "GTASA_STRUCTS.h"
     #define BYVER(__for32, __for64) (__for32)
+    using namespace ThumbV7;
 #else
     #include "AArch64_ModHelper/ARMv8_ASMHelper.h"
     #include "GTASA_STRUCTS_210.h"
     #define BYVER(__for32, __for64) (__for64)
+    using namespace ARMv8;
 #endif
 
 MYMODCFG(net.rusjj.jpatch, JPatch, 1.5, RusJJ)
@@ -38,7 +41,7 @@ union ScriptVariables
 ///////////////////////////////     Saves     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 uintptr_t pGTASA, pSC;
-void* hGTASA, *hSC;
+void *hGTASA, *hSC;
 static constexpr float ar43 = 4.0f / 3.0f;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
@@ -212,6 +215,7 @@ void (*SetTask)(CTaskManager*, CTask*, int, bool);
 bool (*TaskComplexSequenceAddTask)(CTaskComplexSequence*, CTask*);
 CAnimBlendAssociation* (*BlendAnimation)(RpClump* clump, AssocGroupId groupId, AnimationId animId, float clumpAssocBlendData);
 CAnimBlendAssociation* (*RpAnimBlendGetNextAssociation)(CAnimBlendAssociation *pAssociation);
+
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -1297,18 +1301,30 @@ extern "C" void OnModLoad()
         aml->Redirect(pGTASA + 0x5436EC + 0x1, (uintptr_t)DuckAnyWeapon_Inject);
     }
 
-    // BengbuGuards' idea
+    // BengbuGuards' idea #1
     if(cfg->GetBool("FixSecondSiren", true, "Gameplay"))
     {
-        aml->Write(pGTASA + 0x590132, (uintptr_t)"\xAF\xF3\x00\x80\x00\x21",6);
-        aml->Write(pGTASA + 0x590168, (uintptr_t)"\xAF\xF3\x00\x80",4);
+        aml->PlaceNOP(pGTASA + 0x590134 + 0x1, 2);
+        aml->Write(pGTASA + 0x590168, "\xAF\xF3\x00\x80", 4);
     }
 
-    // https://cookieplmonster.github.io/2018/05/27/vehicle-anims-silentpatch/
+    // BengbuGuards' idea #2
     if(cfg->GetBool("BoatRotatingRadarFix", true, "Visual"))
     {
-        aml->Write(pGTASA + 0x6107D9, (uintptr_t)"\0\0\0",3);
+        aml->Write8(pGTASA + 0x6107D9, 0x00); // Animation name: boat_moving_hi -> boat_moving
     }
+
+    // Fix airbubbles from the jaw (CJ is breathing with his ass, lololololol)
+    if(cfg->GetBool("AirBubblesFromJaw", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x53C4A0, "\xD0\xED\x8C\x0B\xD0\xF8\x38\x02", 8);
+    }
+
+    // Disables backface culling for object with transparent textures
+    /*if(cfg->GetBool("NoBFCullingForTransparents", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x40FC64, 0x01);
+    }*/
 
     // Fix camera zooming
     /*if(cfg->GetBool("FixCameraSniperZoomDist", true, "Gameplay"))

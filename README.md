@@ -15,6 +15,11 @@
  - Moon phases (probably far away...)
  - Michelle dating fix
 
+**Since v1.5**
+ - BengbuGuards: Second siren is now working
+ - BengbuGuards: An animation fix for boats
+ - CJ is no longer breathing with his ass underwater
+
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy
  - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
