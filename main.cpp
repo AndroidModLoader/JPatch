@@ -623,11 +623,14 @@ extern "C" void OnModLoad()
     }
 
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
-    if(cfg->GetBool("FixMissingShootBtnForSWAT", true, "Gameplay"))
+    // And boat Predator. The fix dont work without the SWAT fix below
+    if(cfg->GetBool("FixMissingShootBtnForSWATAndPredator", true, "Gameplay"))
     {
         GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
         GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
         aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_Inject);
+
+        aml->Write8(pGTASA + 0x5E2940, 0x01); // CPad::GetCarGunFired(Pad, >1<, 0);
     }
 
     // Just a fuzzy seek. Tell MPG123 to not load useless data.
