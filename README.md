@@ -16,8 +16,10 @@
  - Michelle dating fix
 
 **Since v1.5**
- - BengbuGuards: Second siren is now working
+ - BengbuGuards: Secondary siren is now working
  - BengbuGuards: An animation fix for boats
+ - BengbuGuards: Fixed incorrect shooting button on Predator
+ - BengbuGuards: Player's plane won't disappear after it explodes
  - CJ is no longer breathing with his ass underwater
 
 **Since v1.4.3**

@@ -1323,6 +1323,14 @@ extern "C" void OnModLoad()
         aml->Write(pGTASA + 0x53C4A0, "\xD0\xED\x8C\x0B\xD0\xF8\x38\x02", 8);
     }
 
+    // Fix plane disappear after explode. It's still there, but is invisible. Does it have any meaning, Rockstar?
+    if(cfg->GetBool("PlaneExplodeDisappearFix", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x579ECC, "\x4C\xE0", 2); // B  loc_579F68
+        aml->PlaceNOP(pGTASA + 0x579F7C + 0x1, 1);
+    }
+        
+
     // Disables backface culling for object with transparent textures
     /*if(cfg->GetBool("NoBFCullingForTransparents", true, "Visual"))
     {
