@@ -6,7 +6,7 @@
 
  Currently i can fix those things:
  
- ***GTA:SA v2.10***
+### ***GTA:SA v2.10***
 
 **Since v1.5**
  - Animated textures (UVAnim)
@@ -16,7 +16,7 @@
  - Fixed sky multitude (a glitch on high speeds)
  - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
  
- ***GTA:SA v2.00***
+### ***GTA:SA v2.00***
 
  **Planned/TODO (not ready or broken now)**
  - Damaged components should not be colored by the previously damaged vehicle of that type
