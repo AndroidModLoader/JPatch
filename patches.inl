@@ -1728,6 +1728,16 @@ DECL_HOOKv(CheckForStatsMessage, bool unk)
 // Components clr fix
 RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
 {
+    if(!mat) return mat;
+
+    //CRGBA color = *(CRGBA*)&(mat->color);
+    //int colorIndex;
+    //if(color.val == CRGBA(60, 255, 0, 0).val)       colorIndex = ms_currentCol[0];
+    //else if(color.val == CRGBA(255, 0, 175, 0).val) colorIndex = ms_currentCol[1];
+    //else if(color.val == CRGBA(0, 255, 255, 0).val) colorIndex = ms_currentCol[2];
+    //else if(color.val == CRGBA(255, 0, 255, 0).val) colorIndex = ms_currentCol[3];
+    //else return mat;
+
     mat->color = *(RwRGBA*)data;
     return mat;
 }
@@ -1739,7 +1749,12 @@ void SetComponentColor(CVehicle* self, RwFrame* frame)
     if(atomic)
     {
         geometry = atomic->geometry;
-        geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
+        CRGBA clr(128,128,255);
+        RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
+
+        //SetEditableMaterialsCB(atomic, NULL);
+        //geometry = atomic->geometry;
+        //geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
         
         // CRGBA col;
         // RpGeometryForAllMaterials(self->m_pRwAtomic->geometry, GetCarColorCB, &col);
@@ -1800,12 +1815,12 @@ DECL_HOOKv(PreRenderCar, CAutomobile* self)
     for(int i = CAR_DOOR_RF; i <= CAR_DOOR_LR; ++i)
     {
         node = self->m_CarNodes[i];
-        //logger->Info("car 0x%08X, comp 0x%X 0x%08X", self, i, node);
+        logger->Info("car 0x%08X, comp 0x%X 0x%08X", self, i, node);
         if(!node) continue;
         
-        //CRGBA clr(128,128,255);
-        SetComponentColor(self, node);
+        //SetComponentColor(self, node);
     }
+    self->SetModelIndex(self->m_nModelIndex);
 }
 
 // Social Club
