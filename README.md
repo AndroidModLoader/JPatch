@@ -43,6 +43,7 @@
 **Since v1.5**
  - BengbuGuards: Second siren is now working
  - BengbuGuards: An animation fix for boats
+ - BengbuGuards: Player's plane won't disappear after it explodes
  - CJ is no longer breathing with his ass underwater
  - Directional sunlight on entities (vehicles, peds)
  - Lamppost coronas are now rotating like on PS2

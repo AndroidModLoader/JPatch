@@ -257,6 +257,8 @@
         GetCarGunFired2_BackTo2 = pGTASA + 0x3F9908 + 0x1; // return
         aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_Inject2);
 
+        aml->Write8(pGTASA + 0x5E2940, 0x01); // CPad::GetCarGunFired(Pad, >1<, 0); // BengbuGuards
+
         //aml->PlaceB(pGTASA + 0x3F99B0 + 0x1, pGTASA + 0x3F99E8 + 0x1); // NO DIFFERENCE!
     }
 
@@ -1042,6 +1044,13 @@
     {
         RLE_BackTo = pGTASA + 0x1E9244 + 0x1;
         aml->Redirect(pGTASA + 0x1E9238 + 0x1, (uintptr_t)RLE_Inject);
+    }
+
+    // Fix plane disappear after explode. It's still there, but is invisible. Does it have any meaning, Rockstar?
+    if(cfg->GetBool("PlaneExplodeDisappearFix", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x579ECC, "\x4C\xE0", 2); // B  loc_579F68
+        aml->PlaceNOP(pGTASA + 0x579F7C + 0x1, 1);
     }
 
     // B1ack_&_Wh1te: Wrong vehicle parts colors
