@@ -492,31 +492,46 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
 }
 
 // SWAT
-uintptr_t GetCarGunFired_BackTo; // For our usage only
-uintptr_t GetCarGunFired_BackTo1, GetCarGunFired_BackTo2; // For optimization?
-extern "C" void GetCarGunFired_Patch(void)
+uintptr_t GetCarGunFired1_BackTo1, GetCarGunFired1_BackTo2, GetCarGunFired2_BackTo1, GetCarGunFired2_BackTo2;
+inline bool CanVehicleIdShoot(uint16_t mid)
+{
+    return (mid == 407 || mid == 601 || mid == 430);
+}
+extern "C" uintptr_t GetCarGunFired_Patch1(void)
 {
     CVehicle* veh = FindPlayerVehicle(-1, false);
-    if(veh != NULL && (veh->m_nModelIndex == 407 || veh->m_nModelIndex == 601 ||
-                       veh->m_nModelIndex == 430))
+    if(veh == NULL || CanVehicleIdShoot(veh->m_nModelIndex)) // Weird difference here
     {
-        GetCarGunFired_BackTo = GetCarGunFired_BackTo1;
+        return GetCarGunFired1_BackTo1;
     }
     else
     {
-        GetCarGunFired_BackTo = GetCarGunFired_BackTo2;
+        return GetCarGunFired1_BackTo2;
     }
 }
-__attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_Inject(void)
+extern "C" uintptr_t GetCarGunFired_Patch2(void)
+{
+    CVehicle* veh = FindPlayerVehicle(-1, false);
+    if(veh != NULL && CanVehicleIdShoot(veh->m_nModelIndex))
+    {
+        return GetCarGunFired2_BackTo1;
+    }
+    else
+    {
+        return GetCarGunFired2_BackTo2;
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_Inject1(void)
 {
     asm volatile(
-        "push {r0-r11}\n"
-        "bl GetCarGunFired_Patch\n");
+        "BL GetCarGunFired_Patch1\n"
+        "MOV PC, R0");
+}
+__attribute__((optnone)) __attribute__((naked)) void GetCarGunFired_Inject2(void)
+{
     asm volatile(
-        "mov r12, %0\n"
-        "pop {r0-r11}\n"
-        "bx r12\n"
-    :: "r" (GetCarGunFired_BackTo));
+        "BL GetCarGunFired_Patch2\n"
+        "MOV PC, R0");
 }
 
 // Fuzzy seek (im lazy to patch so lets just do this instead (because we need to inject the code))
@@ -936,7 +951,7 @@ __attribute__((optnone)) __attribute__((naked)) void InitPools_Inject(void)
 }
 extern "C" void InitPools2_Patch()
 {
-    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools15ms_pVehiclePoolE")) =AllocatePool(2000,  2604);
+    *(CSAPool**)(aml->GetSym(hGTASA, "_ZN6CPools15ms_pVehiclePoolE")) = AllocatePool(2000,  2604);
 }
 __attribute__((optnone)) __attribute__((naked)) void InitPools2_Inject(void)
 {
@@ -1246,17 +1261,6 @@ __attribute__((optnone)) __attribute__((naked)) void DrawMoney_Inject(void)
         "POP {R0-R11}\n"
         "BX R12\n"
     :: "r" (DrawMoney_BackTo));
-}
-
-// Hud colours
-DECL_HOOK(int, GetIntColour, void*, eHudColours i)
-{
-    CRGBA& clr = OwnHudColour[i];
-    return ((clr.b) | 0xFF) + (((clr.g) << 16) | 0xFF) + (((clr.r) << 24) | 0xFF);
-}
-DECL_HOOK(CRGBA, GetRGBA, CRGBA& ret, void* self, eHudColours i) // how the arguments look like that?!
-{
-    return (ret = OwnHudColour[i]);
 }
 
 // Para dmg anim fix
@@ -1653,6 +1657,318 @@ __attribute__((optnone)) __attribute__((naked)) void DuckAnyWeapon_Inject(void)
         "BL DuckAnyWeapon_Patch\n"
         "BX R0\n");
 }
+
+// Boat radar (Reefer fix)
+DECL_HOOK(void*, ProcessHierarchy_BoatRadar, RpClump *clump, void *fn, char **str)
+{
+    void* ret = ProcessHierarchy_BoatRadar(clump, fn, str);
+    if(!ret && !strncasecmp(*str, "boat_moving", 12))
+    {
+        static char boat_moving_hi[] = "boat_moving_hi";
+        *str = boat_moving_hi;
+        ret = ProcessHierarchy_BoatRadar(clump, fn, str);
+    }
+    return ret;
+}
+
+// SilentPatch`s fix
+CVector *m_vecDirnLightToSun;
+CVector *m_VectorToSun;
+int *m_CurrentStoredValue;
+DECL_HOOKv(SetLightsWithTimeOfDayColour_DirLight)
+{
+    *m_vecDirnLightToSun = m_VectorToSun[*m_CurrentStoredValue];
+    SetLightsWithTimeOfDayColour_DirLight();
+}
+
+// PS2 coronas
+DECL_HOOKv(RenderOneXLUSprite_Rotate_Aspect_PS2, CVector pos, CVector2D size, uint8_t r, uint8_t g, uint8_t b, int16_t intensity, float rz, float rotation, uint8_t alpha)
+{
+    RenderOneXLUSprite_Rotate_Aspect_PS2(pos, size, r, g, b, intensity, rz * 0.05f, rz, alpha);
+}
+
+// Random license plates
+DECL_HOOK(char*, GetCustomCarPlateText_SetModelIdx, CVehicleModelInfo* mi)
+{
+    char *text = GetCustomCarPlateText(mi);
+    if(!text)
+    {
+        text = &mi->m_szPlateText[0];
+        GeneratePlateText(text, 8);
+        text[8] = 0;
+    }
+    return text;
+}
+
+// Car generators in an interior now work properly
+DECL_HOOKv(CarGen_WorldAdd1, CEntity* target)
+{
+    if(target->GetPosition().z >= 950.0f) target->m_nInterior = 13;
+    CarGen_WorldAdd1(target);
+}
+DECL_HOOKv(CarGen_WorldAdd2, CEntity* target)
+{
+    if(target->GetPosition().z >= 950.0f) target->m_nInterior = 13;
+    CarGen_WorldAdd2(target);
+}
+
+// Fix "You have worked out enough for today, come back tomorrow!"
+uintptr_t Opcode0835_BackTo;
+extern "C" uintptr_t Opcode0835_Patch(CRunningScript* script)
+{
+    char *scriptName = script->ScriptName;
+    if(!strncasecmp(scriptName, "gymbike", 8) || !strncasecmp(scriptName, "gymbenc", 8) || !strncasecmp(scriptName, "gymtrea", 8) || !strncasecmp(scriptName, "gymdumb", 8))
+    {
+        ScriptParams[0].i = *ms_nGameClockDays;
+        ScriptParams[1].i = *ms_nGameClockMonths;
+    }
+    else
+    {
+        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
+        ScriptParams[1].i = -1;
+    }
+    return Opcode0835_BackTo;
+}
+__attribute__((optnone)) __attribute__((naked)) void Opcode0835_Inject(void)
+{
+    asm volatile(
+        "MOV R0, R8\n"
+        "BL Opcode0835_Patch\n"
+        "BX R0\n");
+}
+
+// Fixing a wrong value in carcols.dat
+DECL_HOOK(int, CarColsDatLoad_sscanf, const char* str, const char* fmt, int *v1, int *v2, int *v3)
+{
+    if(CarColsDatLoad_sscanf(str, fmt, v1, v2, v3) != 3)
+    {
+        return CarColsDatLoad_sscanf(str, "%d.%d %d", v1, v2, v3);
+    }
+    return 3;
+}
+
+// Inverse swimming controls to dive/go up (to match PC version)
+eSwimState curSwimState = SWIM_TREAD;
+DECL_HOOKv(TaskSwim_ProcessInput, CTaskSimpleSwim *self, CPlayerPed *ped)
+{
+    curSwimState = self->m_nSwimState;
+    TaskSwim_ProcessInput(self, ped);
+}
+DECL_HOOK(int, GetPedWalkUpDown_Swimming, void* pad)
+{
+    switch(curSwimState)
+    {
+        case SWIM_UNDERWATER_SPRINTING:
+        case SWIM_DIVE_UNDERWATER:
+            return -GetPedWalkUpDown_Swimming(pad);
+
+        default:
+            return GetPedWalkUpDown_Swimming(pad);
+    }
+}
+
+// Fixes the wrong position (from the beta) for a Bravura in a mission "You've Had Your Chips"
+int nBravuraHandle = 0;
+CVehicle* pBravura = NULL;
+DECL_HOOK(CVehicle*, CreateCarForScript_Bravura_00A5, int modelId, CVector pos, bool doMissionCleanup)
+{
+    if(modelId == 401 && (int)pos.x == 2014 && (int)pos.y == 1035)
+    {
+        pBravura = CreateCarForScript_Bravura_00A5(401, { 2040.0, 1013.56, 9.8203 }, doMissionCleanup);
+        if(pBravura) nBravuraHandle = GetVehicleRef(pBravura);
+        return pBravura;
+    }
+    else
+    {
+        return CreateCarForScript_Bravura_00A5(modelId, pos, doMissionCleanup);
+    }
+}
+DECL_HOOKv(CollectParameters_Bravura_0175, CRunningScript *script, int paramsCount)
+{
+    CollectParameters_Bravura_0175(script, paramsCount);
+    if(ScriptParams[0].i == nBravuraHandle)
+    {
+        ScriptParams[1].f = 180.0f;
+        nBravuraHandle = 0;
+    }
+}
+
+// Michelle dating fix
+uintptr_t Opcode039E_BackTo;
+extern "C" uintptr_t Opcode039E_Patch(CRunningScript* script, CPed* ped)
+{
+    char *scriptName = script->ScriptName;
+    if(strncasecmp(scriptName, "gfdate", 7) != 0)
+    {
+        ped->m_PedFlags.bDontDragMeOutCar = ScriptParams[1].i;
+    }
+    return Opcode039E_BackTo;
+}
+__attribute__((optnone)) __attribute__((naked)) void Opcode039E_Inject(void)
+{
+    asm volatile(
+        "MOV R0, R4\n"
+        "BL Opcode039E_Patch\n"
+        "BX R0\n");
+}
+
+// Darker hud colors ()
+DECL_HOOKv(DrawAmmo_PrintString, float x, float y, uint16_t *gxt)
+{
+    DrawAmmo_PrintString(x, y, gxt);
+    RenderFontBuffer();
+}
+
+// Fix a dumb Android 10+ RLEDecompress fix crash
+uintptr_t RLE_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void RLE_Inject(void)
+{
+    asm volatile(
+        "LDR R4, [SP, #0x24]\n"
+        "ADDS R0, R4, R4\n"
+        "BLX malloc\n"
+        "MOV R11, R0");
+    asm volatile(
+        "MOV PC, %0"
+    :: "r" (RLE_BackTo));
+}
+
+
+
+
+// B1ack_&_Wh1te: Wrong vehicle parts colors
+uintptr_t ObjectRender_BackTo1, ObjectRender_BackTo2, ObjectRender_BackTo3;
+std::array<std::pair<RpMaterial**, RpMaterial*>, 64> *gStoredMaterials;
+std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;
+extern "C" uintptr_t ObjectRender_Patch1(CObject* self)
+{
+    gStoredMaterials->front().first = NULL;
+    if(self->m_nCarPartModelIndex < 0 || self->m_nObjectType != OBJECT_TEMPORARY || !self->objectFlags.bChangesVehColor)
+    {
+        return ObjectRender_BackTo2;
+    }
+    return ObjectRender_BackTo1;
+}
+extern "C" void ObjectRender_Patch2(RpAtomic* atomic)
+{
+    auto entry = gStoredMaterials->data();
+    SetEditableMaterialsCB(atomic, &entry);
+    entry->first = NULL;
+}
+extern "C" void ObjectRender_Patch3(CEntity* self)
+{
+    RenderEntity(self);
+    for(auto& entry : *gStoredMaterials)
+    {
+        if(!entry.first) break;
+        *entry.first = entry.second;
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject1(void)
+{
+    asm volatile(
+        "PUSH {R0}\n"
+        "MOV R0, R4\n"
+        "PUSH {R4}\n"
+        "BL ObjectRender_Patch1\n"
+        "POP {R4}\n"
+        "MOV R1, R0\n"
+        "POP {R0}\n"
+        "MOV PC, R1");
+}
+__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject2(void)
+{
+    asm volatile(
+        //"STR R1, [SP, #0x4]\n"
+        //"ADD R1, SP, #0x4\n"
+        "BL ObjectRender_Patch2\n");
+    asm volatile(
+        "MOV PC, %0"
+    :: "r" (ObjectRender_BackTo2));
+}
+__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject3(void)
+{
+    asm volatile(
+        "MOV R0, R4\n"
+        "BL ObjectRender_Patch3");
+    asm volatile(
+        "MOV PC, %0"
+    :: "r" (ObjectRender_BackTo3));
+}
+
+
+
+
+
+// Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
+// !!! SHADER !!!
+#define EXTRA_DIRLIGHTS 3
+
+RpLight* pNewExtraDirectionals[3 + EXTRA_DIRLIGHTS] { NULL };
+float NewLightStrengths[3 + EXTRA_DIRLIGHTS] { 0.0f };
+const RwRGBAReal lightColor = { 1.0f, 0.5f, 0.0f, };
+RpLight* (*RpLightCreate)(int);
+void (*RpLightSetColor)(RpLight*, RwRGBAReal const*);
+void (*RpLightSetRadius)(RpLight*, float);
+RwFrame* (*RwFrameCreate)();
+void (*_rwObjectHasFrameSetFrame)(RpLight*, RwFrame*);
+void (*RpWorldAddLight)(RpWorld*, RpLight*);
+void (*RpWorldRemoveLight)(RpWorld*, RpLight*);
+void (*RwFrameDestroy)(RwFrame*);
+void (*RpLightDestroy)(RpLight*);
+
+#define CREATELIGHT(__v) \
+    __v = RpLightCreate(1); \
+    __v->object.object.flags = 0; \
+    RpLightSetColor(__v, &lightColor); \
+    RpLightSetRadius(__v, 2.0f); \
+    _rwObjectHasFrameSetFrame(__v, RwFrameCreate()); \
+    RpWorldAddLight(world, __v);
+    
+#define DESTROYLIGHT(__v) if(__v) { \
+    RpWorldRemoveLight(world, __v); \
+    RwFrameDestroy((RwFrame*)(__v->object.object.parent)); \
+    RpLightDestroy(__v); \
+    __v = NULL; \
+}
+
+#define TOGGLELIGHT(__v) \
+    __v->object.object.flags = 0;
+
+DECL_HOOKv(LightsCreate, RpWorld* world)
+{
+    if(world)
+    {
+        LightsCreate(world);
+        for(int i = 3; i < 3 + EXTRA_DIRLIGHTS; ++i)
+        {
+            CREATELIGHT(pNewExtraDirectionals[i]);
+        }
+    }
+}
+DECL_HOOKv(LightsDestroy, RpWorld* world)
+{
+    if(world)
+    {
+        LightsDestroy(world);
+        for(int i = 3; i < 3 + EXTRA_DIRLIGHTS; ++i)
+        {
+            DESTROYLIGHT(pNewExtraDirectionals[i]);
+        }
+    }
+}
+DECL_HOOKv(RemoveExtraDirectionalLights, RpWorld* world)
+{
+    RemoveExtraDirectionalLights(world);
+    for(int i = 3; i < 3 + EXTRA_DIRLIGHTS; ++i)
+    {
+        TOGGLELIGHT(pNewExtraDirectionals[i]);
+    }
+}
+
+
+
+
 
 /* Broken below */
 /* Broken below */

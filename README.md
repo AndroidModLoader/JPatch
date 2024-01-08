@@ -6,6 +6,20 @@
 
  Currently i can fix those things:
  
+### ***GTA:VC v1.09***
+
+**Since v1.5**
+ - Vertex Weights
+ - Fixed boat speed on high FPS
+ - Fix wheels rotation speed on high FPS
+ - Fix car slowdown on high FPS
+ - Fix heli rotor rotation speed on high FPS
+ - Streaming distance fix
+ - Wide coronas/sprites fix (this fix is disabled if you have ViceSkies v1.0)
+ - RE3: Fix R* optimization that prevents peds to spawn
+ - RE3: Road reflections
+ - Fix traffic lights
+ 
 ### ***GTA:SA v2.10***
 
 **Since v1.5**
@@ -18,17 +32,29 @@
  
 ### ***GTA:SA v2.00***
 
- **Planned/TODO (not ready or broken now)**
+**Planned/TODO (not ready or broken now)**
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far
  - FoodEatingFix by JuniorDjjr
  - Moon phases (probably far away...)
- - Michelle dating fix
+ - Doubled the directional light sources on models (to match the PC version)
+ - B1ack_&_Wh1te: Wrong vehicle parts colors
 
 **Since v1.5**
  - BengbuGuards: Second siren is now working
  - BengbuGuards: An animation fix for boats
  - CJ is no longer breathing with his ass underwater
+ - Directional sunlight on entities (vehicles, peds)
+ - Lamppost coronas are now rotating like on PS2
+ - Vehicles license plates now random
+ - Car generators in an interior now work properly
+ - "You have worked out enough for today, come back tomorrow!" glitch is fixed
+ - Fixing a wrong value in carcols.dat (a mistakenly placed dot instead of comma, # 98 malachite poly)
+ - Inverse swimming controls to dive/go up (to match PC version)
+ - Fix for the wrong position (from the beta) of Bravura in a mission "You've Had Your Chips"
+ - Michelle dating fix
+ - Stealth kill with a knife does NOT require to be crouched anymore (as on PC)
+ - RLEDecompress crash is fixed! (allocates more memory, for some reason Android is failing in allocating small memory chunks)
 
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy

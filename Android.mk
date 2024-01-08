@@ -7,7 +7,7 @@ ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 else
 	LOCAL_MODULE := JPatch64
 endif
-LOCAL_SRC_FILES := main.cpp mod/logger.cpp mod/config.cpp
+LOCAL_SRC_FILES := main.cpp mod/logger.cpp mod/config.cpp j_sa.cpp j_vc.cpp
 LOCAL_CFLAGS += -O2 -mfloat-abi=softfp -DNDEBUG -std=c++17
 LOCAL_C_INCLUDES += ./include
 LOCAL_LDLIBS += -llog #$(LOCAL_PATH)/libGLESv2.so

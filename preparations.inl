@@ -246,11 +246,18 @@
     }
 
     // Bring back missing "Shoot" button for S.W.A.T. when we dont have a weapon. WarDrum forgot about it.
-    if(cfg->GetBool("FixMissingShootBtnForSWAT", true, "Gameplay"))
+    // TODO: WHY PREDATOR CANT GET IT?!
+    if(cfg->GetBool("ReturnShootBtnForVehicles", true, "Gameplay"))
     {
-        GetCarGunFired_BackTo1 = pGTASA + 0x3F99E8 + 0x1;
-        GetCarGunFired_BackTo2 = pGTASA + 0x3F9908 + 0x1;
-        aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_Inject);
+        GetCarGunFired1_BackTo1 = pGTASA + 0x3F998C + 0x1;
+        GetCarGunFired1_BackTo2 = pGTASA + 0x3F9948 + 0x1;
+        aml->Redirect(pGTASA + 0x3F9914 + 0x1, (uintptr_t)GetCarGunFired_Inject1);
+
+        GetCarGunFired2_BackTo1 = pGTASA + 0x3F99E8 + 0x1; // continue
+        GetCarGunFired2_BackTo2 = pGTASA + 0x3F9908 + 0x1; // return
+        aml->Redirect(pGTASA + 0x3F99C4 + 0x1, (uintptr_t)GetCarGunFired_Inject2);
+
+        //aml->PlaceB(pGTASA + 0x3F99B0 + 0x1, pGTASA + 0x3F99E8 + 0x1); // NO DIFFERENCE!
     }
 
     // Just a fuzzy seek. Tell MPG123 to not load useless data.
@@ -336,7 +343,7 @@
     // RE3: Fix R* optimization that prevents peds to spawn
     if(cfg->GetBool("Re3_PedSpawnDeoptimize", true, "Gameplay"))
     {
-        aml->Write(pGTASA + 0x3F40E8, (uintptr_t)"\x03", 1);
+        aml->Write(pGTASA + 0x3F40C0, (uintptr_t)"\x02", 1);
     }
 
     // RE3: Make cars and peds to not despawn when you look away
@@ -670,13 +677,6 @@
         aml->Redirect(pGTASA + 0x2BD258 + 0x1, (uintptr_t)DrawMoney_Inject);
     }
     
-    // Idk how to fix it, yet
-    //if(cfg->GetBool("ReColors", true, "Visual"))
-    //{
-    //    HOOK(GetIntColour, aml->GetSym(hGTASA, "_ZN11CHudColours12GetIntColourEh"));
-    //    HOOK(GetRGBA, aml->GetSym(hGTASA, "_ZN11CHudColours7GetRGBAEh"));
-    //}
-    
     // Country. Rifle. Is. 3rd. Person.
     if(cfg->GetBool("FixCountryRifleAim", true, "Gameplay"))
     {
@@ -934,6 +934,7 @@
     // BengbuGuards' idea #2
     if(cfg->GetBool("BoatRotatingRadarFix", true, "Visual"))
     {
+        //HOOKBLX(ProcessHierarchy_BoatRadar, pGTASA + 0x387246 + 0x1);
         aml->Write8(pGTASA + 0x6107D9, 0x00); // Animation name: boat_moving_hi -> boat_moving
     }
 
@@ -942,6 +943,132 @@
     {
         aml->Write(pGTASA + 0x53C4A0, "\xD0\xED\x8C\x0B\xD0\xF8\x38\x02", 8);
     }
+
+    // EXPERIMENTAL: Removes entity's nowritez logic at rendering stage
+    if(cfg->GetBool("NoModelFlagNoWriteZ", true, "Visual"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x5D6874 + 0x1, 1);
+    }
+
+    // SilentPatch fix
+    if(cfg->GetBool("DirectionalSunLight", true, "Visual"))
+    {
+        HOOKPLT(SetLightsWithTimeOfDayColour_DirLight, pGTASA + 0x674048);
+    }
+
+    // PS2 thingo
+    if(cfg->GetBool("PS2CoronaRotation", true, "Visual"))
+    {
+        HOOKBLX(RenderOneXLUSprite_Rotate_Aspect_PS2, pGTASA + 0x5A2816 + 0x1);
+        //HOOKPLT(RenderOneXLUSprite_Rotate_Aspect_PS2, pGTASA + 0x675988);
+    }
+
+    // Random license plates
+    if(cfg->GetBool("RandomLicensePlates", true, "Visual"))
+    {
+        HOOKBLX(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x5829F2 + 0x1);
+    }
+
+    // Car generators in an interior now work properly
+    if(cfg->GetBool("InteriorCarGenerators", true, "Gameplay"))
+    {
+        HOOKBLX(CarGen_WorldAdd1, pGTASA + 0x56DA9E + 0x1);
+        HOOKBLX(CarGen_WorldAdd2, pGTASA + 0x56DA76 + 0x1);
+    }
+
+    // Fix "You have worked out enough for today, come back tomorrow!"
+    if(cfg->GetBool("FixGymWorkoutDate", true, "SCMFixes"))
+    {
+        Opcode0835_BackTo = pGTASA + 0x3378CE + 0x1;
+        aml->Redirect(pGTASA + 0x3378AE + 0x1, (uintptr_t)Opcode0835_Inject);
+    }
+
+    // Car generators in an interior now work properly
+    if(cfg->GetBool("CorrectPoliceScannerLocations", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x614258, "WESTP", 6);
+        aml->Write(pGTASA + 0x614300, "????", 5);
+    }
+
+    // Fixing a wrong value in carcols.dat
+    if(cfg->GetBool("CarColsDat_FixWrongValue", true, "Visual"))
+    {
+        HOOKBLX(CarColsDatLoad_sscanf, pGTASA + 0x46C55E + 0x1);
+    }
+
+    // Inverse swimming controls to dive/go up (to match PC version)
+    if(cfg->GetBool("InverseSwimmingDivingControl", true, "Gameplay"))
+    {
+        HOOKPLT(TaskSwim_ProcessInput, pGTASA + 0x674CBC);
+        HOOKBLX(GetPedWalkUpDown_Swimming, pGTASA + 0x53A928 + 0x1);
+    }
+
+    // Fixes the wrong position (from the beta) for a Bravura in a mission "You've Had Your Chips"
+    if(cfg->GetBool("FourDragonsBravuraCoordFix", true, "SCMFixes"))
+    {
+        HOOKBLX(CreateCarForScript_Bravura_00A5, pGTASA + 0x32CBDC + 0x1);
+        HOOKBLX(CollectParameters_Bravura_0175, pGTASA + 0x342474 + 0x1);
+    }
+
+    // Michelle dating fix
+    if(cfg->GetBool("MichelleDatingFix", true, "SCMFixes"))
+    {
+        Opcode039E_BackTo = pGTASA + 0x349E7E + 0x1;
+        aml->Redirect(pGTASA + 0x348CCE + 0x1, (uintptr_t)Opcode039E_Inject);
+        //aml->Redirect(pGTASA + 0x348CA6 + 0x1, pGTASA + 0x349E7E + 0x1); // disable opcode completely
+    }
+
+    // HudColors
+    if(cfg->GetBool("PCHudColors", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
+        aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
+        aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
+        aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
+        aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
+        aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_LIGHT_GRAY); // Armor bar
+        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1);
+    }
+
+    // Fix the issue that player cannot kill with a knife if not crouching
+    if(cfg->GetBool("FixUncrouchedStealthKill", true, "Gameplay"))
+    {
+        // from 0x537988 to 0x538BBE
+        aml->PlaceB(pGTASA + 0x537988 + 0x1, pGTASA + 0x538BBE + 0x1);
+    }
+    
+    // Fix a dumb Android 10+ RLEDecompress fix crash
+    if(cfg->GetBool("RLEDecompressCrashFix", true, "Gameplay"))
+    {
+        RLE_BackTo = pGTASA + 0x1E9244 + 0x1;
+        aml->Redirect(pGTASA + 0x1E9238 + 0x1, (uintptr_t)RLE_Inject);
+    }
+
+    // B1ack_&_Wh1te: Wrong vehicle parts colors
+    /*if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
+    {
+        ObjectRender_BackTo1 = pGTASA + 0x454F16 + 0x1;
+        aml->Redirect(pGTASA + 0x454F06 + 0x1, (uintptr_t)ObjectRender_Inject1);
+        ObjectRender_BackTo2 = (uintptr_t)&ObjectRender_Inject3; // pGTASA + 0x454F58 + 0x1;
+        aml->Redirect(pGTASA + 0x454F4C + 0x1, (uintptr_t)ObjectRender_Inject2); // 0x454F50
+        ObjectRender_BackTo3 = pGTASA + 0x454F5E + 0x1;
+        //aml->Redirect(pGTASA + 0x454F58 + 0x1, (uintptr_t)ObjectRender_Inject3);
+    }*/
+
+    // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
+    /*if(cfg->GetBool("PCDirLightsCount", true, "Visual"))
+    {
+        uint8_t patchval = 3 + EXTRA_DIRLIGHTS;
+        aml->Write8(pGTASA + 0x5D1B0C, patchval);
+        aml->Write8(pGTASA + 0x5D1AE4, (uint8_t)(patchval * 0.6666666f));
+        aml->WriteAddr(pGTASA + 0x678854, pNewExtraDirectionals);
+        aml->WriteAddr(pGTASA + 0x67604C, NewLightStrengths);
+        HOOKPLT(LightsCreate,  pGTASA + 0x671548);
+        HOOKPLT(LightsDestroy, pGTASA + 0x6754E0);
+        HOOKPLT(RemoveExtraDirectionalLights, pGTASA + 0x670240);
+
+        HOOK(ADDDD, aml->GetSym(hGTASA, "_Z26AddAnExtraDirectionalLightP7RpWorldffffff"));
+    }*/
 
     // Disables backface culling for object with transparent textures
     /*if(cfg->GetBool("NoBFCullingForTransparents", true, "Visual"))
