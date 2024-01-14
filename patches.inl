@@ -1816,7 +1816,7 @@ __attribute__((optnone)) __attribute__((naked)) void Opcode039E_Inject(void)
 DECL_HOOKv(DrawAmmo_PrintString, float x, float y, uint16_t *gxt)
 {
     DrawAmmo_PrintString(x, y, gxt);
-    RenderFontBuffer();
+    RenderFontBuffer(); // this here disables a color?!
 }
 
 // Fix a dumb Android 10+ RLEDecompress fix crash
@@ -1824,13 +1824,27 @@ uintptr_t RLE_BackTo;
 __attribute__((optnone)) __attribute__((naked)) void RLE_Inject(void)
 {
     asm volatile(
-        "LDR R4, [SP, #0x24]\n"
-        "ADDS R0, R4, R4\n"
+        "LDR R4, [SP, #0x24]\n" // org
+        "ADDS R0, R4, R4\n" //
+        //"LSLS R0, R4, #2\n" //
+        //"MOV R0, #4096\n" // my attempt...
         "BLX malloc\n"
         "MOV R11, R0");
     asm volatile(
         "MOV PC, %0"
     :: "r" (RLE_BackTo));
+}
+
+// Fix FX memory leak
+DECL_HOOKv(FxInfoMan_FXLeak, int self_44)
+{
+    RwTexture** texturePtr4 = (RwTexture**)(self_44 - 44 + 24);
+    if(*texturePtr4)
+    {
+        RwTextureDestroy(*texturePtr4);
+        *texturePtr4 = NULL;
+    }
+    FxInfoMan_FXLeak(self_44);
 }
 
 
@@ -1966,6 +1980,34 @@ DECL_HOOKv(RemoveExtraDirectionalLights, RpWorld* world)
     }
 }
 
+
+
+inline void FixTheColorFunc(CRGBA *color)
+{
+    color->r = (uint8_t)(0.6592f * color->r);
+    color->g = (uint8_t)(0.6592f * color->g);
+    color->b = (uint8_t)(0.6592f * color->b);
+}
+DECL_HOOKv(ColorFix_DrawBarChart, CRect *rect, CRGBA *color)
+{
+    FixTheColorFunc(color);
+    ColorFix_DrawBarChart(rect, color);
+}
+DECL_HOOKv(ColorFix_SetFontColor, CRGBA *color)
+{
+    FixTheColorFunc(color);
+    ColorFix_SetFontColor(color);
+}
+
+DECL_HOOKv(InitGameEngine)
+{
+    InitGameEngine();
+
+    for(int i = 0; i < HUD_COLOUR_COUNT; ++i)
+    {
+        FixTheColorFunc(&HudColour[i]);
+    }
+}
 
 
 

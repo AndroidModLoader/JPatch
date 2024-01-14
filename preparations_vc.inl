@@ -78,4 +78,39 @@
     if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
         HOOKBL(TrFix_RenderEffects, pGTAVC + 0x202F98 + 0x1);
+
+        // Why does vehicle's lights are in that list?!
+        aml->PlaceNOP4(pGTAVC + 0x231138 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x231198 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x2334C4 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x233C16 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x233CDE + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x235574 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x23579E + 0x1, 1);
+
+        // Why does bike's lights are in that list?!
+        aml->PlaceNOP4(pGTAVC + 0x240E98 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x240FD2 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x241052 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x2410C8 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x2414B8 + 0x1, 1);
     }
+
+    
+
+
+
+
+
+
+
+
+    
+    
+    // An improved ForceDXT (everything goes black, no textures! :( )
+    /*if(cfg->GetBool("ForceLoadDXT", false, "Gameplay"))
+    {
+        aml->Write8(pGTAVC + 0x2A8F70, 0x01);
+        aml->Write8(pGTAVC + 0x2A8EBE, 0x01);
+        HOOKBL(LoadEntries_DXT, pGTAVC + 0x2A8EC8 + 0x1);
+    }*/

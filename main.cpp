@@ -2,11 +2,13 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 
+#include <sys/system_properties.h>
+
 #if !defined(IAML_VER) && IAML_VER < 1020100
     #error "You need to update your MOD folder to 1.2.1!"
 #endif
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.5, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.5.1, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.2.1)
 END_DEPLIST()
@@ -14,6 +16,7 @@ END_DEPLIST()
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Saves     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+int androidSdkVer = 0;
 uintptr_t pGTASA, pGTAVC, pSC;
 void *hGTASA, *hGTAVC, *hSC;
 
@@ -45,6 +48,13 @@ extern "C" void OnModLoad()
     
     pSC = aml->GetLib("libSCAnd.so");
     hSC = aml->GetLibHandle("libSCAnd.so");
+
+    char sdk_ver_str[92]; // PROPERTY_VALUE_MAX
+    if(__system_property_get("ro.build.version.sdk", sdk_ver_str))
+    {
+        androidSdkVer = atoi(sdk_ver_str);
+    }
+    
     
     if(pGTASA) GTA_SA::JPatch();
     else if(pGTAVC) GTA_VC::JPatch();

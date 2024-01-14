@@ -594,7 +594,7 @@
     // Move shadows closer to the ground
     if(cfg->GetBool("MoveShadowsToTheGround", true, "Visual"))
     {
-        float fH = cfg->GetFloat("MoveShadowsToTheGround_Height", 0.02f, "Visual");
+        float fH = cfg->GetFloat("MoveShadowsToTheGround_NewHeight", 0.03f, "Visual");
         aml->Unprot(pGTASA + 0x5A224C, sizeof(float)); *(float*)(pGTASA + 0x5A224C) = -fH;
         aml->Unprot(pGTASA + 0x5B3ED4, sizeof(float)); *(float*)(pGTASA + 0x5B3ED4) = fH;
         aml->Unprot(pGTASA + 0x5BB80C, sizeof(float)); *(float*)(pGTASA + 0x5BB80C) = fH;
@@ -947,10 +947,10 @@
     }
 
     // EXPERIMENTAL: Removes entity's nowritez logic at rendering stage
-    if(cfg->GetBool("NoModelFlagNoWriteZ", true, "Visual"))
-    {
-        aml->PlaceNOP4(pGTASA + 0x5D6874 + 0x1, 1);
-    }
+    //if(cfg->GetBool("NoModelFlagNoWriteZ", true, "Visual"))
+    //{
+    //    aml->PlaceNOP4(pGTASA + 0x5D6874 + 0x1, 1);
+    //}
 
     // SilentPatch fix
     if(cfg->GetBool("DirectionalSunLight", true, "Visual"))
@@ -1023,12 +1023,15 @@
     // HudColors
     if(cfg->GetBool("PCHudColors", true, "Visual"))
     {
-        aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
-        aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
-        aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
-        aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
-        aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
-        aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_LIGHT_GRAY); // Armor bar
+        //aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
+        //aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
+        //aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
+        //aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
+        //aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
+        //aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_WHITE); // Armor bar
+        //aml->Write8(pGTASA + 0x2BD9C4, 172); // Oxygen bar (red channel)
+        //aml->Write8(pGTASA + 0x2BD9CA, 203); // Oxygen bar (green channel)
+        //aml->Write8(pGTASA + 0x2BD9D0, 241); // Oxygen bar (blue channel)
         HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1);
     }
 
@@ -1040,7 +1043,7 @@
     }
     
     // Fix a dumb Android 10+ RLEDecompress fix crash
-    if(cfg->GetBool("RLEDecompressCrashFix", true, "Gameplay"))
+    if(androidSdkVer < 33 && cfg->GetBool("RLEDecompressCrashFix", true, "Gameplay"))
     {
         RLE_BackTo = pGTASA + 0x1E9244 + 0x1;
         aml->Redirect(pGTASA + 0x1E9238 + 0x1, (uintptr_t)RLE_Inject);
@@ -1052,6 +1055,21 @@
         aml->Write(pGTASA + 0x579ECC, "\x4C\xE0", 2); // B  loc_579F68
         aml->PlaceNOP(pGTASA + 0x579F7C + 0x1, 1);
     }
+    
+    // Fix FX memory leak
+    if(cfg->GetBool("FixFXLeak", true, "Gameplay"))
+    {
+        HOOKBLX(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
+    }
+
+    //HOOKBLX(ColorFix_DrawBarChart, pGTASA + 0x5C9F94 + 0x1);
+    //HOOKBLX(ColorFix_SetFontColor, pGTASA + 0x2BDE28 + 0x1);
+    //aml->Redirect(pGTASA + 0x2C84EC + 0x1, (uintptr_t)crash_this);
+
+    //HOOKPLT(InitGameEngine, pGTASA + 0x66F2D0);
+
+
+
 
     // B1ack_&_Wh1te: Wrong vehicle parts colors
     /*if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))

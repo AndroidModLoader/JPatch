@@ -13,6 +13,7 @@
     using namespace ARMv8;
 #endif
 
+extern int androidSdkVer;
 extern uintptr_t pGTAVC;
 extern void *hGTAVC;
 

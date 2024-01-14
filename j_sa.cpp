@@ -26,6 +26,7 @@
     using namespace ARMv8;
 #endif
 
+extern int androidSdkVer;
 extern uintptr_t pGTASA;
 extern void *hGTASA;
 
@@ -78,6 +79,7 @@ CPolyBunch* aPolyBunches;
 CBaseModelInfo** ms_modelInfoPtrs;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths;
 CRGBA* ms_vehicleColourTable;
+CRGBA* HudColour;
 
 CTaskComplexSequence* ms_taskSequence;
 CRunningScript** pActiveScripts;
@@ -130,6 +132,7 @@ static uint32_t CCheat__m_aCheatHashKeys[] = {
 /////////////////////////////////////////////////////////////////////////////
 int ret0(int a, ...) { return 0; } // Generic
 int ret1(int a, ...) { return 1; } // Generic
+void crash_this() { __builtin_trap(); } // Used for redirected funcs, to get the function it's called from (virtual funcs are hard!)
 
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();
@@ -188,6 +191,7 @@ void (*GeneratePlateText)(char*, int);
 char* (*GetCustomCarPlateText)(CVehicleModelInfo*);
 int (*GetVehicleRef)(CVehicle*);
 void (*RenderFontBuffer)();
+void (*RwTextureDestroy)(RwTexture*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -279,6 +283,7 @@ void JPatch()
     SET_TO(GetCustomCarPlateText,   aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo21GetCustomCarPlateTextEv"));
     SET_TO(GetVehicleRef,           aml->GetSym(hGTASA, "_ZN6CPools13GetVehicleRefEP8CVehicle"));
     SET_TO(RenderFontBuffer,        aml->GetSym(hGTASA, "_ZN5CFont16RenderFontBufferEv"));
+    SET_TO(RwTextureDestroy,        aml->GetSym(hGTASA, "_Z16RwTextureDestroyP9RwTexture"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -342,6 +347,7 @@ void JPatch()
     SET_TO(ms_nGameClockDays,       aml->GetSym(hGTASA, "_ZN6CClock17ms_nGameClockDaysE"));
     SET_TO(ms_nGameClockMonths,     aml->GetSym(hGTASA, "_ZN6CClock19ms_nGameClockMonthsE"));
     SET_TO(StatTypesInt,            aml->GetSym(hGTASA, "_ZN6CStats12StatTypesIntE"));
+    SET_TO(HudColour,               aml->GetSym(hGTASA, "HudColour"));
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
         SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));

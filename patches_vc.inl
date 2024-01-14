@@ -173,3 +173,10 @@ DECL_HOOKv(TrFix_RenderEffects)
     BrightLightsRender();
     TrFix_RenderEffects();
 }
+
+// Force DXT
+DECL_HOOKp(LoadEntries_DXT, TextureDatabaseRuntime *self, bool a1, bool a2)
+{
+    self->loadedFormat = DF_DXT;
+    return LoadEntries_DXT(self, a1, a2);
+}
