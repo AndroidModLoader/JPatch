@@ -96,7 +96,19 @@
         aml->PlaceNOP4(pGTAVC + 0x2414B8 + 0x1, 1);
     }
 
-    
+    // Fixes framelimiter (doesnt limit the FPS, ayo lol)
+    // P.S. IT WAS NEVER WORKING, OH MY GOD
+    if(cfg->GetBool("FixGameTimer", true, "Gameplay"))
+    {
+        HOOKBL(GameTick_RsEventHandler, pGTAVC + 0x21E7C8 + 0x1);
+    }
+
+    // Fix water scroll speed on high FPS
+    if(cfg->GetBool("FixWaterUVScrollSpeed", true, "Visual"))
+    {
+        RenderWater_BackTo = pGTAVC + 0x2645D2 + 0x1;
+        aml->Redirect(pGTAVC + 0x2645C6 + 0x1, (uintptr_t)RenderWater_Inject);
+    }
 
 
 

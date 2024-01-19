@@ -35,10 +35,8 @@ extern "C" void OnModLoad()
     logger->SetTag("JPatch");
     
     cfg->Bind("Author", "", "About")->SetString("[-=KILL MAN=-]"); cfg->ClearLast();
-    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, JuniorDjjr, ThirteenAG, Blackbird88, 0x416c69, Whitetigerswt, XMDS, Peepo"); cfg->ClearLast();
     cfg->Bind("Discord", "", "About")->SetString("https://discord.gg/2MY7W39kBg"); cfg->ClearLast();
     cfg->Bind("GitHub", "", "About")->SetString("https://github.com/AndroidModLoader/JPatch"); cfg->ClearLast();
-    cfg->Save();
 
     pGTASA = aml->GetLib("libGTASA.so");
     hGTASA = aml->GetLibHandle("libGTASA.so");
@@ -55,7 +53,8 @@ extern "C" void OnModLoad()
         androidSdkVer = atoi(sdk_ver_str);
     }
     
-    
     if(pGTASA) GTA_SA::JPatch();
     else if(pGTAVC) GTA_VC::JPatch();
+
+    cfg->Save();
 }

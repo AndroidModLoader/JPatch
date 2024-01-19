@@ -174,6 +174,42 @@ DECL_HOOKv(TrFix_RenderEffects)
     TrFix_RenderEffects();
 }
 
+// Framelimiter
+static int curFPSLimit = 30;
+static float frameMs = (1000.0f / 30.0f) * 1000.0f;
+DECL_HOOKv(GameTick_RsEventHandler, int a1, void* a2)
+{
+    if(*m_PrefsFrameLimiter)
+    {
+        // Very bad framelimiter solution.
+        // Does it need a pumpHack from GTA:SA?!
+        OS_ThreadSleep((int)frameMs);
+    }
+    GameTick_RsEventHandler(a1, a2);
+}
+
+// Water UV Scroll
+uintptr_t RenderWater_BackTo;
+extern "C" float RenderWater_Patch(float windScale)
+{
+    return windScale * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void RenderWater_Inject(void)
+{
+    asm volatile(
+        "VMOV R0, S18\n"
+        "BL RenderWater_Patch\n"
+        "VMOV S18, R0\n"
+
+        "VCVT.F32.U32 S17, S14\n"
+        "VMUL.F32 S30, S17, S30\n"
+        "VADD.F32 S28, S18, S28\n");
+
+    asm volatile(
+        "MOV PC, %0"
+    :: "r" (RenderWater_BackTo));
+}
+
 // Force DXT
 DECL_HOOKp(LoadEntries_DXT, TextureDatabaseRuntime *self, bool a1, bool a2)
 {

@@ -7,6 +7,9 @@
  Currently i can fix those things:
  
 ### ***GTA:VC v1.09***
+**Since v1.5.1**
+ - Bringing back a framelimiter (works bad in my opinion, maybe i just like bigger FPS)
+ - Water texture scrolling speed fix on high FPS
 
 **Since v1.5**
  - Vertex Weights
@@ -21,7 +24,6 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
-
 **Since v1.5**
  - Animated textures (UVAnim)
  - Vertex Weights
@@ -31,7 +33,6 @@
  - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
  
 ### ***GTA:SA v2.00***
-
 **Planned/TODO (not ready or broken now)**
  - Damaged components should not be colored by the previously damaged vehicle of that type
  - Fix camera zoom is not that far

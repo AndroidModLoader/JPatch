@@ -42,12 +42,21 @@ union ScriptVariables
 /////////////////////////////////////////////////////////////////////////////
 float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio;
 char *mod_HandlingManager;
+int *fpsLimit; // a part of RsGlobal
+void *GTouchscreen;
+bool *m_PrefsFrameLimiter;
+uint32_t *m_snTimeInMilliseconds;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 void (*BrightLightsRender)();
-
+void (*RsEventHandler)(int, void*);
+void (*TouchscreenUpdate)(void*, void*, bool);
+float (*GetCurrentTimeInCycles)();
+uint32_t (*GetCyclesPerMillisecond)();
+void (*OS_ThreadSleep)(int);
+void (*tbDisplay)();
 
 #ifdef AML32
     #include "patches_vc.inl"
@@ -57,8 +66,16 @@ void (*BrightLightsRender)();
 
 void JPatch()
 {
+    cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, ThirteenAG, Peepo"); cfg->ClearLast();
+
     // Functions Start //
     SET_TO(BrightLightsRender, aml->GetSym(hGTAVC, "_ZN13CBrightLights6RenderEv"));
+    SET_TO(RsEventHandler, aml->GetSym(hGTAVC, "_Z14RsEventHandler7RsEventPv"));
+    SET_TO(TouchscreenUpdate, aml->GetSym(hGTAVC, "_ZN11Touchscreen6UpdateEfb"));
+    SET_TO(GetCurrentTimeInCycles, aml->GetSym(hGTAVC, "_ZN6CTimer22GetCurrentTimeInCyclesEv"));
+    SET_TO(GetCyclesPerMillisecond, aml->GetSym(hGTAVC, "_ZN6CTimer23GetCyclesPerMillisecondEv"));
+    SET_TO(OS_ThreadSleep, aml->GetSym(hGTAVC, "_Z14OS_ThreadSleepi"));
+    SET_TO(tbDisplay, aml->GetSym(hGTAVC, "_Z9tbDisplayv"));
     // Functions End   //
     
     // Variables Start //
@@ -66,6 +83,10 @@ void JPatch()
     SET_TO(mod_HandlingManager, *(char**)(pGTAVC + 0x3956B4));
     SET_TO(fHeliRotorSpeed, pGTAVC + 0x255000); aml->Unprot(AS_ADDR(fHeliRotorSpeed), sizeof(float));
     SET_TO(ms_fAspectRatio, aml->GetSym(hGTAVC, "_ZN5CDraw15ms_fAspectRatioE"));
+    SET_TO(fpsLimit, pGTAVC + 0x714F1C);
+    SET_TO(GTouchscreen, aml->GetSym(hGTAVC, "GTouchscreen"));
+    SET_TO(m_PrefsFrameLimiter, aml->GetSym(hGTAVC, "_ZN12CMenuManager19m_PrefsFrameLimiterE"));
+    SET_TO(m_snTimeInMilliseconds, aml->GetSym(hGTAVC, "_ZN6CTimer22m_snTimeInMillisecondsE"));
     // Variables End   //
 
     #ifdef AML32
