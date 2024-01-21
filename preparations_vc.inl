@@ -23,16 +23,6 @@
     {
         HOOKBL(HeliRender_MatrixUpdate, pGTAVC + 0x254F76 + 0x1);
     }
-
-    // Fix pushing force
-    //if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
-    //{
-    //    HOOK(ApplyCollision_HighFPS, aml->GetSym(hGTAVC, "_ZN9CPhysical14ApplyCollisionEPS_R9CColPointRfS3_"));
-    //    //ApplyCollision_BackTo = pGTAVC + 0x167588 + 0x1;
-    //    //aml->Redirect(pGTAVC + 0x167580 + 0x1, (uintptr_t)ApplyCollision_Inject);
-    //    //HOOKBL(ApplyCollision_MoveForce, pGTAVC + 0x166C60 + 0x1);
-    //    //HOOKBL(ApplyCollision_TurnForce, pGTAVC + 0x166C84 + 0x1);
-    //}
     
     // Fixes a streaming distance that gets bugged because of dumb R* logic (aspect ratio moment)
     if(cfg->GetBool("FixStreamingDistance", true, "Visual"))
@@ -111,10 +101,11 @@
         aml->Redirect(pGTAVC + 0x2645C6 + 0x1, (uintptr_t)RenderWater_Inject);
     }
 
-    // Bringing back missing render states (WarDumb`s optimization) (everything goes black)
+    // Bringing back missing render states (WarDumb`s optimization)
     if(cfg->GetBool("FixRenderStates", true, "Visual"))
     {
-        HOOK(RwRenderState_Patch, aml->GetSym(hGTAVC, "_Z16RwRenderStateSet13RwRenderStatePv"));
+        // Disabled for now, dont let users to check broken things :P
+        //HOOK(RwRenderState_Patch, aml->GetSym(hGTAVC, "_Z16RwRenderStateSet13RwRenderStatePv"));
         aml->Write(pGTAVC + 0x352A10 + 17, "fcolor.xyz      ", 16);
         aml->Write(pGTAVC + 0x3533F0 + 103, "1.00", 4);
         aml->Write(pGTAVC + 0x3539CC + 65, "0.01111111", 10);
@@ -181,6 +172,16 @@
         aml->Write(pGTAVC + 0x128440, "\xC4\xF2\xF0\x2E", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
         aml->Write(pGTAVC + 0x127FB0, "\xC4\xF2\xF0\x2A", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
         aml->Write(pGTAVC + 0x128150, "\xC4\xF2\xF0\x25", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->WriteFloat(pGTAVC + 0x1FC780, 120.0f); // CShadows::StoreShadowForPole, 40 -> 120
+
+        // We do count vehicle shadows as light shadows?
+        // Yeah, why not!
+        HOOKBL(StoreShadowForVehicle, pGTAVC + 0x1FC2F4 + 0x1);
+        // still need patch at 1FC420 and 1FC424
+        aml->WriteFloat(pGTAVC + 0x1FC5EC, 120.0f * 120.0f); // CShadows::StoreCarLightShadow, 27 -> 120
+        aml->WriteFloat(pGTAVC + 0x1FC5E4, 120.0f * 0.75f); // CShadows::StoreCarLightShadow, 27 -> 120
+        aml->Write(pGTAVC + 0x1FC5AA, "\xC4\xF2\xF0\x24", 4); // CShadows::StoreCarLightShadow, 27 -> 120
+        aml->PlaceB(pGTAVC + 0x1FBEE8 + 0x1, pGTAVC + 0x1FC09A + 0x1);
     }
     
     // Just a little fix for banner
@@ -222,9 +223,16 @@
 
 
 
+    // Fix pushing force
+    //if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
+    //{
+    //    HOOK(ApplyCollision_HighFPS, aml->GetSym(hGTAVC, "_ZN9CPhysical14ApplyCollisionEPS_R9CColPointRfS3_"));
+    //    //ApplyCollision_BackTo = pGTAVC + 0x167588 + 0x1;
+    //    //aml->Redirect(pGTAVC + 0x167580 + 0x1, (uintptr_t)ApplyCollision_Inject);
+    //    //HOOKBL(ApplyCollision_MoveForce, pGTAVC + 0x166C60 + 0x1);
+    //    //HOOKBL(ApplyCollision_TurnForce, pGTAVC + 0x166C84 + 0x1);
+    //}
 
-    
-    
     // An improved ForceDXT (everything goes black, no textures! :( )
     /*if(cfg->GetBool("ForceLoadDXT", false, "Gameplay"))
     {
