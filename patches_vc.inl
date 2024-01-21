@@ -59,6 +59,11 @@ DECL_HOOKv(HeliRender_MatrixUpdate, void *self)
 }
 
 // Fix pushing force
+DECL_HOOKb(ApplyCollision_HighFPS, void *A, void *B, void *colpoint, float *impulseA, float *impulseB)
+{
+    *fl1679D4 = 0;//1.4f * GetTimeStepMagic();
+    return ApplyCollision_HighFPS(A, B, colpoint, impulseA, impulseB);
+}
 DECL_HOOKv(ApplyCollision_MoveForce, void *self, CVector force)
 {
     ApplyCollision_MoveForce(self, force * 0.0f);
@@ -135,14 +140,7 @@ DECL_HOOKb(CoronaSprite_CalcScreenCoors, CVector *worldPos, CVector *screenPos, 
 uintptr_t VertexWeightFix_BackTo1, VertexWeightFix_BackTo2;
 extern "C" uintptr_t VertexWeightFix_Patch(RpSkin *skin)
 {
-    if(skin->vertexMaps.maxWeights == 4)
-    {
-        return VertexWeightFix_BackTo2;
-    }
-    else
-    {
-        return VertexWeightFix_BackTo1;
-    }
+    return (skin->vertexMaps.maxWeights == 4) ? VertexWeightFix_BackTo2 : VertexWeightFix_BackTo1;
 }
 __attribute__((optnone)) __attribute__((naked)) void VertexWeightFix_Inject(void)
 {
@@ -208,6 +206,56 @@ __attribute__((optnone)) __attribute__((naked)) void RenderWater_Inject(void)
     asm volatile(
         "MOV PC, %0"
     :: "r" (RenderWater_BackTo));
+}
+
+// Render States
+static int fogState = 0;
+CRGBA fogColor;
+DECL_HOOKb(RwRenderState_Patch, RwRenderState state, int val)
+{
+    switch(state)
+    {
+        default:
+            return RwRenderState_Patch(state, val);
+
+        case rwRENDERSTATEFOGENABLE:
+            if(fogState != val)
+            {
+                fogState = val;
+                emu_DistanceFogSetEnabled(fogState != 0);
+                if(val)
+                {
+                    emu_DistanceFogSetup(*m_fCurrentFogStart, 0.7f * *m_fCurrentFarClip, (float)fogColor.b / 255.0f, (float)fogColor.g / 255.0f, (float)fogColor.r / 255.0f);
+                }
+            }
+            return true;
+
+        case rwRENDERSTATEFOGCOLOR:
+            fogColor.val = val;
+            return true;
+
+        // Shader does not support any other type of the fog...
+        // Always rwFOGTYPELINEAR, no exponential (is this even used tho?)
+        case rwRENDERSTATEFOGTYPE:
+            return true;
+    }
+}
+
+// Speedo cloudz
+DECL_HOOKv(CloudsUpdate_Speedo)
+{
+    *fl1D4CF0 = 0.001f * GetTimeStepMagic();
+    *fl1D4CF4 = 0.3f * GetTimeStepMagic();
+    CloudsUpdate_Speedo();
+}
+
+// The Shadow. Of explosion. It's missing. Yup.
+DECL_HOOKv(AddExplosion_AddShadow, uint8_t ShadowType, RwTexture *pTexture, CVector *pPosn,
+                                   float fFrontX, float fFrontY, float fSideX, float fSideY,
+                                   int16_t nIntensity, uint8_t nRed, uint8_t nGreen, uint8_t nBlue,
+                                   float fZDistance, uint32_t nTime, float fScale)
+{
+    AddExplosion_AddShadow(ShadowType, pTexture, pPosn, 8.0f, 0.0f, 0.0f, -8.0f, 200, 0, 0, 0, 10.0f, 30000, 1.0f);
 }
 
 // Force DXT

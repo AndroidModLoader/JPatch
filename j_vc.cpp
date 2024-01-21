@@ -46,6 +46,12 @@ int *fpsLimit; // a part of RsGlobal
 void *GTouchscreen;
 bool *m_PrefsFrameLimiter;
 uint32_t *m_snTimeInMilliseconds;
+float *m_fCurrentFarClip, *m_fCurrentFogStart;
+
+// CPhysical::ApplyCollision
+float *fl1679D4;
+// CClouds::Update
+float *fl1D4CF0, *fl1D4CF4;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -57,6 +63,8 @@ float (*GetCurrentTimeInCycles)();
 uint32_t (*GetCyclesPerMillisecond)();
 void (*OS_ThreadSleep)(int);
 void (*tbDisplay)();
+void (*emu_DistanceFogSetEnabled)(bool);
+void (*emu_DistanceFogSetup)(float start, float end, float r, float g, float b);
 
 #ifdef AML32
     #include "patches_vc.inl"
@@ -76,6 +84,8 @@ void JPatch()
     SET_TO(GetCyclesPerMillisecond, aml->GetSym(hGTAVC, "_ZN6CTimer23GetCyclesPerMillisecondEv"));
     SET_TO(OS_ThreadSleep, aml->GetSym(hGTAVC, "_Z14OS_ThreadSleepi"));
     SET_TO(tbDisplay, aml->GetSym(hGTAVC, "_Z9tbDisplayv"));
+    SET_TO(emu_DistanceFogSetEnabled, aml->GetSym(hGTAVC, "_Z25emu_DistanceFogSetEnabledh"));
+    SET_TO(emu_DistanceFogSetup, aml->GetSym(hGTAVC, "_Z20emu_DistanceFogSetupfffff"));
     // Functions End   //
     
     // Variables Start //
@@ -87,6 +97,11 @@ void JPatch()
     SET_TO(GTouchscreen, aml->GetSym(hGTAVC, "GTouchscreen"));
     SET_TO(m_PrefsFrameLimiter, aml->GetSym(hGTAVC, "_ZN12CMenuManager19m_PrefsFrameLimiterE"));
     SET_TO(m_snTimeInMilliseconds, aml->GetSym(hGTAVC, "_ZN6CTimer22m_snTimeInMillisecondsE"));
+    SET_TO(m_fCurrentFarClip, aml->GetSym(hGTAVC, "_ZN10CTimeCycle17m_fCurrentFarClipE"));
+    SET_TO(m_fCurrentFogStart, aml->GetSym(hGTAVC, "_ZN10CTimeCycle18m_fCurrentFogStartE"));
+    SET_TO(fl1679D4, pGTAVC + 0x1679D4); UNPROT(fl1679D4, sizeof(float));
+    SET_TO(fl1D4CF0, pGTAVC + 0x1D4CF0); UNPROT(fl1D4CF0, sizeof(float));
+    SET_TO(fl1D4CF4, pGTAVC + 0x1D4CF4); UNPROT(fl1D4CF4, sizeof(float));
     // Variables End   //
 
     #ifdef AML32

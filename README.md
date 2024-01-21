@@ -7,9 +7,20 @@
  Currently i can fix those things:
  
 ### ***GTA:VC v1.09***
+**Planned/TODO (not ready or broken now)**
+ - Corona sprites draw distance is 3 times bigger (not working???)
+ - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger (not working???)
+ - The fog is back (the water shader is broken???)
+ - Pushing vehicles on a high FPS (just doesnt work.)
+
 **Since v1.5.1**
  - Bringing back a framelimiter (works bad in my opinion, maybe i just like bigger FPS)
  - Water texture scrolling speed fix on high FPS
+ - Fixed incorrect physics target (fixes small physical glitches with the vehicles, but also probably creates some)
+ - Clouds rotating speed on high FPS (it is few times faster than it should be)
+ - Allows the game to choose Extra6 component on a vehicle when created
+ - Bringing back the fake crater from explosion
+ - Correct render flag for Dodo Banner (does it work?)
 
 **Since v1.5**
  - Vertex Weights

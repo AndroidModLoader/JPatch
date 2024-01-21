@@ -25,13 +25,14 @@
     }
 
     // Fix pushing force
-    /*if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
-    {
-        ApplyCollision_BackTo = pGTAVC + 0x167588 + 0x1;
-        aml->Redirect(pGTAVC + 0x167580 + 0x1, (uintptr_t)ApplyCollision_Inject);
-        //HOOKBL(ApplyCollision_MoveForce, pGTAVC + 0x166C60 + 0x1);
-        //HOOKBL(ApplyCollision_TurnForce, pGTAVC + 0x166C84 + 0x1);
-    }*/
+    //if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
+    //{
+    //    HOOK(ApplyCollision_HighFPS, aml->GetSym(hGTAVC, "_ZN9CPhysical14ApplyCollisionEPS_R9CColPointRfS3_"));
+    //    //ApplyCollision_BackTo = pGTAVC + 0x167588 + 0x1;
+    //    //aml->Redirect(pGTAVC + 0x167580 + 0x1, (uintptr_t)ApplyCollision_Inject);
+    //    //HOOKBL(ApplyCollision_MoveForce, pGTAVC + 0x166C60 + 0x1);
+    //    //HOOKBL(ApplyCollision_TurnForce, pGTAVC + 0x166C84 + 0x1);
+    //}
     
     // Fixes a streaming distance that gets bugged because of dumb R* logic (aspect ratio moment)
     if(cfg->GetBool("FixStreamingDistance", true, "Visual"))
@@ -110,7 +111,77 @@
         aml->Redirect(pGTAVC + 0x2645C6 + 0x1, (uintptr_t)RenderWater_Inject);
     }
 
+    // Bringing back missing render states (WarDumb`s optimization) (everything goes black)
+    if(cfg->GetBool("FixRenderStates", true, "Visual"))
+    {
+        HOOK(RwRenderState_Patch, aml->GetSym(hGTAVC, "_Z16RwRenderStateSet13RwRenderStatePv"));
+        aml->Write(pGTAVC + 0x352A10 + 17, "fcolor.xyz      ", 16);
+        aml->Write(pGTAVC + 0x3533F0 + 103, "1.00", 4);
+        aml->Write(pGTAVC + 0x3539CC + 65, "0.01111111", 10);
+        aml->Write(pGTAVC + 0x353A84 + 42, "0.65000000", 10);
+        
+        // Not exactly like in GTA:SA. Should be a different thing.
+        aml->Write(pGTAVC + 0x353978 + 44, "0.50000000", 10);
+        aml->Write(pGTAVC + 0x353978 + 63, "0.50000000", 10);
+        aml->Write(pGTAVC + 0x353924 + 42, "0.50000000", 10);
+        aml->Write(pGTAVC + 0x353924 + 61, "0.50000000", 10);
 
+        aml->PlaceNOP4(pGTAVC + 0x287526, 1);
+        aml->PlaceNOP4(pGTAVC + 0x287554, 1);
+        aml->PlaceNOP4(pGTAVC + 0x2874EE, 1);
+
+        // shading
+        aml->PlaceNOP4(pGTAVC + 0x286E44, 1);
+    }
+
+    // Fixes a mistake by Rockstar (not WarDrum), a wrong physical target
+    if(cfg->GetBool("FixPhysicsTargets", true, "Gameplay"))
+    {
+        aml->Write16(pGTAVC + 0x16777E, 0x4628);
+        aml->Write16(pGTAVC + 0x1677A2, 0x4628);
+        aml->Write8(pGTAVC + 0x16AC3C, 0x94);
+    }
+
+    // Fix clouds rotating speed
+    if(cfg->GetBool("FixCloudsRotateSpeed", true, "Visual"))
+    {
+        HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x14CA8E + 0x1);
+    }
+
+    // The explosion "shadow" is missing
+    if(cfg->GetBool("FixExplosionCraterTexture", true, "Visual"))
+    {
+        HOOKBL(AddExplosion_AddShadow, pGTAVC + 0x2656B4 + 0x1);
+    }
+
+    // Allows the game to choose Extra6 component on a vehicle when created
+    if(cfg->GetBool("AllowExtra6Part", true, "Visual"))
+    {
+        aml->Write8(pGTAVC + 0x20E3A4 + 2, 0x08);
+    }
+
+    // Bigger distance for light coronas
+    if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
+    {
+        aml->WriteFloat(pGTAVC + 0x1D7450, 400.0f); // CEntity::ProcessLightsForEntity, 120 -> 400
+        aml->Write(pGTAVC + 0x127EA2, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
+    }
+
+    // Bigger distance for light shadows
+    if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
+    {
+        aml->WriteFloat(pGTAVC + 0x1D744C, 120.0f); // CEntity::ProcessLightsForEntity, 40 -> 120
+        aml->Write(pGTAVC + 0x14BAD4, "\xC4\xF2\xF0\x2E", 4); // CFire::ProcessFire, 40 -> 120
+        aml->Write(pGTAVC + 0x128440, "\xC4\xF2\xF0\x2E", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write(pGTAVC + 0x127FB0, "\xC4\xF2\xF0\x2A", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write(pGTAVC + 0x128150, "\xC4\xF2\xF0\x25", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
+    }
+    
+    // Just a little fix for banner
+    if(cfg->GetBool("CorrectBannerRenderFlag", true, "Visual"))
+    {
+        aml->Write16(pGTAVC + 0x1DF904, 0x2319);
+    }
 
 
 
