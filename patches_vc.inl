@@ -258,6 +258,20 @@ DECL_HOOKv(AddExplosion_AddShadow, uint8_t ShadowType, RwTexture *pTexture, CVec
     AddExplosion_AddShadow(ShadowType, pTexture, pPosn, 8.0f, 0.0f, 0.0f, -8.0f, 200, 0, 0, 0, 10.0f, 30000, 1.0f);
 }
 
+// Static shadows
+DECL_HOOKv(InitShadows)
+{
+    static CPolyBunch bunchezTail[1024];
+    
+    InitShadows();
+    for(int i = 0; i < 1023; ++i)
+    {
+        bunchezTail[i].m_pNext = &bunchezTail[i+1];
+    }
+    bunchezTail[1023].m_pNext = NULL;
+    aPolyBunches[380-1].m_pNext = &bunchezTail[0]; // GTA:VC has 380 instead of 360 in SA?! LOL, DOWNGRADE
+}
+
 // Force DXT
 DECL_HOOKp(LoadEntries_DXT, TextureDatabaseRuntime *self, bool a1, bool a2)
 {

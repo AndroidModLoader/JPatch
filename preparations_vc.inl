@@ -195,6 +195,29 @@
         UNPROT(pGTAVC + 0x3D20B4, 1);
     }
 
+    // Allows the game to render even more light shadows on the ground
+    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
+    {
+        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
+        aml->Write(pGTAVC + 0x394750, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+
+        // Static Shadows:
+        // CShadows::StoreStaticShadow
+        aml->Write(pGTAVC + 0x1FBBDE, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTAVC + 0x1FBC8C, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTAVC + 0x1FBCA0, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTAVC + 0x1FBBB8, (uintptr_t)"\x09\xF5\x1B\x5E", 4); // ADD.W LR, R9, #0x26C0
+        // CShadows::RenderStaticShadows
+        aml->Write(pGTAVC + 0x1FCB00, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTAVC + 0x1FCB2C, (uintptr_t)"\xFE", 1);
+        aml->Write(pGTAVC + 0x1FCB54, (uintptr_t)"\xFF", 1);
+        aml->Write(pGTAVC + 0x1FCEBA, (uintptr_t)"\xFF", 1);
+        // CShadows::UpdateStaticShadows
+        aml->Write(pGTAVC + 0x1F92D6, (uintptr_t)"\x04\xF5\x1B\x55", 4); // ADD.W R5, R4, #0x26C0
+
+        HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
+    }
+
 
 
 

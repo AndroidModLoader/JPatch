@@ -21,6 +21,7 @@
  - Correct render flag for Dodo Banner (does it work?)
  - Corona sprites draw distance is 3 times bigger (partially, traffic lights do work)
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
+ - Bumped a limit of static shadows!
 
 **Since v1.5**
  - Vertex Weights

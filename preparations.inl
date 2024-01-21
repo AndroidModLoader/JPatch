@@ -547,12 +547,12 @@
         HOOK(emu_TextureSetDetailTexture, aml->GetSym(hGTASA, "_Z27emu_TextureSetDetailTexturePvj"));
     }
 
-    // Bring back light shadows from poles!
+    // Allows the game to render even more light shadows on the ground
     if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
         // Static shadows?
-        asShadowsStored_NEW = new CRegisteredShadow[0xFF]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * 0xFF);
-        aStaticShadows_NEW = new CStaticShadow[0xFF] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * 0xFF);
+        asShadowsStored_NEW = new CRegisteredShadow[0xFF + 1]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * (0xFF + 1));
+        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
         aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
         aml->Write(pGTASA + 0x6798EC, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
         

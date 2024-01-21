@@ -40,6 +40,9 @@ union ScriptVariables
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+#if defined(AML32)
+CStaticShadow* aStaticShadows_NEW;
+
 float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio;
 char *mod_HandlingManager;
 int *fpsLimit; // a part of RsGlobal
@@ -47,11 +50,13 @@ void *GTouchscreen;
 bool *m_PrefsFrameLimiter;
 uint32_t *m_snTimeInMilliseconds;
 float *m_fCurrentFarClip, *m_fCurrentFogStart;
+CPolyBunch *aPolyBunches;
 
 // CPhysical::ApplyCollision
 float *fl1679D4;
 // CClouds::Update
 float *fl1D4CF0, *fl1D4CF4;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -74,6 +79,7 @@ void (*emu_DistanceFogSetup)(float start, float end, float r, float g, float b);
 
 void JPatch()
 {
+    #if defined(AML32)
     cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, ThirteenAG, Peepo"); cfg->ClearLast();
 
     // Functions Start //
@@ -99,10 +105,12 @@ void JPatch()
     SET_TO(m_snTimeInMilliseconds, aml->GetSym(hGTAVC, "_ZN6CTimer22m_snTimeInMillisecondsE"));
     SET_TO(m_fCurrentFarClip, aml->GetSym(hGTAVC, "_ZN10CTimeCycle17m_fCurrentFarClipE"));
     SET_TO(m_fCurrentFogStart, aml->GetSym(hGTAVC, "_ZN10CTimeCycle18m_fCurrentFogStartE"));
+    SET_TO(aPolyBunches, aml->GetSym(hGTAVC, "_ZN8CShadows12aPolyBunchesE"));
     SET_TO(fl1679D4, pGTAVC + 0x1679D4); UNPROT(fl1679D4, sizeof(float));
     SET_TO(fl1D4CF0, pGTAVC + 0x1D4CF0); UNPROT(fl1D4CF0, sizeof(float));
     SET_TO(fl1D4CF4, pGTAVC + 0x1D4CF4); UNPROT(fl1D4CF4, sizeof(float));
     // Variables End   //
+    #endif // AML32
 
     #ifdef AML32
         #include "preparations_vc.inl"
