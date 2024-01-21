@@ -165,6 +165,12 @@
     {
         aml->WriteFloat(pGTAVC + 0x1D7450, 400.0f); // CEntity::ProcessLightsForEntity, 120 -> 400
         aml->Write(pGTAVC + 0x127EA2, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write(pGTAVC + 0x127A0A, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write(pGTAVC + 0x127BE8, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write(pGTAVC + 0x1280B4, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
+
+        aml->Write(pGTAVC + 0x1D7842, "\x4F\xF0\x00\x0E", 4); // CEntity::ProcessLightsForEntity, Force off useNearDist
+        aml->Write(pGTAVC + 0x1D74A6, "\x4F\xF0\x00\x0E", 4); // CEntity::ProcessLightsForEntity, Force off useNearDist
     }
 
     // Bigger distance for light shadows
@@ -181,6 +187,12 @@
     if(cfg->GetBool("CorrectBannerRenderFlag", true, "Visual"))
     {
         aml->Write16(pGTAVC + 0x1DF904, 0x2319);
+    }
+
+    // Fixing a weird error with access error in Unprotected version of VC apk
+    if(cfg->GetBool("FixUnprotectedAccessCrash", true, "Gameplay"))
+    {
+        UNPROT(pGTAVC + 0x3D20B4, 1);
     }
 
 

@@ -8,8 +8,6 @@
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
- - Corona sprites draw distance is 3 times bigger (not working???)
- - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger (not working???)
  - The fog is back (the water shader is broken???)
  - Pushing vehicles on a high FPS (just doesnt work.)
 
@@ -21,6 +19,8 @@
  - Allows the game to choose Extra6 component on a vehicle when created
  - Bringing back the fake crater from explosion
  - Correct render flag for Dodo Banner (does it work?)
+ - Corona sprites draw distance is 3 times bigger (partially, traffic lights do work)
+ - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
 
 **Since v1.5**
  - Vertex Weights
