@@ -30,6 +30,8 @@ extern int androidSdkVer;
 extern uintptr_t pGTASA;
 extern void *hGTASA;
 
+#define BUNCHTAILS_EX 1024
+
 namespace GTA_SA
 {
 

@@ -17,6 +17,8 @@ extern int androidSdkVer;
 extern uintptr_t pGTAVC;
 extern void *hGTAVC;
 
+#define BUNCHTAILS_EX 1024
+
 namespace GTA_VC
 {
 
@@ -61,6 +63,10 @@ float *fl1D4CF0, *fl1D4CF4;
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+int ret0(int a, ...) { return 0; } // Generic
+int ret1(int a, ...) { return 1; } // Generic
+void crash_this() { __builtin_trap(); } // Used for redirected funcs, to get the function it's called from (virtual funcs are hard!)
+
 void (*BrightLightsRender)();
 void (*RsEventHandler)(int, void*);
 void (*TouchscreenUpdate)(void*, void*, bool);
@@ -70,6 +76,7 @@ void (*OS_ThreadSleep)(int);
 void (*tbDisplay)();
 void (*emu_DistanceFogSetEnabled)(bool);
 void (*emu_DistanceFogSetup)(float start, float end, float r, float g, float b);
+double (*OS_TimeAccurate)();
 
 #ifdef AML32
     #include "patches_vc.inl"
@@ -92,6 +99,7 @@ void JPatch()
     SET_TO(tbDisplay, aml->GetSym(hGTAVC, "_Z9tbDisplayv"));
     SET_TO(emu_DistanceFogSetEnabled, aml->GetSym(hGTAVC, "_Z25emu_DistanceFogSetEnabledh"));
     SET_TO(emu_DistanceFogSetup, aml->GetSym(hGTAVC, "_Z20emu_DistanceFogSetupfffff"));
+    SET_TO(OS_TimeAccurate, aml->GetSym(hGTAVC, "_Z15OS_TimeAccuratev"));
     // Functions End   //
     
     // Variables Start //

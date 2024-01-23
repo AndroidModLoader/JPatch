@@ -91,7 +91,11 @@
     // P.S. IT WAS NEVER WORKING, OH MY GOD
     if(cfg->GetBool("FixGameTimer", true, "Gameplay"))
     {
-        HOOKBL(GameTick_RsEventHandler, pGTAVC + 0x21E7C8 + 0x1);
+        aml->PlaceB(pGTAVC + 0x21E7C4 + 0x1, pGTAVC + 0x21E7CC + 0x1);
+        HOOKBL(GameTick_TouchscreenUpdate, pGTAVC + 0x21E7D6 + 0x1);
+        HOOK(OS_ScreenSetRefresh, aml->GetSym(hGTAVC, "_Z19OS_ScreenSetRefreshj"));
+
+        aml->Write8(pGTAVC + 0x21E994, 0x1E);
     }
 
     // Fix water scroll speed on high FPS
@@ -182,6 +186,11 @@
         aml->WriteFloat(pGTAVC + 0x1FC5E4, 120.0f * 0.75f); // CShadows::StoreCarLightShadow, 27 -> 120
         aml->Write(pGTAVC + 0x1FC5AA, "\xC4\xF2\xF0\x24", 4); // CShadows::StoreCarLightShadow, 27 -> 120
         aml->PlaceB(pGTAVC + 0x1FBEE8 + 0x1, pGTAVC + 0x1FC09A + 0x1);
+        
+        DoCollectableEffects_BackTo = pGTAVC + 0xFF058 + 0x1;
+        aml->Redirect(pGTAVC + 0xFF04E + 0x1, (uintptr_t)DoCollectableEffects_Inject);
+        DoPickUpEffects_BackTo = pGTAVC + 0xFFF8A + 0x1;
+        aml->Redirect(pGTAVC + 0xFFF7E + 0x1, (uintptr_t)DoPickUpEffects_Inject);
     }
     
     // Just a little fix for banner
@@ -222,6 +231,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+    // Do camera tweaks, get a better camera!
+    //if(cfg->GetBool("CameraTweaks", true, "Gameplay"))
+    //{
+    //    // Need to check WellBufferMe
+    //}
 
     // Fix pushing force
     //if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))

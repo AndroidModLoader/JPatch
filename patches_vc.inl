@@ -39,14 +39,14 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessWheelRotation_Inject
 DECL_HOOKv(ProcessWheel_SlowDownFix, void *self, CVector &a1, CVector &a2, CVector &a3, CVector &a4, int a5, float a6, float a7, float a8, char a9, float *a10, void *a11, uint16_t a12)
 {
     float& fWheelFriction = *(float*)(mod_HandlingManager + 4);
-    float save = fWheelFriction; fWheelFriction *= GetTimeStepMagic();
+    float save = fWheelFriction; fWheelFriction *= 2.0f * GetTimeStepMagic();
     ProcessWheel_SlowDownFix(self, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
     fWheelFriction = save;
 }
 DECL_HOOKv(ProcessBikeWheel_SlowDownFix, void *self, CVector &a1, CVector &a2, CVector &a3, CVector &a4, int a5, float a6, float a7, float a8, float a9, char a10, float *a11, void *a12, int a13, uint16_t a14)
 {
     float& fWheelFriction = *(float*)(mod_HandlingManager + 4);
-    float save = fWheelFriction; fWheelFriction *= GetTimeStepMagic();
+    float save = fWheelFriction; fWheelFriction *= 2.0f * GetTimeStepMagic();
     ProcessBikeWheel_SlowDownFix(self, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
     fWheelFriction = save;
 }
@@ -56,38 +56,6 @@ DECL_HOOKv(HeliRender_MatrixUpdate, void *self)
 {
     HeliRender_MatrixUpdate(self);
     *fHeliRotorSpeed = 0.48307693f * GetTimeStepMagic();
-}
-
-// Fix pushing force
-DECL_HOOKb(ApplyCollision_HighFPS, void *A, void *B, void *colpoint, float *impulseA, float *impulseB)
-{
-    *fl1679D4 = 0;//1.4f * GetTimeStepMagic();
-    return ApplyCollision_HighFPS(A, B, colpoint, impulseA, impulseB);
-}
-DECL_HOOKv(ApplyCollision_MoveForce, void *self, CVector force)
-{
-    ApplyCollision_MoveForce(self, force * 0.0f);
-}
-DECL_HOOKv(ApplyCollision_TurnForce, void *self, CVector force, CVector center)
-{
-    ApplyCollision_TurnForce(self, force * 0.0f, center);
-}
-uintptr_t ApplyCollision_BackTo;
-extern "C" float ApplyCollision_Patch(float invmass)
-{
-    return invmass * GetTimeStepMagic();
-}
-__attribute__((optnone)) __attribute__((naked)) void ApplyCollision_Inject(void)
-{
-    asm volatile(
-        "VLDR S11, [R6, #0x10]\n"
-        "VDIV.F32 S13, S7, S13\n"
-        "VMOV R0, S13\n"
-        "BL ApplyCollision_Patch\n"
-        "VMOV S13, R0\n");
-    asm volatile(
-        "MOV PC, %0"
-    :: "r" (ApplyCollision_BackTo));
 }
 
 // Streaming distance fix
@@ -173,17 +141,31 @@ DECL_HOOKv(TrFix_RenderEffects)
 }
 
 // Framelimiter
-static int curFPSLimit = 30;
-static float frameMs = (1000.0f / 30.0f) * 1000.0f;
-DECL_HOOKv(GameTick_RsEventHandler, int a1, void* a2)
+static double frameMcs = (1.0 / 30.0);
+static double nextMcsTime = 0.0;
+DECL_HOOKv(GameTick_TouchscreenUpdate, void *self, float a1, bool a2)
 {
     if(*m_PrefsFrameLimiter)
     {
-        // Very bad framelimiter solution.
-        // Does it need a pumpHack from GTA:SA?!
-        OS_ThreadSleep((int)frameMs);
+        // Touch handling is completely fucked up.
+        // Pausing thread is the only way...
+        double accurateTime = OS_TimeAccurate();
+        if(!nextMcsTime) nextMcsTime = accurateTime;
+        else nextMcsTime += frameMcs;
+
+        OS_ThreadSleep(1000 * (nextMcsTime - accurateTime));
     }
-    GameTick_RsEventHandler(a1, a2);
+
+    RsEventHandler(0x1A, (void*)true);
+    GameTick_TouchscreenUpdate(self, a1, a2);
+}
+DECL_HOOKv(OS_ScreenSetRefresh, int newLimit)
+{
+    if(newLimit < 10) newLimit = 10;
+    else if(newLimit > 240) newLimit = 240;
+    
+    *fpsLimit = newLimit;
+    frameMcs = 1.0 / (double)newLimit;
 }
 
 // Water UV Scroll
@@ -267,15 +249,95 @@ DECL_HOOKv(StoreShadowForVehicle, uint32_t nId, uint8_t ShadowType, void *pTextu
 // Static shadows
 DECL_HOOKv(InitShadows)
 {
-    static CPolyBunch bunchezTail[1024];
+    static CPolyBunch bunchezTail[BUNCHTAILS_EX];
     
     InitShadows();
-    for(int i = 0; i < 1023; ++i)
+    for(int i = 0; i < BUNCHTAILS_EX-1; ++i)
     {
         bunchezTail[i].m_pNext = &bunchezTail[i+1];
     }
-    bunchezTail[1023].m_pNext = NULL;
+    bunchezTail[BUNCHTAILS_EX-1].m_pNext = NULL;
     aPolyBunches[380-1].m_pNext = &bunchezTail[0]; // GTA:VC has 380 instead of 360 in SA?! LOL, DOWNGRADE
+}
+
+uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void DoCollectableEffects_Inject(void)
+{
+    asm volatile(
+        "LDM.W R3, {R0-R2}\n"
+        "MOVS R10, #0x0\n"
+        "MOVT R10, #0x4220\n"
+        "VMOV.F32 S17, R10\n"
+        "SUB SP, SP, #0x54\n"
+        "PUSH {R0}\n"
+    );
+    asm volatile(
+        "MOV R10, %0"
+    :: "r" (DoCollectableEffects_BackTo));
+    asm volatile(
+        "POP {R0}\n"
+        "MOV PC, R10\n"
+    );
+}
+__attribute__((optnone)) __attribute__((naked)) void DoPickUpEffects_Inject(void)
+{
+    asm volatile(
+        "VLDR S13, [R4, #0x38]\n"
+        "STM.W R7, {R0-R2}\n"
+        "MOVS R11, #0x0\n"
+        "MOVT R11, #0x41F0\n"
+        "VMOV.F32 S17, R11\n"
+        "PUSH {R0}\n"
+    );
+    asm volatile(
+        "MOV R11, %0"
+    :: "r" (DoPickUpEffects_BackTo));
+    asm volatile(
+        "POP {R0}\n"
+        "MOV PC, R11\n"
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+// Fix pushing force
+DECL_HOOKb(ApplyCollision_HighFPS, void *A, void *B, void *colpoint, float *impulseA, float *impulseB)
+{
+    *fl1679D4 = 0;//1.4f * GetTimeStepMagic();
+    return ApplyCollision_HighFPS(A, B, colpoint, impulseA, impulseB);
+}
+DECL_HOOKv(ApplyCollision_MoveForce, void *self, CVector force)
+{
+    ApplyCollision_MoveForce(self, force * 0.0f);
+}
+DECL_HOOKv(ApplyCollision_TurnForce, void *self, CVector force, CVector center)
+{
+    ApplyCollision_TurnForce(self, force * 0.0f, center);
+}
+uintptr_t ApplyCollision_BackTo;
+extern "C" float ApplyCollision_Patch(float invmass)
+{
+    return invmass * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void ApplyCollision_Inject(void)
+{
+    asm volatile(
+        "VLDR S11, [R6, #0x10]\n"
+        "VDIV.F32 S13, S7, S13\n"
+        "VMOV R0, S13\n"
+        "BL ApplyCollision_Patch\n"
+        "VMOV S13, R0\n");
+    asm volatile(
+        "MOV PC, %0"
+    :: "r" (ApplyCollision_BackTo));
 }
 
 // Force DXT

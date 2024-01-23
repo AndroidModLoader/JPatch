@@ -537,7 +537,7 @@
     {
         ProcessLightsForEntity_BackTo = pGTASA + 0x5A4DA8 + 0x1;
         aml->Redirect(pGTASA + 0x5A4578 + 0x1, (uintptr_t)ProcessLightsForEntity_Inject);
-        HOOK(AddLight, aml->GetSym(hGTASA, "_ZN12CPointLights8AddLightEh7CVectorS0_ffffhbP7CEntity"));
+        HOOKPLT(AddLight_LightPoles, pGTASA + 0x671A10);
     }
 
     // Fix greenish detail tex
@@ -797,12 +797,12 @@
     if(cfg->GetBool("NoRadioCuts", true, "Gameplay"))
     {
         aml->Redirect(aml->GetSym(hGTASA, "_Z14IsRemovedTracki"), (uintptr_t)ret0);
-        aml->Redirect(pGTASA + 0x3A152A + 0x1, pGTASA + 0x3A1602 + 0x1); // QueueUpTracksForStation
-        aml->Redirect(pGTASA + 0x3A35F6 + 0x1, pGTASA + 0x3A369A + 0x1); // ChooseMusicTrackIndex
-        aml->Redirect(pGTASA + 0x3A37C2 + 0x1, pGTASA + 0x3A385E + 0x1); // ChooseIdentIndex
-        aml->Redirect(pGTASA + 0x3A3A1E + 0x1, pGTASA + 0x3A3AA2 + 0x1); // ChooseAdvertIndex
-        aml->Redirect(pGTASA + 0x3A4374 + 0x1, pGTASA + 0x3A4416 + 0x1); // ChooseTalkRadioShow
-        aml->Redirect(pGTASA + 0x3A44D6 + 0x1, pGTASA + 0x3A4562 + 0x1); // ChooseDJBanterIndexFromList
+        aml->PlaceB(pGTASA + 0x3A152A + 0x1, pGTASA + 0x3A1602 + 0x1); // QueueUpTracksForStation
+        aml->PlaceB(pGTASA + 0x3A35F6 + 0x1, pGTASA + 0x3A369A + 0x1); // ChooseMusicTrackIndex
+        aml->PlaceB(pGTASA + 0x3A37C2 + 0x1, pGTASA + 0x3A385E + 0x1); // ChooseIdentIndex
+        aml->PlaceB(pGTASA + 0x3A3A1E + 0x1, pGTASA + 0x3A3AA2 + 0x1); // ChooseAdvertIndex
+        aml->PlaceB(pGTASA + 0x3A4374 + 0x1, pGTASA + 0x3A4416 + 0x1); // ChooseTalkRadioShow
+        aml->PlaceB(pGTASA + 0x3A44D6 + 0x1, pGTASA + 0x3A4562 + 0x1); // ChooseDJBanterIndexFromList
     }
     
     // Make the grenade's collision smaller. Will this nade fit in this hole now?
@@ -819,7 +819,7 @@
     // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
     if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
     {
-        aml->Redirect(pGTASA + 0x5D991E + 0x1, pGTASA + 0x5D9A04 + 0x1);
+        aml->PlaceB(pGTASA + 0x5D991E + 0x1, pGTASA + 0x5D9A04 + 0x1);
     }
     
     // Fixes a very slippery floor?
