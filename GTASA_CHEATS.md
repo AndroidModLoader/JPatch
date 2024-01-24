@@ -1,3 +1,4 @@
+```
 Weapon Set 4 (hash 0xbc39f5a2) = SECRETSPYSET
 Time travel (+4 hours) (hash 0x87237a8e) = TIMETRAVELER
 Script Bypass (hash 0xbb5adfd7) = SCRIPTBYPASS
@@ -11,3 +12,4 @@ Spawn hunter (hash 0xf51f7ed1) = SKYPREDATOR
 Prostitues pay you (hash 0x57e1ca95) = IMAPIMP
 All taxis have nitro (hash 0xf689f99f) = FASTASF
 Xbox Helper (hash 0x68afad9) = XBOXHELPER
+```
