@@ -50,7 +50,7 @@ char *mod_HandlingManager;
 int *fpsLimit; // a part of RsGlobal
 void *GTouchscreen;
 bool *m_PrefsFrameLimiter;
-uint32_t *m_snTimeInMilliseconds;
+uint32_t *m_snTimeInMilliseconds, *m_FrameCounter;
 float *m_fCurrentFarClip, *m_fCurrentFogStart;
 CPolyBunch *aPolyBunches;
 
@@ -111,6 +111,7 @@ void JPatch()
     SET_TO(GTouchscreen, aml->GetSym(hGTAVC, "GTouchscreen"));
     SET_TO(m_PrefsFrameLimiter, aml->GetSym(hGTAVC, "_ZN12CMenuManager19m_PrefsFrameLimiterE"));
     SET_TO(m_snTimeInMilliseconds, aml->GetSym(hGTAVC, "_ZN6CTimer22m_snTimeInMillisecondsE"));
+    SET_TO(m_FrameCounter, aml->GetSym(hGTAVC, "_ZN6CTimer14m_FrameCounterE"));
     SET_TO(m_fCurrentFarClip, aml->GetSym(hGTAVC, "_ZN10CTimeCycle17m_fCurrentFarClipE"));
     SET_TO(m_fCurrentFogStart, aml->GetSym(hGTAVC, "_ZN10CTimeCycle18m_fCurrentFogStartE"));
     SET_TO(aPolyBunches, aml->GetSym(hGTAVC, "_ZN8CShadows12aPolyBunchesE"));

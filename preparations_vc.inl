@@ -228,6 +228,15 @@
         HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
     }
 
+    // An attempt to fix fighting... (incomplete, the radius is small tho)
+    if(cfg->GetBool("FixFighting", true, "Gameplay"))
+    {
+        aml->Write(pGTAVC + 0x1C2E3C, "\xB1\xEE\x00\x7A", 4); // CPed::Fight -> unlock move FIGHTMOVE_KNEE
+        aml->Write8(pGTAVC + 0x1C5520, 0x01); // CheckForPedsOnGroundToAttack -> 4 >> PED_IN_FRONT_OF_ATTACKER
+    }
+    
+
+
 
 
 

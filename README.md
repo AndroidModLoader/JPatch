@@ -10,9 +10,12 @@
 **Planned/TODO (not ready or broken now)**
  - The fog is back (the water shader is broken???)
  - Pushing vehicles on a high FPS (just doesnt work.)
+ - Fix fighting range
+ - Probably, fix sprint speed?
+ - Not sure, maybe timer-related bugs in save files
 
 **Since v1.5.1**
- - Bringing back a framelimiter (works bad in my opinion, maybe i just like bigger FPS)
+ - Bringing back a framelimiter (may be inaccurate)
  - Water texture scrolling speed fix on high FPS
  - Fixed incorrect physics target (fixes small physical glitches with the vehicles, but also probably creates some)
  - Clouds rotating speed on high FPS (it is few times faster than it should be)
@@ -22,6 +25,7 @@
  - Corona sprites draw distance is 3 times bigger (partially, traffic lights do work)
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
  - Bumped a limit of static shadows!
+ - Fixing a crash of "Unprotected" APK (FLA bug)
 
 **Since v1.5**
  - Vertex Weights

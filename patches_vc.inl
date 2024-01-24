@@ -150,7 +150,7 @@ DECL_HOOKv(GameTick_TouchscreenUpdate, void *self, float a1, bool a2)
         // Touch handling is completely fucked up.
         // Pausing thread is the only way...
         double accurateTime = OS_TimeAccurate();
-        if(!nextMcsTime) nextMcsTime = accurateTime;
+        if(nextMcsTime < accurateTime - frameMcs) nextMcsTime = accurateTime + frameMcs;
         else nextMcsTime += frameMcs;
 
         OS_ThreadSleep(1000 * (nextMcsTime - accurateTime));
@@ -297,6 +297,7 @@ __attribute__((optnone)) __attribute__((naked)) void DoPickUpEffects_Inject(void
         "MOV PC, R11\n"
     );
 }
+
 
 
 
