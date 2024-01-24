@@ -228,6 +228,25 @@
         HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
     }
 
+    // Bigger max count of peds
+    if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))
+    {
+        *(int*)aml->GetSym(hGTAVC, "_ZN11CPopulation20MaxNumberOfPedsInUseE") = 0x23;
+        //aml->Write(pGTASA + 0x3F4DE0, (uintptr_t)"\x23", 1);
+        //aml->Write(pGTASA + 0x4CC284, (uintptr_t)"\x23", 1);
+        //aml->Write(pGTASA + 0x4CCBE0, (uintptr_t)"\x23", 1);
+        //aml->Write(pGTASA + 0x4CCBEA, (uintptr_t)"\x1C", 1);
+    }
+
+    // Bigger spawn distance for peds
+    if(cfg->GetBool("BuffPedsDistance", true, "Gameplay"))
+    {
+        aml->WriteFloat(pGTAVC + 0x1D413C, 50.0f);
+        aml->WriteFloat(pGTAVC + 0x1D4140, 90.0f);
+        HOOKBL(PedCreationDistMult_Offscreen, pGTAVC + 0x1D40EE + 0x1);
+        HOOKBL(PedCreationDistMult_Offscreen, pGTAVC + 0x1D40F6 + 0x1);
+    }
+
     // An attempt to fix fighting... (incomplete, the radius is small tho)
     if(cfg->GetBool("FixFighting", true, "Gameplay"))
     {

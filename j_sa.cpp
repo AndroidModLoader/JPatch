@@ -82,10 +82,11 @@ CBaseModelInfo** ms_modelInfoPtrs;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths;
 CRGBA* ms_vehicleColourTable;
 CRGBA* HudColour;
+bool *m_UserPause, *m_CodePause;
 
 CTaskComplexSequence* ms_taskSequence;
 CRunningScript** pActiveScripts;
-float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale;
 void *g_surfaceInfos;
 unsigned int *m_snTimeInMilliseconds;
 int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
@@ -194,6 +195,7 @@ char* (*GetCustomCarPlateText)(CVehicleModelInfo*);
 int (*GetVehicleRef)(CVehicle*);
 void (*RenderFontBuffer)();
 void (*RwTextureDestroy)(RwTexture*);
+double (*OS_TimeAccurate)();
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -218,6 +220,39 @@ inline CVector TransformFromObjectSpace(CEntity* ent, const CVector& offset)
 inline void BumpStreamingMemory(int megabytes)
 {
     *ms_memoryAvailable += megabytes * 1024 * 1024;
+}
+
+// Global Hooks (no need to enable patches)
+double m_dblTimeInMicroseconds = 0.0f;
+double m_dblOldTimeInMicroseconds = 0.0f;
+uint32_t m_snOwnTimeInMilliseconds = 0;
+
+uint32_t m_LogicalFramesPassed = 0, m_LogicalFrameCounter = 0;
+DECL_HOOKv(Global_TimerUpdate)
+{
+    Global_TimerUpdate();
+
+    m_dblOldTimeInMicroseconds = m_dblTimeInMicroseconds;
+    m_dblTimeInMicroseconds = OS_TimeAccurate();
+
+    // re3:
+    static double frameTimeLogical = 0.0, frameTimeFractionScaled = 0.0;
+
+    m_LogicalFramesPassed = 0;
+    frameTimeLogical += m_dblTimeInMicroseconds;
+    while (frameTimeLogical >= 1.0 / 30.0)
+    {
+        frameTimeLogical -= 1.0 / 30.0;
+        m_LogicalFramesPassed++;
+    }
+    m_LogicalFrameCounter += m_LogicalFramesPassed;
+
+    if(!*m_UserPause && !*m_CodePause)
+    {
+        frameTimeFractionScaled += m_dblTimeInMicroseconds * *ms_fTimeScale;
+        m_snOwnTimeInMilliseconds += (uint32_t)frameTimeFractionScaled;
+        frameTimeFractionScaled -= (uint32_t)frameTimeFractionScaled;
+    }
 }
     
 #ifdef AML32
@@ -288,6 +323,7 @@ void JPatch()
     SET_TO(GetVehicleRef,           aml->GetSym(hGTASA, "_ZN6CPools13GetVehicleRefEP8CVehicle"));
     SET_TO(RenderFontBuffer,        aml->GetSym(hGTASA, "_ZN5CFont16RenderFontBufferEv"));
     SET_TO(RwTextureDestroy,        aml->GetSym(hGTASA, "_Z16RwTextureDestroyP9RwTexture"));
+    SET_TO(OS_TimeAccurate,         aml->GetSym(hGTASA, "_Z15OS_TimeAccuratev"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -338,6 +374,7 @@ void JPatch()
     SET_TO(m_f3rdPersonCHairMultX,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultXE"));
     SET_TO(m_f3rdPersonCHairMultY,  aml->GetSym(hGTASA, "_ZN7CCamera22m_f3rdPersonCHairMultYE"));
     SET_TO(ms_fAspectRatio,         aml->GetSym(hGTASA, "_ZN5CDraw15ms_fAspectRatioE"));
+    SET_TO(ms_fTimeScale,           aml->GetSym(hGTASA, "_ZN6CTimer13ms_fTimeScaleE"));
     SET_TO(aWeaponInfo,             aml->GetSym(hGTASA, "aWeaponInfo"));
     SET_TO(windowSize,              aml->GetSym(hGTASA, "windowSize"));
     SET_TO(ms_bIsPlayerOnAMission,  aml->GetSym(hGTASA, "_ZN10CPedGroups22ms_bIsPlayerOnAMissionE"));
@@ -352,6 +389,8 @@ void JPatch()
     SET_TO(ms_nGameClockMonths,     aml->GetSym(hGTASA, "_ZN6CClock19ms_nGameClockMonthsE"));
     SET_TO(StatTypesInt,            aml->GetSym(hGTASA, "_ZN6CStats12StatTypesIntE"));
     SET_TO(HudColour,               aml->GetSym(hGTASA, "HudColour"));
+    SET_TO(m_UserPause,             aml->GetSym(hGTASA, "_ZN6CTimer11m_UserPauseE"));
+    SET_TO(m_CodePause,             aml->GetSym(hGTASA, "_ZN6CTimer11m_CodePauseE"));
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
         SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
@@ -359,6 +398,9 @@ void JPatch()
         SET_TO(gStoredMaterials,        pGTASA + 0x99E53C);
     #endif // AML32
     // Variables End //
+
+    // We need it for future fixes.
+    HOOK(Global_TimerUpdate, aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
 
     #ifdef AML32
         #include "preparations.inl"

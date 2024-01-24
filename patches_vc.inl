@@ -298,6 +298,12 @@ __attribute__((optnone)) __attribute__((naked)) void DoPickUpEffects_Inject(void
     );
 }
 
+// Bigger spawn distance for peds
+DECL_HOOK(float, PedCreationDistMult_Offscreen)
+{
+    return 2.6f * PedCreationDistMult_Offscreen();
+}
+
 
 
 

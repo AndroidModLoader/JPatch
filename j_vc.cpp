@@ -43,22 +43,25 @@ union ScriptVariables
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 #if defined(AML32)
-CStaticShadow* aStaticShadows_NEW;
+    CStaticShadow* aStaticShadows_NEW;
+#endif
 
-float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio;
+float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio, *ms_fTimeScale;
 char *mod_HandlingManager;
 int *fpsLimit; // a part of RsGlobal
 void *GTouchscreen;
 bool *m_PrefsFrameLimiter;
 uint32_t *m_snTimeInMilliseconds, *m_FrameCounter;
 float *m_fCurrentFarClip, *m_fCurrentFogStart;
-CPolyBunch *aPolyBunches;
+#if defined(AML32)
+    CPolyBunch *aPolyBunches;
+#endif
+bool *m_UserPause, *m_CodePause;
 
 // CPhysical::ApplyCollision
 float *fl1679D4;
 // CClouds::Update
 float *fl1D4CF0, *fl1D4CF4;
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -77,6 +80,39 @@ void (*tbDisplay)();
 void (*emu_DistanceFogSetEnabled)(bool);
 void (*emu_DistanceFogSetup)(float start, float end, float r, float g, float b);
 double (*OS_TimeAccurate)();
+
+// Global Hooks (no need to enable patches)
+double m_dblTimeInMicroseconds = 0.0f;
+double m_dblOldTimeInMicroseconds = 0.0f;
+uint32_t m_snOwnTimeInMilliseconds = 0;
+
+uint32_t m_LogicalFramesPassed = 0, m_LogicalFrameCounter = 0;
+DECL_HOOKv(Global_TimerUpdate)
+{
+    Global_TimerUpdate();
+
+    m_dblOldTimeInMicroseconds = m_dblTimeInMicroseconds;
+    m_dblTimeInMicroseconds = OS_TimeAccurate();
+
+    // re3:
+    static double frameTimeLogical = 0.0, frameTimeFractionScaled = 0.0;
+
+    m_LogicalFramesPassed = 0;
+    frameTimeLogical += m_dblTimeInMicroseconds;
+    while (frameTimeLogical >= 1.0 / 30.0)
+    {
+        frameTimeLogical -= 1.0 / 30.0;
+        m_LogicalFramesPassed++;
+    }
+    m_LogicalFrameCounter += m_LogicalFramesPassed;
+
+    if(!*m_UserPause && !*m_CodePause)
+    {
+        frameTimeFractionScaled += m_dblTimeInMicroseconds * *ms_fTimeScale;
+        m_snOwnTimeInMilliseconds += (uint32_t)frameTimeFractionScaled;
+        frameTimeFractionScaled -= (uint32_t)frameTimeFractionScaled;
+    }
+}
 
 #ifdef AML32
     #include "patches_vc.inl"
@@ -105,8 +141,9 @@ void JPatch()
     // Variables Start //
     SET_TO(ms_fTimeStep, aml->GetSym(hGTAVC, "_ZN6CTimer12ms_fTimeStepE"));
     SET_TO(mod_HandlingManager, *(char**)(pGTAVC + 0x3956B4));
-    SET_TO(fHeliRotorSpeed, pGTAVC + 0x255000); aml->Unprot(AS_ADDR(fHeliRotorSpeed), sizeof(float));
+    SET_TO(fHeliRotorSpeed, pGTAVC + 0x255000); UNPROT(fHeliRotorSpeed, sizeof(float));
     SET_TO(ms_fAspectRatio, aml->GetSym(hGTAVC, "_ZN5CDraw15ms_fAspectRatioE"));
+    SET_TO(ms_fTimeScale, aml->GetSym(hGTAVC, "_ZN6CTimer13ms_fTimeScaleE"));
     SET_TO(fpsLimit, pGTAVC + 0x714F1C);
     SET_TO(GTouchscreen, aml->GetSym(hGTAVC, "GTouchscreen"));
     SET_TO(m_PrefsFrameLimiter, aml->GetSym(hGTAVC, "_ZN12CMenuManager19m_PrefsFrameLimiterE"));
@@ -115,11 +152,16 @@ void JPatch()
     SET_TO(m_fCurrentFarClip, aml->GetSym(hGTAVC, "_ZN10CTimeCycle17m_fCurrentFarClipE"));
     SET_TO(m_fCurrentFogStart, aml->GetSym(hGTAVC, "_ZN10CTimeCycle18m_fCurrentFogStartE"));
     SET_TO(aPolyBunches, aml->GetSym(hGTAVC, "_ZN8CShadows12aPolyBunchesE"));
+    SET_TO(m_UserPause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_UserPauseE"));
+    SET_TO(m_CodePause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_CodePauseE"));
     SET_TO(fl1679D4, pGTAVC + 0x1679D4); UNPROT(fl1679D4, sizeof(float));
     SET_TO(fl1D4CF0, pGTAVC + 0x1D4CF0); UNPROT(fl1D4CF0, sizeof(float));
     SET_TO(fl1D4CF4, pGTAVC + 0x1D4CF4); UNPROT(fl1D4CF4, sizeof(float));
     // Variables End   //
     #endif // AML32
+
+    // We need it for future fixes.
+    HOOK(Global_TimerUpdate, aml->GetSym(hGTAVC, "_ZN6CTimer6UpdateEv"));
 
     #ifdef AML32
         #include "preparations_vc.inl"
