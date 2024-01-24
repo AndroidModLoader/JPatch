@@ -1173,6 +1173,10 @@ DECL_HOOKv(KBEvent, bool pushed, int keyNum, int ctrl_or_shift, int alwaysZero)
     
     if(!pushed && key != 0) AddToCheatString(toupper(key));
 }
+void Cheat_Predator()
+{
+    VehicleCheat(430);
+}
 
 // Fix crash while loading the save file
 DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
