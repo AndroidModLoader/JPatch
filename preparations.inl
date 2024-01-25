@@ -1114,6 +1114,14 @@
 
         aml->PlaceNOP4(pGTASA + 0x3BF2DC, 1);
         HOOKBLX(CamProcess_IdleCam, pGTASA + 0x3DCA2C + 0x1);
+        HOOKPLT(DrawAllWidgets, pGTASA + 0x66E5E4);
+
+        // Speed 3.0f is like on PC: 1,5 minutes
+        // Some weird glitch exists i dont wanna deal with...
+        float idleCamSpeed = cfg->GetFloat("IdleCameraStartSpeed", 3.0f, "Gameplay");
+        if(idleCamSpeed < 0.34f) idleCamSpeed = 0.34f; // min 10 seconds
+        else if(idleCamSpeed > 20.0f) idleCamSpeed = 20.0f; // max 10 minutes
+        gIdleCam->timeControlsIdleForIdleToKickIn = idleCamSpeed * 90000.0f;
     }
 
 

@@ -1895,7 +1895,6 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessCamFollowPed_IdleCam
         "VMUL.F32 S0, S0, S0\n"
         "MOV PC, R0\n");
 }
-
 DECL_HOOKv(CamProcess_IdleCam, CCam* self)
 {
     if(gIdleCam->idleTickerFrames <= gIdleCam->timeControlsIdleForIdleToKickIn)
@@ -1903,6 +1902,10 @@ DECL_HOOKv(CamProcess_IdleCam, CCam* self)
         *_bf_12c &= ~1;
     }
     CamProcess_IdleCam(self);
+}
+DECL_HOOKv(DrawAllWidgets, bool noEffects)
+{
+    if(*gbCineyCamProcessedOnFrame != *m_FrameCounter) DrawAllWidgets(noEffects);
 }
 
 
