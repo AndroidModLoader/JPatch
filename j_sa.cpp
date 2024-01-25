@@ -84,6 +84,7 @@ CRGBA* ms_vehicleColourTable;
 CRGBA* HudColour;
 bool *m_UserPause, *m_CodePause;
 bool *m_aCheatsActive;
+uint32_t *gbCineyCamProcessedOnFrame;
 
 CTaskComplexSequence* ms_taskSequence;
 CRunningScript** pActiveScripts;
@@ -94,6 +95,9 @@ int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *de
 bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
 uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable;
 RwTexture **ms_pRemapTexture;
+CIdleCam *gIdleCam;
+uint8_t *_bf_12c;
+uint32_t *m_FrameCounter;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -163,6 +167,11 @@ void (*RwTextureDestroy)(RwTexture*);
 double (*OS_TimeAccurate)();
 CVehicle* (*VehicleCheat)(int);
 bool (*WidgetIsTouched)(int, CVector2D*, int);
+void (*InitIdleCam)(CIdleCam*);
+void (*ProcessIdleCam)(CIdleCam*);
+void (*ResetIdleCam)(CIdleCam*, bool);
+void (*SetIdleCamTarget)(CIdleCam*, CEntity*);
+void (*RunIdleCam)(CIdleCam*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -293,6 +302,11 @@ void JPatch()
     SET_TO(OS_TimeAccurate,         aml->GetSym(hGTASA, "_Z15OS_TimeAccuratev"));
     SET_TO(VehicleCheat,            aml->GetSym(hGTASA, "_ZN6CCheat12VehicleCheatEi"));
     SET_TO(WidgetIsTouched,         aml->GetSym(hGTASA, "_ZN15CTouchInterface9IsTouchedENS_9WidgetIDsEP9CVector2Di"));
+    SET_TO(InitIdleCam,             aml->GetSym(hGTASA, "_ZN8CIdleCam4InitEv"));
+    SET_TO(ProcessIdleCam,          aml->GetSym(hGTASA, "_ZN8CIdleCam7ProcessEv"));
+    SET_TO(ResetIdleCam,            aml->GetSym(hGTASA, "_ZN8CIdleCam5ResetEb"));
+    SET_TO(SetIdleCamTarget,        aml->GetSym(hGTASA, "_ZN8CIdleCam9SetTargetEP7CEntity"));
+    SET_TO(RunIdleCam,              aml->GetSym(hGTASA, "_ZN8CIdleCam3RunEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -361,6 +375,10 @@ void JPatch()
     SET_TO(m_UserPause,             aml->GetSym(hGTASA, "_ZN6CTimer11m_UserPauseE"));
     SET_TO(m_CodePause,             aml->GetSym(hGTASA, "_ZN6CTimer11m_CodePauseE"));
     SET_TO(m_aCheatsActive,         aml->GetSym(hGTASA, "_ZN6CCheat15m_aCheatsActiveE"));
+    SET_TO(gIdleCam,                aml->GetSym(hGTASA, "gIdleCam"));
+    SET_TO(m_FrameCounter,          aml->GetSym(hGTASA, "_ZN6CTimer14m_FrameCounterE"));
+    SET_TO(gbCineyCamProcessedOnFrame, aml->GetSym(hGTASA, "gbCineyCamProcessedOnFrame"));
+    SET_TO(_bf_12c,                 pGTASA + 0x9EF9D8 + 0x12C);
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
         SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));

@@ -61,6 +61,7 @@
  - Fixed a small FX system leakage when using custom effects mod
  - Rewrote cheats hashes, check **GTASA_CHEATS.md** file for more info
  - BengbuGuards: Implement jetpack hover button
+ - **AFK/Idle camera!**
 
 **Since v1.5**
  - BengbuGuards: Second siren is now working

@@ -1835,6 +1835,83 @@ DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
     return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1);
 }
 
+// Re-implement idle camera like on PC/PS2
+void ProcessIdleCam_CutPart()
+{
+    if (gIdleCam->idleTickerFrames <= gIdleCam->timeControlsIdleForIdleToKickIn) return;
+
+    gIdleCam->pCam = &TheCamera->m_apCams[TheCamera->m_nCurrentActiveCam];
+    if (gIdleCam->lastFrameProcessed < *m_FrameCounter - 1)
+    {
+        *_bf_12c |= 1;
+        ResetIdleCam(gIdleCam, false);
+        gIdleCam->timeIdleCamStarted = *m_snTimeInMilliseconds;
+        SetIdleCamTarget(gIdleCam, FindPlayerPed(-1));
+        gIdleCam->bForceAZoomOut = true;
+    }
+    gIdleCam->lastFrameProcessed = *m_FrameCounter;
+    RunIdleCam(gIdleCam);
+    *gbCineyCamProcessedOnFrame = gIdleCam->lastFrameProcessed;
+}
+uintptr_t ProcessCamFollowPed_BackTo1, ProcessCamFollowPed_BackTo2, ProcessCamFollowPed_BackTo3;
+extern "C" uintptr_t ProcessCamFollowPed_IdleCam1_Patch(int flag, CCam *thisCam)
+{
+    if(flag) return ProcessCamFollowPed_BackTo1;
+    
+    thisCam->ResetStatics = 0;
+    ProcessIdleCam(gIdleCam);
+    ProcessIdleCam_CutPart();
+
+    return ProcessCamFollowPed_BackTo2;
+}
+extern "C" uintptr_t ProcessCamFollowPed_IdleCam2_Patch(CCam *thisCam)
+{
+    thisCam->ResetStatics = 0;
+    ProcessIdleCam(gIdleCam);
+    ProcessIdleCam_CutPart();
+
+    return ProcessCamFollowPed_BackTo3;
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessCamFollowPed_IdleCam1(void)
+{
+    asm volatile(
+        "LDR R0, [SP, #0x4C]\n"
+        "MOV R1, R10\n"
+        "PUSH {R2-R3}\n"
+        "BL ProcessCamFollowPed_IdleCam1_Patch\n"
+        "POP {R2-R3}\n"
+        "MOVS R1, #0\n"
+        "MOV PC, R0\n");
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessCamFollowPed_IdleCam2(void)
+{
+    asm volatile(
+        "MOV R0, R10\n"
+        "PUSH {R1-R3}\n"
+        "BL ProcessCamFollowPed_IdleCam2_Patch\n"
+        "POP {R1-R3}\n"
+        "VLDR S0, [R8, #0x48]\n"
+        "VLDR S2, [R8, #0x4C]\n"
+        "VMUL.F32 S0, S0, S0\n"
+        "MOV PC, R0\n");
+}
+
+DECL_HOOKv(CamProcess_IdleCam, CCam* self)
+{
+    if(gIdleCam->idleTickerFrames <= gIdleCam->timeControlsIdleForIdleToKickIn)
+    {
+        *_bf_12c &= ~1;
+    }
+    CamProcess_IdleCam(self);
+}
+
+
+
+
+
+
+
+
 
 
 

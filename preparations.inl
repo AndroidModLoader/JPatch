@@ -643,7 +643,7 @@
         static uint32_t m_aNewCheatHashKeys[0x6F] =
         { 
             0xDE4B237D, 0xB22A28D1, 0x5A783FAE, 0xBC39F5A2, // WEAPON4_CHEAT
-            0x87237A8E, 0xBB5ADFD7, 0x37B458AA, 0x7B64E263, // INVINCIBILITY_CHEAT
+            0x87237A8E, 0xBB5ADFD7, 0x37B458AA, 0xE1614CCB, // INVINCIBILITY_CHEAT
             0x438F0792, 0x1983B67D, 0xEECCEA2B, 0x42AF1E28, // WANTEDLEVELUP_CHEAT
             0x555FC201, 0x2A845345, 0xE1EF01EA, 0x771B83FC, // CLOUDYWEATHER_CHEAT
             0x5BF12848, 0x44453A17, 0xFCFF1D08, 0xB69E8532, // FASTTIME_CHEAT
@@ -1100,12 +1100,24 @@
     {
         HOOKBLX(Jetpack_IsHeldDown, pGTASA + 0x3FA4A0 + 0x1);
     }
+    
+    // Re-implement idle camera like on PC/PS2
+    if(cfg->GetBool("IdleCamera", true, "Gameplay"))
+    {
+        InitIdleCam(gIdleCam);
 
-    //HOOKBLX(ColorFix_DrawBarChart, pGTASA + 0x5C9F94 + 0x1);
-    //HOOKBLX(ColorFix_SetFontColor, pGTASA + 0x2BDE28 + 0x1);
-    //aml->Redirect(pGTASA + 0x2C84EC + 0x1, (uintptr_t)crash_this);
+        ProcessCamFollowPed_BackTo1 = pGTASA + 0x3C4C52 + 0x1; // reset idle cam
+        ProcessCamFollowPed_BackTo2 = pGTASA + 0x3C4B84 + 0x1; // skip after patch 1
+        ProcessCamFollowPed_BackTo3 = pGTASA + 0x3C4BBE + 0x1; // skip after patch 2
+        aml->Redirect(pGTASA + 0x3C4B7C + 0x1, (uintptr_t)ProcessCamFollowPed_IdleCam1);
+        aml->Redirect(pGTASA + 0x3C4BB2 + 0x1, (uintptr_t)ProcessCamFollowPed_IdleCam2);
 
-    //HOOKPLT(InitGameEngine, pGTASA + 0x66F2D0);
+        aml->PlaceNOP4(pGTASA + 0x3BF2DC, 1);
+        HOOKBLX(CamProcess_IdleCam, pGTASA + 0x3DCA2C + 0x1);
+    }
+
+
+
 
 
 
