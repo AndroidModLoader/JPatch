@@ -1094,6 +1094,12 @@
     {
         HOOKBLX(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
     }
+    
+    // BengbuGuards: Jetpack Hover Button
+    if(cfg->GetBool("JetpackHovering", true, "Gameplay"))
+    {
+        HOOKBLX(Jetpack_IsHeldDown, pGTASA + 0x3FA4A0 + 0x1);
+    }
 
     //HOOKBLX(ColorFix_DrawBarChart, pGTASA + 0x5C9F94 + 0x1);
     //HOOKBLX(ColorFix_SetFontColor, pGTASA + 0x2BDE28 + 0x1);

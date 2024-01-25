@@ -162,6 +162,7 @@ void (*RenderFontBuffer)();
 void (*RwTextureDestroy)(RwTexture*);
 double (*OS_TimeAccurate)();
 CVehicle* (*VehicleCheat)(int);
+bool (*WidgetIsTouched)(int, CVector2D*, int);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -291,6 +292,7 @@ void JPatch()
     SET_TO(RwTextureDestroy,        aml->GetSym(hGTASA, "_Z16RwTextureDestroyP9RwTexture"));
     SET_TO(OS_TimeAccurate,         aml->GetSym(hGTASA, "_Z15OS_TimeAccuratev"));
     SET_TO(VehicleCheat,            aml->GetSym(hGTASA, "_ZN6CCheat12VehicleCheatEi"));
+    SET_TO(WidgetIsTouched,         aml->GetSym(hGTASA, "_ZN15CTouchInterface9IsTouchedENS_9WidgetIDsEP9CVector2Di"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

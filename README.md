@@ -57,6 +57,11 @@
  - Doubled the directional light sources on models (to match the PC version)
  - B1ack_&_Wh1te: Wrong vehicle parts colors
 
+**Since v1.5.1**
+ - Fixed a small FX system leakage when using custom effects mod
+ - Rewrote cheats hashes, check **GTASA_CHEATS.md** file for more info
+ - BengbuGuards: Implement jetpack hover button
+
 **Since v1.5**
  - BengbuGuards: Second siren is now working
  - BengbuGuards: An animation fix for boats

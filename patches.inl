@@ -1829,6 +1829,12 @@ DECL_HOOKv(FxInfoMan_FXLeak, int self_44)
     FxInfoMan_FXLeak(self_44);
 }
 
+// Jetpack hover
+DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
+{
+    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1);
+}
+
 
 
 
