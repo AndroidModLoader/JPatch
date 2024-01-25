@@ -1036,6 +1036,8 @@
     {
         HOOKPLT(TaskSwim_ProcessInput, pGTASA + 0x674CBC);
         HOOKBLX(GetPedWalkUpDown_Swimming, pGTASA + 0x53A928 + 0x1);
+        //aml->WriteFloat(pGTASA + 0x53B31C, -0.08f); // not what we want!
+        aml->WriteFloat(pGTASA + 0x53B338,  0.08f);
     }
 
     // Fixes the wrong position (from the beta) for a Bravura in a mission "You've Had Your Chips"
@@ -1056,16 +1058,20 @@
     // HudColors
     if(cfg->GetBool("PCHudColors", true, "Visual"))
     {
-        //aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
-        //aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
-        //aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
-        //aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
-        //aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
-        //aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_WHITE); // Armor bar
-        //aml->Write8(pGTASA + 0x2BD9C4, 172); // Oxygen bar (red channel)
-        //aml->Write8(pGTASA + 0x2BD9CA, 203); // Oxygen bar (green channel)
-        //aml->Write8(pGTASA + 0x2BD9D0, 241); // Oxygen bar (blue channel)
-        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1);
+        // A function CWidgetVitalStats::Draw (0x2C84EC) has something that brings back normal colors!!!
+        // Temporary fix. I found an interesting connection between real colors and those:
+
+        // Color rendering is broken, wadahel !!!
+        aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
+        aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
+        aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
+        aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
+        aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
+        aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_WHITE); // Armor bar
+        aml->Write8(pGTASA + 0x2BD9C4, (uint8_t)(magicColorVal * 172)); // Oxygen bar (red channel)
+        aml->Write8(pGTASA + 0x2BD9CA, (uint8_t)(magicColorVal * 203)); // Oxygen bar (green channel)
+        aml->Write8(pGTASA + 0x2BD9D0, (uint8_t)(magicColorVal * 241)); // Oxygen bar (blue channel)
+        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1); // check this fn for bit more info
     }
 
     // Fix the issue that player cannot kill with a knife if not crouching

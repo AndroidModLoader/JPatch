@@ -1794,11 +1794,13 @@ __attribute__((optnone)) __attribute__((naked)) void Opcode039E_Inject(void)
         "BX R0\n");
 }
 
-// Darker hud colors ()
+// Darker hud colors
+static const double magicColorVal = 1.0 / 1.517;
 DECL_HOOKv(DrawAmmo_PrintString, float x, float y, uint16_t *gxt)
 {
     DrawAmmo_PrintString(x, y, gxt);
     RenderFontBuffer(); // this here disables a color?!
+    // UPD: yes, this disables a color-return-to-normal when showing vital stats. WTH??
 }
 
 // Fix a dumb Android 10+ RLEDecompress fix crash
@@ -2052,9 +2054,9 @@ DECL_HOOKv(RemoveExtraDirectionalLights, RpWorld* world)
 
 inline void FixTheColorFunc(CRGBA *color)
 {
-    color->r = (uint8_t)(0.6592f * color->r);
-    color->g = (uint8_t)(0.6592f * color->g);
-    color->b = (uint8_t)(0.6592f * color->b);
+    color->r = (uint8_t)(magicColorVal * color->r);
+    color->g = (uint8_t)(magicColorVal * color->g);
+    color->b = (uint8_t)(magicColorVal * color->b);
 }
 DECL_HOOKv(ColorFix_DrawBarChart, CRect *rect, CRGBA *color)
 {
