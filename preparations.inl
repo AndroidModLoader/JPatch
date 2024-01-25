@@ -747,7 +747,7 @@
     }
     
     // Water Quadrant
-    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 5, "Visual");
+    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 3, "Visual");
     if(dist > 0)
     {
         if(dist < 24) dist = 24;
@@ -763,7 +763,7 @@
     
     if(cfg->GetBool("DisableCloudSaves", false, "Gameplay"))
     {
-        aml->Write(aml->GetSym(hGTASA, "UseCloudSaves"), (uintptr_t)"\x00", 1);
+        aml->Write8(aml->GetSym(hGTASA, "UseCloudSaves"), 0x00);
     }
     
     // Always show wanted stars even if we're not breakin the law
