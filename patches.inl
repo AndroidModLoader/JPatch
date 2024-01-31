@@ -1910,7 +1910,13 @@ DECL_HOOKv(DrawAllWidgets, bool noEffects)
     if(*gbCineyCamProcessedOnFrame != *m_FrameCounter) DrawAllWidgets(noEffects);
 }
 
-
+// Do a bigger size for collision-processing cache
+int newColCacheSize;
+DECL_HOOKv(InitCollisions_BumpCache)
+{
+    ms_colModelCache->Init(newColCacheSize);
+    InitCollisions_BumpCache();
+}
 
 
 

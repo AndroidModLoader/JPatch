@@ -1129,6 +1129,14 @@
         else if(idleCamSpeed > 20.0f) idleCamSpeed = 20.0f; // max 10 minutes
         gIdleCam->timeControlsIdleForIdleToKickIn = idleCamSpeed * 90000.0f;
     }
+    
+    // Do a bigger size for collision-processing cache
+    newColCacheSize = cfg->GetInt("CollisionCacheSizeBump", 128, "Gameplay");
+    if(newColCacheSize > 50) // default is 50, we dont allow to set it to lower value
+    {
+        aml->PlaceB(pGTASA + 0x2D96B4 + 0x1, pGTASA + 0x2D9730 + 0x1); // disable default limit
+        HOOKBLX(InitCollisions_BumpCache, pGTASA + 0x471DB8 + 0x1);
+    }
 
 
 

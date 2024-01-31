@@ -62,42 +62,33 @@ float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 #define GetTimeStep() (*ms_fTimeStep)
 #define GetTimeStepInSeconds() (*ms_fTimeStep / 50.0f)
 
-CPlayerInfo* WorldPlayers;
-CIntVector2D* windowSize;
-CCamera* TheCamera;
-RsGlobalType* RsGlobal;
-MobileMenu *gMobileMenu;
-CWidget** m_pWidgets;
-ScriptVariables* ScriptParams;
-CLinkList<AlphaObjectInfo>* m_alphaList;
-CPool<CCutsceneObject>** pObjectPool;
-CZoneInfo** m_pCurrZoneInfo;
-CWeaponInfo* aWeaponInfo;
-int keys[538];
-bool *ms_bIsPlayerOnAMission;
-int *DETAILEDWATERDIST;
-int *ms_nNumGang, *StatTypesInt;
-CPolyBunch* aPolyBunches;
-CBaseModelInfo** ms_modelInfoPtrs;
-uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths;
-CRGBA* ms_vehicleColourTable;
-CRGBA* HudColour;
-bool *m_UserPause, *m_CodePause;
-bool *m_aCheatsActive;
-uint32_t *gbCineyCamProcessedOnFrame;
-
-CTaskComplexSequence* ms_taskSequence;
-CRunningScript** pActiveScripts;
+bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
+uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
+int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
+uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale;
-void *g_surfaceInfos;
-unsigned int *m_snTimeInMilliseconds;
-int *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
-bool *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
-uint32_t *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable;
-RwTexture **ms_pRemapTexture;
-CIdleCam *gIdleCam;
-uint8_t *_bf_12c;
-uint32_t *m_FrameCounter;
+
+CPlayerInfo                 *WorldPlayers;
+CIntVector2D                *windowSize;
+CCamera                     *TheCamera;
+RsGlobalType                *RsGlobal;
+MobileMenu                  *gMobileMenu;
+CWidget                     **m_pWidgets;
+ScriptVariables*            ScriptParams;
+CLinkList<AlphaObjectInfo>  *m_alphaList;
+CPool<CCutsceneObject>      **pObjectPool;
+CZoneInfo                   **m_pCurrZoneInfo;
+CWeaponInfo                 *aWeaponInfo;
+CPolyBunch                  *aPolyBunches;
+CBaseModelInfo              **ms_modelInfoPtrs;
+CRGBA                       *ms_vehicleColourTable;
+CRGBA                       *HudColour;
+CTaskComplexSequence        *ms_taskSequence;
+CRunningScript              **pActiveScripts;
+void                        *g_surfaceInfos;
+RwTexture                   **ms_pRemapTexture;
+CIdleCam                    *gIdleCam;
+CLinkList<CCollisionData*>  *ms_colModelCache;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -378,6 +369,7 @@ void JPatch()
     SET_TO(gIdleCam,                aml->GetSym(hGTASA, "gIdleCam"));
     SET_TO(m_FrameCounter,          aml->GetSym(hGTASA, "_ZN6CTimer14m_FrameCounterE"));
     SET_TO(gbCineyCamProcessedOnFrame, aml->GetSym(hGTASA, "gbCineyCamProcessedOnFrame"));
+    SET_TO(ms_colModelCache,        aml->GetSym(hGTASA, "_ZN10CCollision16ms_colModelCacheE"));
     SET_TO(_bf_12c,                 pGTASA + 0x9EF9D8 + 0x12C);
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
