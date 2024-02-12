@@ -195,3 +195,27 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessBuoyancy_Inject(void
         "LDR S1, [X19 ,#0x7C]\n"
         "BR X16");
 }
+
+// Fixing a crosshair by very stupid math
+float fWideScreenWidthScale, fWideScreenHeightScale;
+DECL_HOOKv(DrawCrosshair)
+{
+    static constexpr float XSVal = 1024.0f / 1920.0f; // prev. 0.530, now it's 0.533333..3
+    static constexpr float YSVal = 768.0f / 1920.0f; // unchanged :p
+
+    CPlayerPed* player = WorldPlayers[0].pPed;
+    if(player->m_WeaponSlots[player->m_nCurrentWeapon].m_eWeaponType == WEAPON_COUNTRYRIFLE)
+    {
+        // Weirdo logic but ok
+        float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - 0.84f * ar43 * 0.01115f; // 0.01125f;
+        float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + 0.84f * ar43 * 0.038f; // 0.03600f;
+        DrawCrosshair();
+        *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
+        return;
+    }
+
+    float save1 = *m_f3rdPersonCHairMultX; *m_f3rdPersonCHairMultX = 0.530f - fAspectCorrection * 0.01115f; // 0.01125f;
+    float save2 = *m_f3rdPersonCHairMultY; *m_f3rdPersonCHairMultY = 0.400f + fAspectCorrection * 0.038f; // 0.03600f;
+    DrawCrosshair();
+    *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
+}

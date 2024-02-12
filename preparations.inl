@@ -1138,6 +1138,13 @@
         HOOKBLX(InitCollisions_BumpCache, pGTASA + 0x471DB8 + 0x1);
     }
 
+    // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // uanble to use some weapons, here somewhere
+
+
+
+
+
+
 
 
 

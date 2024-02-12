@@ -40,6 +40,10 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
+**Since v1.5.1**
+ - **Crosshair should be placed at the correct place**
+ - Aiming with Country Rifle is now in 3rd person
+
 **Since v1.5**
  - Animated textures (UVAnim)
  - Vertex Weights

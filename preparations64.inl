@@ -54,3 +54,16 @@
         ProcessBuoyancy_BackTo = pGTASA + 0x691E94;
         aml->Redirect(pGTASA + 0x691E80, (uintptr_t)ProcessBuoyancy_Inject);
     }
+
+    // Fixing a crosshair position by very stupid math
+    if(cfg->GetBool("FixCrosshair", true, "Visual"))
+    {
+        HOOKBL(DrawCrosshair, pGTASA + 0x51F7E4);
+    }
+    
+    // Country. Rifle. Is. 3rd. Person.
+    if(cfg->GetBool("FixCountryRifleAim", true, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x653408, 2);
+        aml->Write32(pGTASA + 0x6539E0, CMPBits::Create(0xFF, 28, false));
+    }
