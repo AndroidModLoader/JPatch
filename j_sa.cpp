@@ -224,9 +224,9 @@ DECL_HOOKv(Global_TimerUpdate)
 }
     
 #ifdef AML32
-    #include "patches.inl"
+    #include "patches_sa.inl"
 #else
-    #include "patches64.inl"
+    #include "patches_sa64.inl"
 #endif
 
 void JPatch()
@@ -385,9 +385,9 @@ void JPatch()
     HOOK(Global_TimerUpdate, aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
 
     #ifdef AML32
-        #include "preparations.inl"
+        #include "preparations_sa.inl"
     #else
-        #include "preparations64.inl"
+        #include "preparations_sa64.inl"
     #endif
 }
 
