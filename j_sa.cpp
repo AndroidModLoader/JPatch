@@ -163,6 +163,7 @@ void (*ProcessIdleCam)(CIdleCam*);
 void (*ResetIdleCam)(CIdleCam*, bool);
 void (*SetIdleCamTarget)(CIdleCam*, CEntity*);
 void (*RunIdleCam)(CIdleCam*);
+void (*SetColTrianglePlane)(CColTrianglePlane*, CVector*, CColTriangle*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -298,6 +299,7 @@ void JPatch()
     SET_TO(ResetIdleCam,            aml->GetSym(hGTASA, "_ZN8CIdleCam5ResetEb"));
     SET_TO(SetIdleCamTarget,        aml->GetSym(hGTASA, "_ZN8CIdleCam9SetTargetEP7CEntity"));
     SET_TO(RunIdleCam,              aml->GetSym(hGTASA, "_ZN8CIdleCam3RunEv"));
+    SET_TO(SetColTrianglePlane,     aml->GetSym(hGTASA, "_ZN17CColTrianglePlane3SetEPK7CVectorR12CColTriangle"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

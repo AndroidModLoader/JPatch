@@ -936,6 +936,13 @@
         HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x673E84);
     }
 
+    // Detonator unused anim?
+    // This should work but this animation is not in the files!
+    if(cfg->GetBool("UnusedDetonatorAnim", false, "Visual"))
+    {
+        HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
+    }
+
     // FX particles distance multiplier!
     float fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
     if(fxMultiplier != 1 && fxMultiplier > 0.1)
@@ -1138,7 +1145,13 @@
         HOOKBLX(InitCollisions_BumpCache, pGTASA + 0x471DB8 + 0x1);
     }
 
-    // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // uanble to use some weapons, here somewhere
+    if(cfg->GetBool("FallingStarColor", true, "Visual"))
+    {
+        HOOKBLX(RenderState_Star, pGTASA + 0x59F570 + 0x1);
+    }
+
+
+    // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // unable to use some weapons, here somewhere
 
 
 
@@ -1163,6 +1176,7 @@
     }*/
 
     // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
+    // UPD: shaders are limited to 1 (or 2?) only...
     /*if(cfg->GetBool("PCDirLightsCount", true, "Visual"))
     {
         uint8_t patchval = 3 + EXTRA_DIRLIGHTS;
@@ -1214,18 +1228,3 @@
     {
         HOOKPLT(PlayerInfoProcess_Food, pGTASA + 0x673E84);
     }*/
-    
-    // Michelle date: CTaskSimpleCarSetPedInAsPassenger?
-
-    // No SetClumpAlpha for ped (probably fixes the problem with player's lighting when holding a weapon)
-    //if(cfg->GetBool("FixPlayerLighting", true, "Visual"))
-    //{
-    //    aml->PlaceNOP(pGTASA + 0x4A2622 + 0x1, 2);
-    //}
-
-    // Detonator unused anim?
-    // This should work but this animation is not in the files!
-    //if(cfg->GetBool("UnusedDetonatorAnim", true, "Visual"))
-    //{
-    //    HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
-    //}

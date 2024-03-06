@@ -60,6 +60,12 @@
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version)
  - B1ack_&_Wh1te: Wrong vehicle parts colors
+ - Cant use some weapons (fire ex., spray) while the car-enter widget is active (read: near the vehicle)
+ - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
+
+**Since v1.5.2**
+ - Falling star is now not a black line
+ - Unused detonator animation fix can be enabled (you need to put animations in your game files like on PC!)
 
 **Since v1.5.1**
  - Fixed a small FX system leakage when using custom effects mod

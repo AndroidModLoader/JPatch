@@ -1918,6 +1918,15 @@ DECL_HOOKv(InitCollisions_BumpCache)
     InitCollisions_BumpCache();
 }
 
+// Falling Star
+DECL_HOOKv(RenderState_Star, int a1, int a2)
+{
+    RenderState_Star(a1, a2);
+    RenderState_Star(1, 0);
+}
+
+
+
 
 
 
