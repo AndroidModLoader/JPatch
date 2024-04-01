@@ -1089,7 +1089,7 @@
     }
     
     // Fix a dumb Android 10+ RLEDecompress fix crash
-    if(androidSdkVer < 33 && cfg->GetBool("RLEDecompressCrashFix", true, "Gameplay"))
+    if(cfg->GetBool("RLEDecompressCrashFix", androidSdkVer < 33, "Gameplay"))
     {
         RLE_BackTo = pGTASA + 0x1E9244 + 0x1;
         aml->Redirect(pGTASA + 0x1E9238 + 0x1, (uintptr_t)RLE_Inject);
