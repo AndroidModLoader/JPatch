@@ -1925,6 +1925,11 @@ DECL_HOOKv(RenderState_Star, int a1, int a2)
     RenderState_Star(1, 0);
 }
 
+// Stunt smoke
+DECL_HOOKb(Plane_ProcessControl_Horn, int a1)
+{
+    return WidgetIsTouched(7, NULL, 2);
+}
 
 
 

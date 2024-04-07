@@ -1145,9 +1145,16 @@
         HOOKBLX(InitCollisions_BumpCache, pGTASA + 0x471DB8 + 0x1);
     }
 
+    // Falling star.
     if(cfg->GetBool("FallingStarColor", true, "Visual"))
     {
         HOOKBLX(RenderState_Star, pGTASA + 0x59F570 + 0x1);
+    }
+
+    // Stunt smoke
+    if(cfg->GetBool("FixStuntSmoke", true, "Gameplay"))
+    {
+        HOOKBLX(Plane_ProcessControl_Horn, pGTASA + 0x575CC4 + 0x1);
     }
 
 
