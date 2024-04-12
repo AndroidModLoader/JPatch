@@ -40,7 +40,7 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
-**Since v1.5.2**
+**Since v1.6**
  - Colored zone names are back
 
 **Since v1.5.1**
@@ -64,7 +64,7 @@
  - Cant use some weapons (fire ex., spray) while the car-enter widget is active (read: near the vehicle)
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
 
-**Since v1.5.2**
+**Since v1.6**
  - Falling star is now not a black line
  - Unused detonator animation fix can be enabled (you need to put animations in your game files like on PC!)
  - Jetpack hovering is now "lockable"
