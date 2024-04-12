@@ -40,6 +40,9 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
+**Since v1.5.2**
+ - Colored zone names are back
+
 **Since v1.5.1**
  - **Crosshair should be placed at the correct place**
  - Aiming with Country Rifle is now in 3rd person
@@ -54,18 +57,19 @@
  
 ### ***GTA:SA v2.00***
 **Planned/TODO (not ready or broken now)**
- - Damaged components should not be colored by the previously damaged vehicle of that type
- - Fix camera zoom is not that far
+ - Fix camera zoom is not that big (aspect ratio?)
  - FoodEatingFix by JuniorDjjr
  - Moon phases (probably far away...)
- - Doubled the directional light sources on models (to match the PC version)
- - B1ack_&_Wh1te: Wrong vehicle parts colors
+ - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Cant use some weapons (fire ex., spray) while the car-enter widget is active (read: near the vehicle)
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
 
 **Since v1.5.2**
  - Falling star is now not a black line
  - Unused detonator animation fix can be enabled (you need to put animations in your game files like on PC!)
+ - Jetpack hovering is now "lockable"
+ - Planes now have a toggleable smoke/dust (thanks BengbuGuards!)
+ - Wrong vehicle parts colors (thanks B1ack_&_Wh1te!)
 
 **Since v1.5.1**
  - Fixed a small FX system leakage when using custom effects mod

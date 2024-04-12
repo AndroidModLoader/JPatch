@@ -1157,30 +1157,17 @@
         HOOKBLX(Plane_ProcessControl_Horn, pGTASA + 0x575CC4 + 0x1);
     }
 
+    if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
+    {
+        HOOKBLX(ObjectRender_VehicleParts, pGTASA + 0x454F5A + 0x1);
+        aml->PlaceB(pGTASA + 0x454F02 + 0x1, pGTASA + 0x454F58 + 0x1);
+    }
+
+
+
 
     // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // unable to use some weapons, here somewhere
 
-
-
-
-
-
-
-
-
-
-
-
-    // B1ack_&_Wh1te: Wrong vehicle parts colors
-    /*if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
-    {
-        ObjectRender_BackTo1 = pGTASA + 0x454F16 + 0x1;
-        aml->Redirect(pGTASA + 0x454F06 + 0x1, (uintptr_t)ObjectRender_Inject1);
-        ObjectRender_BackTo2 = (uintptr_t)&ObjectRender_Inject3; // pGTASA + 0x454F58 + 0x1;
-        aml->Redirect(pGTASA + 0x454F4C + 0x1, (uintptr_t)ObjectRender_Inject2); // 0x454F50
-        ObjectRender_BackTo3 = pGTASA + 0x454F5E + 0x1;
-        //aml->Redirect(pGTASA + 0x454F58 + 0x1, (uintptr_t)ObjectRender_Inject3);
-    }*/
 
     // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
     // UPD: shaders are limited to 1 (or 2?) only...
@@ -1221,14 +1208,6 @@
     {
         HOOK(CheckForStatsMessage, aml->GetSym(hGTASA, "_ZN6CStats20CheckForStatsMessageEb"));
     }*/
-
-    // Undone and so disabled
-    //if(cfg->GetBool("DamagedComponentsColorFix", true, "Visual"))
-    //{
-    //    //HOOK(ChooseVehicleColour, aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo19ChooseVehicleColourERhS0_S0_S0_i"));
-    //    //HOOKPLT(SetComponentVisibility, pGTASA + 0x66ED8C);
-    //    HOOK(PreRenderCar, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
-    //}
     
     // JuniorDjjr, W.I.P.
     /*if(cfg->GetBool("FoodEatingModelFix", true, "Gameplay"))

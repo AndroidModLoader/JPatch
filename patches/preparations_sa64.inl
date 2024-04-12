@@ -67,3 +67,9 @@
         aml->PlaceNOP(pGTASA + 0x653408, 2);
         aml->Write32(pGTASA + 0x6539E0, CMPBits::Create(0xFF, 28, false));
     }
+
+    // Colored zone names are back
+    if(cfg->GetBool("ColoredZoneNames", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x51D9C0, 1);
+    }

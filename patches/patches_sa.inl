@@ -1834,7 +1834,13 @@ DECL_HOOKv(FxInfoMan_FXLeak, int self_44)
 // Jetpack hover
 DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
 {
-    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1);
+    static bool holdTheButton = false;
+    if(Touch_IsDoubleTapped(WIDGETID_VEHICLEEXHAUST, true, 1))
+    {
+        holdTheButton = !holdTheButton;
+        return holdTheButton;
+    }
+    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1) ^ holdTheButton;
 }
 
 // Re-implement idle camera like on PC/PS2
@@ -1931,74 +1937,54 @@ DECL_HOOKb(Plane_ProcessControl_Horn, int a1)
     return WidgetIsTouched(7, NULL, 2);
 }
 
-
-
-
-
-
-
-
-
-
-// B1ack_&_Wh1te: Wrong vehicle parts colors
-uintptr_t ObjectRender_BackTo1, ObjectRender_BackTo2, ObjectRender_BackTo3;
-std::array<std::pair<RpMaterial**, RpMaterial*>, 64> *gStoredMaterials;
+// Wrong vehicle parts colors
+RpMaterial* gMatStore[64];
+RwTexture* gTexStore[64];
+RwRGBA gColorStore[64];
+int matsNumba;
 std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;
-extern "C" uintptr_t ObjectRender_Patch1(CObject* self)
+DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
-    gStoredMaterials->front().first = NULL;
-    if(self->m_nCarPartModelIndex < 0 || self->m_nObjectType != OBJECT_TEMPORARY || !self->objectFlags.bChangesVehColor)
+    // Original code (Skipped by the patcher)
+    if(self->m_nCarPartModelIndex != -1 && self->objectFlags.bChangesVehColor && self->m_nObjectType == eObjectType::OBJECT_TEMPORARY)
     {
-        return ObjectRender_BackTo2;
+        *ms_pRemapTexture = self->m_pRemapTexture;
+
+        CVehicleModelInfo* vi = (CVehicleModelInfo*)ms_modelInfoPtrs[self->m_nCarPartModelIndex];
+        SetVehicleColour(vi, self->m_rgbaVehicleColor.r, self->m_rgbaVehicleColor.g, self->m_rgbaVehicleColor.b, self->m_rgbaVehicleColor.a);
+
+        if(self->m_pRwAtomic && self->m_pRwAtomic->object.object.type == 1)
+        {
+            // Addition
+            matsNumba = self->m_pRwAtomic->geometry->matList.numMaterials;
+            for(int i = 0; i < matsNumba; ++i)
+            {
+                gMatStore[i] = self->m_pRwAtomic->geometry->matList.materials[i];
+                gColorStore[i] = gMatStore[i]->color;
+                gTexStore[i] = gMatStore[i]->texture;
+            }
+
+            // Original
+            auto pEntry = gNewStoredMaterials.data();
+            SetEditableMaterialsCB(self->m_pRwAtomic, &pEntry);
+        }
     }
-    return ObjectRender_BackTo1;
-}
-extern "C" void ObjectRender_Patch2(RpAtomic* atomic)
-{
-    auto entry = gStoredMaterials->data();
-    SetEditableMaterialsCB(atomic, &entry);
-    entry->first = NULL;
-}
-extern "C" void ObjectRender_Patch3(CEntity* self)
-{
-    RenderEntity(self);
-    for(auto& entry : *gStoredMaterials)
+
+    ObjectRender_VehicleParts(self); // CEntity::Render
+
+    // Addition
+    for(int i = 0; i < matsNumba; ++i)
     {
-        if(!entry.first) break;
-        *entry.first = entry.second;
+        if(gMatStore[i])
+        {
+            gMatStore[i]->texture = gTexStore[i];
+            gMatStore[i]->color = gColorStore[i];
+        }
     }
 }
-__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject1(void)
-{
-    asm volatile(
-        "PUSH {R0}\n"
-        "MOV R0, R4\n"
-        "PUSH {R4}\n"
-        "BL ObjectRender_Patch1\n"
-        "POP {R4}\n"
-        "MOV R1, R0\n"
-        "POP {R0}\n"
-        "MOV PC, R1");
-}
-__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject2(void)
-{
-    asm volatile(
-        //"STR R1, [SP, #0x4]\n"
-        //"ADD R1, SP, #0x4\n"
-        "BL ObjectRender_Patch2\n");
-    asm volatile(
-        "MOV PC, %0"
-    :: "r" (ObjectRender_BackTo2));
-}
-__attribute__((optnone)) __attribute__((naked)) void ObjectRender_Inject3(void)
-{
-    asm volatile(
-        "MOV R0, R4\n"
-        "BL ObjectRender_Patch3");
-    asm volatile(
-        "MOV PC, %0"
-    :: "r" (ObjectRender_BackTo3));
-}
+
+
+
 
 
 
@@ -2171,104 +2157,6 @@ DECL_HOOKv(CheckForStatsMessage, bool unk)
     if(*bProcessingCutscene) return;
 
     CheckForStatsMessage(unk);
-}
-
-// Components clr fix
-RpMaterial* SetCompColorCB(RpMaterial* mat, void* data)
-{
-    if(!mat) return mat;
-
-    //CRGBA color = *(CRGBA*)&(mat->color);
-    //int colorIndex;
-    //if(color.val == CRGBA(60, 255, 0, 0).val)       colorIndex = ms_currentCol[0];
-    //else if(color.val == CRGBA(255, 0, 175, 0).val) colorIndex = ms_currentCol[1];
-    //else if(color.val == CRGBA(0, 255, 255, 0).val) colorIndex = ms_currentCol[2];
-    //else if(color.val == CRGBA(255, 0, 255, 0).val) colorIndex = ms_currentCol[3];
-    //else return mat;
-
-    mat->color = *(RwRGBA*)data;
-    return mat;
-}
-void SetComponentColor(CVehicle* self, RwFrame* frame)
-{
-    RpAtomic* atomic = NULL;
-    RpGeometry* geometry = NULL;
-    RwFrameForAllObjects(frame, GetCurrentAtomicObjectCB, &atomic);
-    if(atomic)
-    {
-        geometry = atomic->geometry;
-        CRGBA clr(128,128,255);
-        RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
-
-        //SetEditableMaterialsCB(atomic, NULL);
-        //geometry = atomic->geometry;
-        //geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
-        
-        // CRGBA col;
-        // RpGeometryForAllMaterials(self->m_pRwAtomic->geometry, GetCarColorCB, &col);
-        // RpGeometryForAllMaterials(geometry, SetCompColorCB, &clr);
-        // logger->Info("RpMaterialList %d", geometry->matList.numMaterials);
-        
-        
-        //geometry->matList.materials[0]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nPrimaryColor];
-        //geometry->matList.materials[1]->color = *(RwRGBA*)&ms_vehicleColourTable[self->m_nSecondaryColor];
-    }
-}
-DECL_HOOKv(ChooseVehicleColour, CVehicleModelInfo* self, uint8_t& prim, uint8_t& sec, uint8_t& tert, uint8_t& quat, int32_t variationShift)
-{
-    ChooseVehicleColour(self, prim, sec, tert, quat, variationShift);
-    
-    self->m_nCurrentPrimaryColor = prim;
-    self->m_nCurrentSecondaryColor = sec;
-    self->m_nCurrentTertiaryColor = tert;
-    self->m_nCurrentQuaternaryColor = quat;
-}
-DECL_HOOKv(SetComponentVisibility, CAutomobile* self, RwFrame* nodeFrame, eAtomicComponentFlag visibility)
-{
-    CVehicleModelInfo* vi = (CVehicleModelInfo*)ms_modelInfoPtrs[self->m_nModelIndex];
-    vi->m_currentColor = self->m_color;
-        /*vi->m_nCurrentPrimaryColor = self->m_nPrimaryColor;
-        vi->m_nCurrentSecondaryColor = self->m_nSecondaryColor;
-        vi->m_nCurrentTertiaryColor = self->m_nTertiaryColor;
-        vi->m_nCurrentQuaternaryColor = self->m_nQuaternaryColor;*/
-    SetComponentVisibility(self, nodeFrame, visibility);
-    
-            
-    /*if(visibility != ATOMIC_IS_DAM_STATE) return;
-    
-    eSomeMaxs compNum = (eSomeMaxs)-1;
-    for(uint8_t i = 0; i < MAX_CAR_NODES; ++i)
-    {
-        if(nodeFrame == self->m_CarNodes[i]) { compNum = (eSomeMaxs)i; break; }
-    }
-    if(compNum == (eSomeMaxs)-1) return;
-    
-    switch(compNum)
-    {
-        default: break;
-        
-        case CAR_DOOR_RF:
-        case CAR_DOOR_RR:
-        case CAR_DOOR_LF:
-        case CAR_DOOR_LR:
-            SetComponentColor(self, nodeFrame);
-            break;
-    }*/
-}
-DECL_HOOKv(PreRenderCar, CAutomobile* self)
-{
-    PreRenderCar(self);
-    
-    RwFrame* node = NULL;
-    for(int i = CAR_DOOR_RF; i <= CAR_DOOR_LR; ++i)
-    {
-        node = self->m_CarNodes[i];
-        logger->Info("car 0x%08X, comp 0x%X 0x%08X", self, i, node);
-        if(!node) continue;
-        
-        //SetComponentColor(self, node);
-    }
-    self->SetModelIndex(self->m_nModelIndex);
 }
 
 // Social Club

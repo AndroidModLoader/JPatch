@@ -164,6 +164,7 @@ void (*ResetIdleCam)(CIdleCam*, bool);
 void (*SetIdleCamTarget)(CIdleCam*, CEntity*);
 void (*RunIdleCam)(CIdleCam*);
 void (*SetColTrianglePlane)(CColTrianglePlane*, CVector*, CColTriangle*);
+void (*SetVehicleColour)(CVehicleModelInfo*, uint8_t, uint8_t, uint8_t, uint8_t);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -373,11 +374,11 @@ void JPatch()
     SET_TO(gbCineyCamProcessedOnFrame, aml->GetSym(hGTASA, "gbCineyCamProcessedOnFrame"));
     SET_TO(ms_colModelCache,        aml->GetSym(hGTASA, "_ZN10CCollision16ms_colModelCacheE"));
     SET_TO(_bf_12c,                 pGTASA + BYVER(0x9EF9D8 + 0x12C, 0xC8C180 + 0x14C));
+    SET_TO(SetVehicleColour,        aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo16SetVehicleColourEhhhh"));
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
         SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
         SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
-        SET_TO(gStoredMaterials,        pGTASA + 0x99E53C);
     #endif // AML32
     // Variables End //
 
