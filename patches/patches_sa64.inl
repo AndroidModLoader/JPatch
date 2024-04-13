@@ -1,3 +1,91 @@
+// Limit particles
+uintptr_t AddBulletImpactFx_BackTo;
+eBulletFxType nLimitWithSparkles = BULLETFX_NOTHING;
+DECL_HOOK(eBulletFxType, GetBulletFx_Limited, void* surfInfos, uint32_t surfId)
+{
+    static uint32_t nextHeavyParticleTick = 0;
+    eBulletFxType nParticlesType = GetBulletFx_Limited(surfInfos, surfId);
+    if(nParticlesType == BULLETFX_SAND || nParticlesType == BULLETFX_DUST)
+    {
+        if(nextHeavyParticleTick < *m_snTimeInMilliseconds)
+        {
+            nextHeavyParticleTick = *m_snTimeInMilliseconds + 100;
+        }
+        else
+        {
+            return nLimitWithSparkles;
+        }
+    }
+    return nParticlesType;
+}
+
+// Madd Dogg's Mansion Basketball glitch
+DECL_HOOK(ScriptHandle, GenerateNewPickup_MaddDogg, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+{
+    if(modelId == 1277 && x == 1263.05f && y == -773.67f && z == 1091.39f)
+    {
+        return GenerateNewPickup_MaddDogg(1291.2f, -798.0f, 1089.39f, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    }
+    return GenerateNewPickup_MaddDogg(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+}
+
+// Fix Star bribe which is missing minus sign in X coordinate and spawns inside the building
+DECL_HOOK(ScriptHandle, GenerateNewPickup_SFBribe, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+{
+    if(modelId == 1247 && (int)x == -2120 && (int)y == 96)
+    {
+        return GenerateNewPickup_SFBribe(2120.0f, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    }
+    return GenerateNewPickup_SFBribe(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+}
+
+// Fix a Rifle weapon pickup that is located inside the stadium wall since beta
+DECL_HOOK(ScriptHandle, GenerateNewPickup_SFRiflePickup, float x, float y, float z, int16_t modelId, ePickupType pickupType, int ammo, int16_t moneyPerDay, bool isEmpty, const char* msg)
+{
+    if(modelId == 357 && x == -2094.0f && y == -488.0f)
+    {
+        return GenerateNewPickup_SFRiflePickup(x, -490.2f, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+    }
+    return GenerateNewPickup_SFRiflePickup(x, y, z, modelId, pickupType, ammo, moneyPerDay, isEmpty, msg);
+}
+
+// Do not drop-off jetpack in air
+DECL_HOOKv(DropJetPackTask, void* task, CPed* ped)
+{
+    if(!ped->m_PedFlags.bIsStanding) return;
+    DropJetPackTask(task, ped);
+}
+
+// Immediately leave the car
+DECL_HOOK(bool, CanPedStepOutCar, CVehicle* self, bool bIgnoreSpeedUpright)
+{
+    float lookupAngle = self->m_matrix->at.z;
+    if((lookupAngle <= 0.1f && lookupAngle >= -0.1f) ||
+       (self->m_nVehicleType != eVehicleType::VEHICLE_TYPE_BOAT && !bIgnoreSpeedUpright))
+    {
+        if(fabs(self->m_vecMoveSpeed.z) > 0.05f || self->m_vecMoveSpeed.Magnitude2D() >= 0.01f) return false;
+    }
+    return true;
+}
+
+// Died penalty
+uintptr_t DiedPenalty_BackTo;
+extern "C" void DiedPenalty(void)
+{
+    if(WorldPlayers[0].Score > 0)
+    {
+        WorldPlayers[0].Score = (WorldPlayers[0].Score - 100) < 0 ? 0 : (WorldPlayers[0].Score - 100);
+    }
+    ClearPedWeapons(WorldPlayers[0].pPed);
+}
+__attribute__((optnone)) __attribute__((naked)) void DiedPenalty_Inject(void)
+{
+    asm("STR X1, [SP, #-16]!");
+    asm volatile("BL DiedPenalty");
+    asm volatile("MOV X16, %0" :: "r"(DiedPenalty_BackTo));
+    asm("LDR X1, [SP], #16\nBR X16");
+}
+
 // AimingRifleWalkFix
 DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D)
 {
@@ -5,8 +93,6 @@ DECL_HOOKv(ControlGunMove, void* self, CVector2D* vec2D)
     ControlGunMove(self, vec2D);
     *ms_fTimeStep = save;
 }
-
-
 
 // Water physics fix
 // https://github.com/gta-reversed/gta-reversed-modern/blob/163ddc6ab22181004afd57e017618d9e3953a734/source/game_sa/Tasks/TaskTypes/TaskSimpleSwim.cpp#L440

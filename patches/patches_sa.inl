@@ -1,66 +1,3 @@
-extern "C" void adadad(void)
-{
-    asm("VMOV S6, S0");
-} // This one is used internally by myself. Helps me to get patched values.
-
-// Moon phases
-int moon_alphafunc, moon_vertexblend, moon_alphaval;
-uintptr_t MoonVisual_1_BackTo, MoonVisual_2_BackTo;
-void (*gglBlendFunc)(GLenum, GLclampf);
-extern "C" void MoonVisual_1(void)
-{
-    emu_glEnable(GL_ALPHA_TEST);
-
-    RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTION, &moon_alphafunc);
-    RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &moon_vertexblend);
-    RwRenderStateGet(rwRENDERSTATEALPHATESTFUNCTIONREF, &moon_alphaval);
-    
-    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)rwALPHATESTFUNCTIONALWAYS);
-    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
-    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDZERO);
-
-    SET_TO(emu_glAlphaFunc, *(void**)(pGTASA + 0x6BCBF8));
-    SET_TO(gglBlendFunc, pGTASA + 0x1A1504);
-    emu_glAlphaFunc(GL_ALWAYS, 0.5f);
-    //gglBlendFunc();
-}
-extern "C" void MoonVisual_2(void)
-{
-    emu_glAlphaFunc(GL_ALWAYS, 0.5f);
-    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTION, (void*)moon_alphafunc);
-    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)moon_vertexblend);
-    RwRenderStateSet(rwRENDERSTATEALPHATESTFUNCTIONREF, (void*)moon_alphaval);
-
-    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCCOLOR);
-    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDONE);
-    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
-
-    //emu_glDisable(GL_ALPHA_TEST);
-}
-__attribute__((optnone)) __attribute__((naked)) void MoonVisual_1_Inject(void)
-{
-    asm volatile(
-        "push {r0-r11}\n"
-        "bl MoonVisual_1\n");
-    asm volatile(
-        "mov r12, %0\n"
-        "pop {r0-r11}\n"
-        "bx r12\n"
-    :: "r" (MoonVisual_1_BackTo));
-}
-__attribute__((optnone)) __attribute__((naked)) void MoonVisual_2_Inject(void)
-{
-    asm volatile(
-        "push {r0-r11}\n"
-        "bl MoonVisual_2\n");
-    asm volatile(
-        "mov r12, %0\n"
-        "pop {r0-r11}\n"
-        "bx r12\n"
-    :: "r" (MoonVisual_2_BackTo));
-}
-
 // FOV
 DECL_HOOKv(SetFOV, float factor, bool unused)
 {
@@ -76,10 +13,10 @@ DECL_HOOKv(SetFOV, float factor, bool unused)
 
 // Limit particles
 uintptr_t AddBulletImpactFx_BackTo;
-unsigned int nextHeavyParticleTick = 0;
 eBulletFxType nLimitWithSparkles = BULLETFX_NOTHING;
 extern "C" eBulletFxType AddBulletImpactFx(unsigned int surfaceId)
 {
+    static uint32_t nextHeavyParticleTick = 0;
     eBulletFxType nParticlesType = GetBulletFx(g_surfaceInfos, surfaceId);
     if(nParticlesType == BULLETFX_SAND || nParticlesType == BULLETFX_DUST)
     {

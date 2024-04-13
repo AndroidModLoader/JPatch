@@ -42,6 +42,14 @@
 ### ***GTA:SA v2.10***
 **Since v1.6**
  - Colored zone names are back
+ - Sand/Dust particles from bullets are limited because they are creating a lot of lag
+ - CJ magnetting to stealable objects only when very close
+ - Moved save pickup in Madd Dogg's Mansion
+ - Moved a bribe to the broken bridge from SF building
+ - Moved a rifle pickup outside of the SF Stadium wall
+ - CJ no more can drop JetPack while he's in air
+ - CJ can leave any vehicle at high speeds
+ - Weapon penalty clean-up when CJ dies
 
 **Since v1.5.1**
  - **Crosshair should be placed at the correct place**

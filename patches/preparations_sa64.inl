@@ -30,9 +30,13 @@
     }
 
     // Limit sand/dust particles on bullet impact (they are EXTREMELY dropping FPS)
-    //if(cfg->GetBool("LimitSandDustBulletParticles", true, "Visual"))
+    if(cfg->GetBool("LimitSandDustBulletParticles", true, "Visual"))
     {
-        
+        HOOKBL(GetBulletFx_Limited, pGTASA + 0x434A38);
+        if(cfg->GetBool("LimitSandDustBulletParticlesWithSparkles", false, "Visual"))
+        {
+            nLimitWithSparkles = BULLETFX_SPARK;
+        }
     }
 
     // Do not set primary color to the white on vehicles paintjob
@@ -53,6 +57,49 @@
         HOOKBL(ProcessSwimmingResistance, pGTASA + 0x6565F0);
         ProcessBuoyancy_BackTo = pGTASA + 0x691E94;
         aml->Redirect(pGTASA + 0x691E80, (uintptr_t)ProcessBuoyancy_Inject);
+    }
+
+    // Fix stealable items sucking
+    if(cfg->GetBool("ClampObjectToStealDist", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x4EF9C4, (uintptr_t)"\x00\x10\x2E\x1E", 4);
+    }
+
+    // Fix broken basketball minigame by placing the save icon away from it
+    if(cfg->GetBool("MaddDoggMansionSaveFix", true, "SCMFixes"))
+    {
+        HOOKPLT(GenerateNewPickup_MaddDogg, pGTASA + 0x848278);
+    }
+
+    // Fix broken basketball minigame by placing the save icon away from it
+    if(cfg->GetBool("FixStarBribeInSFBuilding", true, "SCMFixes"))
+    {
+        HOOKPLT(GenerateNewPickup_SFBribe, pGTASA + 0x848278);
+    }
+
+    // Fix rifle pickup that stuck inside the stadium
+    if(cfg->GetBool("FixSFStadiumRiflePickup", true, "SCMFixes"))
+    {
+        HOOKPLT(GenerateNewPickup_SFRiflePickup, pGTASA + 0x848278);
+    }
+
+    // Remove jetpack leaving on widget press while in air?
+    if(cfg->GetBool("DisableDropJetPackInAir", true, "Gameplay"))
+    {
+        HOOKPLT(DropJetPackTask, pGTASA + 0x849738);
+    }
+
+    // Dont stop the car before leaving it
+    if(cfg->GetBool("ImmediatelyLeaveTheCar", true, "Gameplay"))
+    {
+        HOOK(CanPedStepOutCar, aml->GetSym(hGTASA, "_ZNK8CVehicle16CanPedStepOutCarEb"));
+    }
+
+    // Bring back penalty when CJ dies!
+    if(cfg->GetBool("WeaponPenaltyIfDied", true, "Gameplay"))
+    {
+        DiedPenalty_BackTo = pGTASA + 0x3CE2A8 + 0x1;
+        aml->Redirect(pGTASA + 0x3CE290 + 0x1, (uintptr_t)DiedPenalty_Inject);
     }
 
     // Fixing a crosshair position by very stupid math

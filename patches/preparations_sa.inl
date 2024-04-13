@@ -11,17 +11,6 @@
         aml->Write(pGTASA + 0x1C8082, (uintptr_t)"\x01", 1);
     }
 
-    // Fix moon!
-    // War Drum moment: cannot get Alpha testing to work
-    /*if(cfg->GetBool("MoonPhases", true, "Visual"))
-    {
-        //aml->Write(pGTASA + 0x1AF5C2, (uintptr_t)"\x4F\xF0\x00\x03", 4);
-        MoonVisual_1_BackTo = pGTASA + 0x59ED90 + 0x1;
-        MoonVisual_2_BackTo = pGTASA + 0x59EE4E + 0x1;
-        aml->Redirect(pGTASA + 0x59ED80 + 0x1, (uintptr_t)MoonVisual_1_Inject);
-        aml->Redirect(pGTASA + 0x59EE36 + 0x1, (uintptr_t)MoonVisual_2_Inject);
-    };*/
-
     // Fix sky multitude
     if(cfg->GetBool("FixSkyMultitude", true, "Visual"))
     {
