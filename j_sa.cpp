@@ -99,9 +99,6 @@ void crash_this() { __builtin_trap(); } // Used for redirected funcs, to get the
 
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();
-void (*emu_glEnable)(GLenum);
-void (*emu_glDisable)(GLenum);
-void (*emu_glAlphaFunc)(GLenum, GLclampf);
 bool (*IsOnAMission)();
 void (*AddToCheatString)(char);
 void (*RwRenderStateSet)(RwRenderState, void*);
@@ -264,8 +261,6 @@ void JPatch()
     SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, "_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf"));
     SET_TO(TransformPoint,          aml->GetSym(hGTASA, "_Z14TransformPointR5RwV3dRK16CSimpleTransformRKS_"));
     SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
-    SET_TO(emu_glEnable,            aml->GetSym(hGTASA, "_Z12emu_glEnablej"));
-    SET_TO(emu_glDisable,           aml->GetSym(hGTASA, "_Z13emu_glDisablej"));
     SET_TO(BrightLightsInit,        aml->GetSym(hGTASA, "_ZN13CBrightLights4InitEv"));
     SET_TO(BrightLightsRender,      aml->GetSym(hGTASA, "_ZN13CBrightLights6RenderEv"));
     SET_TO(CreateObject,            aml->GetSym(hGTASA, "_ZN7CObject6CreateEib"));

@@ -1152,6 +1152,18 @@
         aml->PlaceB(pGTASA + 0x454F02 + 0x1, pGTASA + 0x454F58 + 0x1);
     }
 
+    // AliAssassiN: Camera does not go crazy with mouse connected
+    if(cfg->GetBool("MouseFix", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x3F8C8C, 0x679F90 - 0x3F8C5E);
+        aml->Write32(pGTASA + 0x3F8C94, 0x679F90 - 0x3F8B7E);
+    }
+
+    // AliAssassiN: Fixes "ghosting" when looking underground
+    if(cfg->GetBool("CompletelyClearCameraBuffer", true, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x3F58A0 + 0x1, pGTASA + 0x3F58D0 + 0x1);
+    }
 
 
 

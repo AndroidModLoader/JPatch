@@ -78,6 +78,8 @@
  - Jetpack hovering is now "lockable"
  - Planes now have a toggleable smoke/dust (thanks BengbuGuards!)
  - Wrong vehicle parts colors (thanks B1ack_&_Wh1te!)
+ - The camera is not rotating like a crazy when mouse/keyboard is connected (thanks AliAssassiN!)
+ - The camera buffer is getting properly cleared. This is fixing "ghosting" underworld (thanks AliAssassiN!)
 
 **Since v1.5.1**
  - Fixed a small FX system leakage when using custom effects mod
