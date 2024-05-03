@@ -1470,6 +1470,12 @@ DECL_HOOK(bool, FireInstantHit, CWeapon *self, CEntity *a2, CVector *a3, CVector
     return FireInstantHit(self, a2, a3, a4, a5, a6, a7, a8, a9);
 }
 
+// Fixes farclip glitch with wall (wardumb be like)
+DECL_HOOKv(DistanceFogSetup_FogWall, float minDistance, float maxDistance, float red, float green, float blue)
+{
+    DistanceFogSetup_FogWall(0.8f * minDistance, 0.95f * maxDistance, red, green, blue);
+}
+
 // IS_CHAR_DEAD fix
 DECL_HOOK(bool, RunningScript_IsPedDead, CRunningScript* script, CPed* ped)
 {

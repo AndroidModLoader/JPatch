@@ -52,6 +52,8 @@
  - Weapon penalty clean-up when CJ dies
  - A fix for 2.10 crash (thanks fastman92!)
  - A fix for vehicle's entering task (thanks AliAssassiN!)
+ - Fixed wall behind the fog (use default shaders!)
+ - Remove stupid specular from peds
 
 **Since v1.5.1**
  - **Crosshair should be placed at the correct place**

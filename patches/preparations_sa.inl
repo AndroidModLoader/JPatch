@@ -872,7 +872,7 @@
     // Game is checking if HP is < 1.0 but it may be lower!
     if(cfg->GetBool("AllowCrouchWith1HP", true, "Gameplay"))
     {
-        aml->Write(pGTASA + 0x54316C, (uintptr_t)"\xB4", 1);
+        aml->Write(pGTASA + 0x54316C, "\xB4", 1);
     }
 
     // Show muzzle flash for the last bullet in magazine
@@ -884,7 +884,7 @@
     // Renders shadows on all surfaces -> disables a flag
     if(cfg->GetBool("DrawShadowsOnAllSurfaces", true, "Visual"))
     {
-        aml->Write(pGTASA + 0x5BAE23, (uintptr_t)"\x00", 1);
+        aml->Write(pGTASA + 0x5BAE23, "\x00", 1);
     }
 
     // Spread fix
@@ -897,13 +897,14 @@
     // Fixes farclip glitch with wall (wardumb be like)
     if(cfg->GetBool("FixFogWall", true, "Visual"))
     {
-        aml->Write(pGTASA + 0x5EB9D9, (uintptr_t)"\x31\x2E\x30\x30", 4);
+        aml->Write(pGTASA + 0x5EB9D9, "\x31\x2E\x30\x30", 4);
+        HOOKBLX(DistanceFogSetup_FogWall, pGTASA + 0x1AF4AE);
     }
 
     // Fixes Corona sprites stretching at foggy weather
     if(cfg->GetBool("FixCoronasStretching", true, "Visual"))
     {
-        aml->Write(pGTASA + 0x5A27EC, (uintptr_t)"\xB0\xEE\x44\x0A", 4);
+        aml->Write(pGTASA + 0x5A27EC, "\xB0\xEE\x44\x0A", 4);
     }
 
     // JuniorDjjr: Fix IS_CHAR_DEAD returning false even if health is 0.0

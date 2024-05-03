@@ -135,3 +135,17 @@
         aml->PlaceB(pGTASA + 0x4EEFE0, pGTASA + 0x4EF010);
         HOOKBL(Patch_ExitVehicleJustDown, pGTASA + 0x4EF044);
     }
+
+    // Fixes farclip glitch with wall (wardumb be like)
+    if(cfg->GetBool("FixFogWall", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x712095, "\x31\x2E\x30\x30", 4);
+        HOOKBL(DistanceFogSetup_FogWall, pGTASA + 0x240B3C);
+    }
+
+    // Frick your "improved characters models", War Dumb
+    if(cfg->GetBool("FixPedSpecInShaders", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x263810, ARMv8::MOVRegBits::CreateMOV(23, 8, false));
+        aml->PlaceB(pGTASA + 0x264A94, pGTASA + 0x264B34);
+    }
