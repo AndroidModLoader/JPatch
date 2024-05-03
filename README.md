@@ -72,6 +72,8 @@
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
+ - Check why player is forced to close the vehicle door
+ - Check what i can do with RsGrabScreen
 
 **Since v1.6**
  - Falling star is now not a black line
