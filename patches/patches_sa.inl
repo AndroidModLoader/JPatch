@@ -761,7 +761,7 @@ std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
 bool bUnloadUnusedModels, bDynStreamingMem, bDontUnloadInCutscenes;
-float fRemoveUnusedStreamMemPercentage, fDynamicStreamingMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
+float fRemoveUnusedStreamMemPercentage, fDynamicStreamingMemPercentage; int nRemoveUnusedInterval, nDynamicStreamingMemBumpStep; unsigned int lastTimeRemoveUnused = 0;
 DECL_HOOKv(GameProcess)
 {
     GameProcess();
@@ -817,11 +817,11 @@ DECL_HOOKv(GameProcess)
         }
         return;
     }
-    else if(bUnloadUnusedModels || bDynStreamingMem)
+    else if(bUnloadUnusedModels)
     {
-        float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
         if(!bDontUnloadInCutscenes || !*bRunningCutscene)
         {
+            float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
             if(bUnloadUnusedModels && memUsedPercent >= fRemoveUnusedStreamMemPercentage)
             {
                 int removeUnusedIntervalMsTweaked;
@@ -835,9 +835,16 @@ DECL_HOOKv(GameProcess)
                 }
             }
         }
-        if(bDynStreamingMem && memUsedPercent >= fDynamicStreamingMemPercentage)
+    }
+    else if(bDynStreamingMem)
+    {
+        if(*ms_memoryAvailable < nMaxStreamingMemForDynamic)
         {
-            BumpStreamingMemory(32);
+            float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
+            if(memUsedPercent >= fDynamicStreamingMemPercentage)
+            {
+                BumpStreamingMemory(nDynamicStreamingMemBumpStep);
+            }
         }
     }
 }

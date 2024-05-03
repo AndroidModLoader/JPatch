@@ -200,7 +200,24 @@
 
     // Buff streaming memory (dynamic)
     bDynStreamingMem = cfg->GetBool("DynamicStreamingMem", true, "Gameplay");
-    fDynamicStreamingMemPercentage = 0.001f * cfg->GetInt("DynamicStreamingMem_Percentage", 80, "Gameplay");
+    if(bDynStreamingMem)
+    {
+        fDynamicStreamingMemPercentage = 0.01f * cfg->GetInt("DynamicStreamingMem_Percentage", 80, "Gameplay");
+        if(fDynamicStreamingMemPercentage < 0.01f || fDynamicStreamingMemPercentage > 0.99f) bDynStreamingMem = false;
+        else
+        {
+            int valllue = cfg->GetInt("DynamicStreamingMem_MaxMBs", 1024, "Gameplay");
+            if(valllue < 32) valllue = 32;
+            else if(valllue > 2048) valllue = 2048;
+
+            nMaxStreamingMemForDynamic = 1024 * 1024 * valllue;
+
+            valllue = cfg->GetInt("DynamicStreamingMem_BumpStep", 8, "Gameplay");
+            if(valllue < 2) valllue = 2;
+            else if(valllue > 64) valllue = 64;
+            nDynamicStreamingMemBumpStep = valllue;
+        }
+    }
 
     // Buff planes max height
     if(cfg->GetBool("BuffPlanesMaxHeight", true, "Gameplay"))

@@ -185,9 +185,14 @@ inline CVector TransformFromObjectSpace(CEntity* ent, const CVector& offset)
     TransformPoint((RwV3d&)result, ent->m_placement, (RwV3d&)offset);
     return result;
 }
+int nMaxStreamingMemForDynamic;
 inline void BumpStreamingMemory(int megabytes)
 {
     *ms_memoryAvailable += megabytes * 1024 * 1024;
+    if(*ms_memoryAvailable > nMaxStreamingMemForDynamic)
+    {
+        *ms_memoryAvailable = nMaxStreamingMemForDynamic;
+    }
 }
 
 // Global Hooks (no need to enable patches)
