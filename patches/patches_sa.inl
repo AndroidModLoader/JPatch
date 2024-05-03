@@ -1934,6 +1934,32 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
     return false;
 }
 
+// Fix widget's holding radius
+uintptr_t WidgetUpdateHold_BackTo;
+extern "C" float WidgetUpdateHold_Patch()
+{
+    return 10.0f * ((float)(RsGlobal->maximumHeight) / 480.0f);
+}
+__attribute__((optnone)) __attribute__((naked)) void WidgetUpdateHold_Inject(void)
+{
+    asm volatile(
+        "PUSH {R0-R2}\n"
+        "BL WidgetUpdateHold_Patch\n"
+        "VMOV.F32 S16, R0\n");
+    asm volatile(
+        "MOV R12, %0"
+    :: "r" (WidgetUpdateHold_BackTo));
+
+    asm volatile(
+        "POP {R0-R2}\n"
+
+        // Original code
+        "VLDR S0, [SP, #0x10]\n"
+        "LDR R0, [R0]\n"
+        "ADD.W R0, R0, R1, LSL#3\n"
+
+        "MOV PC, R12\n");
+}
 
 
 

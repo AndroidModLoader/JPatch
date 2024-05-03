@@ -82,6 +82,7 @@
  - The camera is not rotating like a crazy when mouse/keyboard is connected (thanks AliAssassiN!)
  - The camera buffer is getting properly cleared. This is fixing "ghosting" underworld (thanks AliAssassiN!)
  - A fix for vehicle's entering task (thanks AliAssassiN!)
+ - A little mistake by WarDrum related to holding a finger on widgets (thanks AliAssassiN!)
 
 **Since v1.5.1**
  - Fixed a small FX system leakage when using custom effects mod

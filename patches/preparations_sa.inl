@@ -1172,9 +1172,18 @@
         HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AC16);
     }
 
+    // Fix widget's holding radius
+    if(cfg->GetBool("WidgetHoldingMaxShift", true, "Gameplay"))
+    {
+        WidgetUpdateHold_BackTo = pGTASA + 0x2B2C98 + 0x1;
+        aml->Redirect(pGTASA + 0x2B2C8E + 0x1, (uintptr_t)WidgetUpdateHold_Inject);
+    }
+    
 
 
-    // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // unable to use some weapons, here somewhere
+
+
+    
 
 
     // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
