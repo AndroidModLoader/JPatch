@@ -943,9 +943,8 @@
         HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x673E84);
     }
 
-    // Detonator unused anim?
-    // This should work but this animation is not in the files!
-    if(cfg->GetBool("UnusedDetonatorAnim", false, "Visual"))
+    // Unused detonator animation is in the ped.ifp, lol
+    if(cfg->GetBool("UnusedDetonatorAnimation", true, "Visual"))
     {
         HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
     }
@@ -1186,8 +1185,8 @@
     // Fix enter-vehicle tasks
     if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
     {
-        aml->Write(pGTASA + 0x40A78C, "\x00\x20\x00\xBF", 4);
-        HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AC16);
+        aml->PlaceB(pGTASA + 0x40A784 + 0x1, pGTASA + 0x40A7A4 + 0x1);
+        HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AC16 + 0x1);
     }
 
     // Fix widget's holding radius

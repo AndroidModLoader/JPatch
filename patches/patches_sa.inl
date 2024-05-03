@@ -1537,7 +1537,7 @@ DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
     PlayerInfoProcess_ParachuteAnim(self, playerNum);
 }
 
-// Unused detonator anim
+// Unused detonator animation is in the ped.ifp, lol
 DECL_HOOKv(UseDetonator, CEntity* ent)
 {
     UseDetonator(ent);
@@ -1545,7 +1545,8 @@ DECL_HOOKv(UseDetonator, CEntity* ent)
     if(ent->m_nType == eEntityType::ENTITY_TYPE_PED)
     {
         CTask* task = TaskConstructor();
-        TaskStartNamedAnim(task, "BOMBER", "DETONATOR", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+        //TaskStartNamedAnim(task, "BOMBER", "DETONATOR", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+        TaskStartNamedAnim(task, "bomber", "ped", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
         SetTask(&((CPed*)ent)->m_pIntelligence->m_TaskMgr, task, TASK_PRIMARY_PRIMARY, false);
     }
 }
@@ -1942,7 +1943,7 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
         if(!player) return false;
 
         CTask* task = GetActiveTask(&player->m_pIntelligence->m_TaskMgr);
-        return (task || ( task && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL) ));
+        return (!task || ( task && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL) ));
     }
     return false;
 }
