@@ -1165,6 +1165,13 @@
         aml->PlaceB(pGTASA + 0x3F58A0 + 0x1, pGTASA + 0x3F58D0 + 0x1);
     }
 
+    // Fix enter-vehicle tasks
+    if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x40A78C, "\x00\x20\x00\xBF", 4);
+        HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AC16);
+    }
+
 
 
     // aml->PlaceB(pGTASA + 0x40A748 + 0x1, pGTASA + 0x4095F6 + 0x1); // unable to use some weapons, here somewhere

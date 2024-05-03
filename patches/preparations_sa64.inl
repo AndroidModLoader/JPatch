@@ -120,3 +120,18 @@
     {
         aml->PlaceNOP(pGTASA + 0x51D9C0, 1);
     }
+
+    // A fix for 2.10 crash (thanks fastman92!)
+    if(cfg->GetBool("Fix210Crash", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x278E50, 0x8B090108);
+        aml->Write32(pGTASA + 0x278E60, 0x8B090108);
+        aml->Write32(pGTASA + 0x278E70, 0xAA0903E9);
+    }
+
+    // Fix enter-vehicle tasks
+    if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x4EEFE0, pGTASA + 0x4EF010);
+        HOOKBL(Patch_ExitVehicleJustDown, pGTASA + 0x4EF044);
+    }

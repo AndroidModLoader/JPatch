@@ -50,6 +50,8 @@
  - CJ no more can drop JetPack while he's in air
  - CJ can leave any vehicle at high speeds
  - Weapon penalty clean-up when CJ dies
+ - A fix for 2.10 crash (thanks fastman92!)
+ - A fix for vehicle's entering task (thanks AliAssassiN!)
 
 **Since v1.5.1**
  - **Crosshair should be placed at the correct place**
@@ -69,7 +71,6 @@
  - FoodEatingFix by JuniorDjjr
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
- - Cant use some weapons (fire ex., spray) while the car-enter widget is active (read: near the vehicle)
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
 
 **Since v1.6**
@@ -80,6 +81,7 @@
  - Wrong vehicle parts colors (thanks B1ack_&_Wh1te!)
  - The camera is not rotating like a crazy when mouse/keyboard is connected (thanks AliAssassiN!)
  - The camera buffer is getting properly cleared. This is fixing "ghosting" underworld (thanks AliAssassiN!)
+ - A fix for vehicle's entering task (thanks AliAssassiN!)
 
 **Since v1.5.1**
  - Fixed a small FX system leakage when using custom effects mod

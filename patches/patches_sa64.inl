@@ -305,3 +305,17 @@ DECL_HOOKv(DrawCrosshair)
     DrawCrosshair();
     *m_f3rdPersonCHairMultX = save1; *m_f3rdPersonCHairMultY = save2;
 }
+
+// Enter-Vehicle tasks
+DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVehicle, bool bEntering, CVector *vecVehicle)
+{
+    if(Patch_ExitVehicleJustDown(pad, bCheckTouch, pVehicle, bEntering, vecVehicle))
+    {
+        CPlayerPed* player = FindPlayerPed(-1);
+        if(!player) return false;
+
+        CTask* task = GetActiveTask(&player->m_pPedIntelligence->m_taskManager);
+        return (task || ( task && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL) ));
+    }
+    return false;
+}

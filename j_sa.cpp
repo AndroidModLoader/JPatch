@@ -6,6 +6,7 @@
 #include <cctype>
 #include <array>
 #include <utility>
+#include <unistd.h>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GLES/gl.h>
@@ -162,6 +163,7 @@ void (*SetIdleCamTarget)(CIdleCam*, CEntity*);
 void (*RunIdleCam)(CIdleCam*);
 void (*SetColTrianglePlane)(CColTrianglePlane*, CVector*, CColTriangle*);
 void (*SetVehicleColour)(CVehicleModelInfo*, uint8_t, uint8_t, uint8_t, uint8_t);
+CTask* (*GetActiveTask)(CTaskManager*);
 
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
@@ -296,6 +298,7 @@ void JPatch()
     SET_TO(SetIdleCamTarget,        aml->GetSym(hGTASA, "_ZN8CIdleCam9SetTargetEP7CEntity"));
     SET_TO(RunIdleCam,              aml->GetSym(hGTASA, "_ZN8CIdleCam3RunEv"));
     SET_TO(SetColTrianglePlane,     aml->GetSym(hGTASA, "_ZN17CColTrianglePlane3SetEPK7CVectorR12CColTriangle"));
+    SET_TO(GetActiveTask,           aml->GetSym(hGTASA, "_ZNK12CTaskManager13GetActiveTaskEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
