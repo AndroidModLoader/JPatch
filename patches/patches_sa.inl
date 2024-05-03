@@ -761,7 +761,7 @@ std::vector<CEntity*> g_aLODs;
 std::vector<int> g_aPeds;
 bool bPreloadLOD, bPreloadAnim, bPreloadPed = false;
 bool bUnloadUnusedModels, bDynStreamingMem, bDontUnloadInCutscenes;
-float fRemoveUnusedStreamMemPercentage, fDynamicStreamingMemPercentage; int nRemoveUnusedInterval, nDynamicStreamingMemBumpStep; unsigned int lastTimeRemoveUnused = 0;
+float fRemoveUnusedStreamMemPercentage, fDynamicStreamingMemPercentage; int nRemoveUnusedInterval; unsigned int lastTimeRemoveUnused = 0;
 DECL_HOOKv(GameProcess)
 {
     GameProcess();
@@ -1889,13 +1889,30 @@ DECL_HOOKb(Plane_ProcessControl_Horn, int a1)
 }
 
 // Wrong vehicle parts colors
-RpMaterial* gMatStore[64];
+/*RpMaterial* gMatStore[64];
 RwTexture* gTexStore[64];
 RwRGBA gColorStore[64];
 int matsNumba;
-std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;
+std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;*/
+
 DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
+    ObjectRender_VehicleParts(self);
+    if(self->m_nCarPartModelIndex != -1 && self->objectFlags.bChangesVehColor && self->m_nObjectType == eObjectType::OBJECT_TEMPORARY)
+    {
+        if(self->m_pRwAtomic && self->m_pRwAtomic->object.object.type == 1)
+        {
+            auto ptr = gStoredMats;
+            while(ptr->material != NULL)
+            {
+                ptr->material->texture = ptr->texture;
+                ++ptr;
+            }
+            gStoredMats->material = NULL;
+        }
+    }
+
+/*
     // Original code (Skipped by the patcher)
     if(self->m_nCarPartModelIndex != -1 && self->objectFlags.bChangesVehColor && self->m_nObjectType == eObjectType::OBJECT_TEMPORARY)
     {
@@ -1932,6 +1949,7 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
             gMatStore[i]->color = gColorStore[i];
         }
     }
+*/
 }
 
 // Enter-Vehicle tasks
@@ -1943,7 +1961,11 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
         if(!player) return false;
 
         CTask* task = GetActiveTask(&player->m_pIntelligence->m_TaskMgr);
-        return (!task || ( task && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL) ));
+        if(!task) return true;
+
+        eTaskType type = task->GetTaskType();
+        return type != TASK_SIMPLE_JETPACK && type != TASK_SIMPLE_GANG_DRIVEBY && type != TASK_COMPLEX_EVASIVE_DIVE_AND_GET_UP &&
+               type != TASK_SIMPLE_NAMED_ANIM && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL);
     }
     return false;
 }
@@ -1974,6 +1996,19 @@ __attribute__((optnone)) __attribute__((naked)) void WidgetUpdateHold_Inject(voi
 
         "MOV PC, R12\n");
 }
+
+// Fix planes generation coordinates
+DECL_HOOKb(FindPlaneCoors_CheckCol, int X, int Y, CColBox* box, CColSphere* sphere, CColSphere* A, CColSphere* B)
+{
+    return FindPlaneCoors_CheckCol(GetSectorForCoord(X), GetSectorForCoord(Y), box, sphere, A, B);
+}
+
+
+
+
+
+
+
 
 
 

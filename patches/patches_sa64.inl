@@ -1,3 +1,22 @@
+bool bDynStreamingMem;
+float fDynamicStreamingMemPercentage;
+DECL_HOOKv(GameProcess)
+{
+    GameProcess();
+
+    if(bDynStreamingMem)
+    {
+        if(*ms_memoryAvailable < nMaxStreamingMemForDynamic)
+        {
+            float memUsedPercent = (float)*ms_memoryUsed / (float)*ms_memoryAvailable;
+            if(memUsedPercent >= fDynamicStreamingMemPercentage)
+            {
+                BumpStreamingMemory(nDynamicStreamingMemBumpStep);
+            }
+        }
+    }
+}
+
 // Limit particles
 uintptr_t AddBulletImpactFx_BackTo;
 eBulletFxType nLimitWithSparkles = BULLETFX_NOTHING;
@@ -315,7 +334,11 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
         if(!player) return false;
 
         CTask* task = GetActiveTask(&player->m_pPedIntelligence->m_taskManager);
-        return (task || ( task && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL) ));
+        if(!task) return true;
+
+        eTaskType type = task->GetTaskType();
+        return type != TASK_SIMPLE_JETPACK && type != TASK_SIMPLE_GANG_DRIVEBY && type != TASK_COMPLEX_EVASIVE_DIVE_AND_GET_UP &&
+               type != TASK_SIMPLE_NAMED_ANIM && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL);
     }
     return false;
 }
@@ -324,4 +347,64 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
 DECL_HOOKv(DistanceFogSetup_FogWall, float minDistance, float maxDistance, float red, float green, float blue)
 {
     DistanceFogSetup_FogWall(0.8f * minDistance, 0.95f * maxDistance, red, green, blue);
+}
+
+// Wrong vehicle's parts colors!
+DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
+{
+    ObjectRender_VehicleParts(self);
+    if(self->m_nParentModelIndex != -1 && self->objectFlags.bChangesVehColor && self->ObjectCreatedBy == eObjectType::OBJECT_TEMPORARY)
+    {
+        if(self->m_pRwAtomic && self->m_pRwAtomic->object.object.type == 1)
+        {
+            auto ptr = gStoredMats;
+            while(ptr->material != NULL)
+            {
+                ptr->material->texture = ptr->texture;
+                ++ptr;
+            }
+            gStoredMats->material = NULL;
+        }
+    }
+}
+
+// Stunt smoke
+DECL_HOOKb(Plane_ProcessControl_Horn, int a1)
+{
+    return WidgetIsTouched(7, NULL, 2);
+}
+
+// Falling Star
+DECL_HOOKv(RenderState_Star, int a1, int a2)
+{
+    RenderState_Star(a1, a2);
+    RenderState_Star(1, 0);
+}
+
+// Jetpack hover
+DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
+{
+    static bool holdTheButton = false;
+    if(Touch_IsDoubleTapped(WIDGETID_VEHICLEEXHAUST, true, 1))
+    {
+        holdTheButton = !holdTheButton;
+        return holdTheButton;
+    }
+    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1) ^ holdTheButton;
+}
+
+// Fixing a wrong value in carcols.dat
+DECL_HOOK(int, CarColsDatLoad_sscanf, const char* str, const char* fmt, int *v1, int *v2, int *v3)
+{
+    if(CarColsDatLoad_sscanf(str, fmt, v1, v2, v3) != 3)
+    {
+        return CarColsDatLoad_sscanf(str, "%d.%d %d", v1, v2, v3);
+    }
+    return 3;
+}
+
+// Fix planes generation coordinates
+DECL_HOOKb(FindPlaneCoors_CheckCol, int X, int Y, CColBox* box, CColSphere* sphere, CColSphere* A, CColSphere* B)
+{
+    return FindPlaneCoors_CheckCol(GetSectorForCoord(X), GetSectorForCoord(Y), box, sphere, A, B);
 }

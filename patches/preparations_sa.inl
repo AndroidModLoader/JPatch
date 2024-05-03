@@ -1090,7 +1090,6 @@
     // Fix the issue that player cannot kill with a knife if not crouching
     if(cfg->GetBool("FixUncrouchedStealthKill", true, "Gameplay"))
     {
-        // from 0x537988 to 0x538BBE
         aml->PlaceB(pGTASA + 0x537988 + 0x1, pGTASA + 0x538BBE + 0x1);
     }
     
@@ -1163,10 +1162,11 @@
         HOOKBLX(Plane_ProcessControl_Horn, pGTASA + 0x575CC4 + 0x1);
     }
 
+    // Wrong vehicle's parts colors!
     if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
     {
         HOOKBLX(ObjectRender_VehicleParts, pGTASA + 0x454F5A + 0x1);
-        aml->PlaceB(pGTASA + 0x454F02 + 0x1, pGTASA + 0x454F58 + 0x1);
+        //aml->PlaceB(pGTASA + 0x454F02 + 0x1, pGTASA + 0x454F58 + 0x1);
     }
 
     // AliAssassiN: Camera does not go crazy with mouse connected
@@ -1185,8 +1185,9 @@
     // Fix enter-vehicle tasks
     if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
     {
-        aml->PlaceB(pGTASA + 0x40A784 + 0x1, pGTASA + 0x40A7A4 + 0x1);
-        HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AC16 + 0x1);
+        aml->PlaceNOP(pGTASA + 0x40AA36);
+        aml->PlaceB(pGTASA + 0x40AA68 + 0x1, pGTASA + 0x40AACC + 0x1);
+        HOOKBLX(Patch_ExitVehicleJustDown, pGTASA + 0x40AB80 + 0x1);
     }
 
     // Fix widget's holding radius
@@ -1194,6 +1195,12 @@
     {
         WidgetUpdateHold_BackTo = pGTASA + 0x2B2C98 + 0x1;
         aml->Redirect(pGTASA + 0x2B2C8E + 0x1, (uintptr_t)WidgetUpdateHold_Inject);
+    }
+
+    // Fix planes generation coordinates
+    if(cfg->GetBool("FixPlanesGenerationCoords", true, "Gameplay"))
+    {
+        HOOKBL(FindPlaneCoors_CheckCol, pGTASA + 0x69C660);
     }
     
 

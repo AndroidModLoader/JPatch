@@ -62,7 +62,13 @@ float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 #define fAspectCorrectionDiv (*ms_fAspectRatio / ar43)
 #define GetTimeStep() (*ms_fTimeStep)
 #define GetTimeStepInSeconds() (*ms_fTimeStep / 50.0f)
-
+struct VehiclePartsPair
+{
+    RpMaterial* material;
+    uintptr_t color;
+    RwTexture* texture;
+}; // 
+VehiclePartsPair* gStoredMats;
 bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
 int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
@@ -165,6 +171,15 @@ void (*SetColTrianglePlane)(CColTrianglePlane*, CVector*, CColTriangle*);
 void (*SetVehicleColour)(CVehicleModelInfo*, uint8_t, uint8_t, uint8_t, uint8_t);
 CTask* (*GetActiveTask)(CTaskManager*);
 
+inline int GetSectorForCoord(int coord)
+{
+    return floor(0.02f * coord + 60.0f);
+}
+inline int GetSectorForCoord(float coord)
+{
+    return floor(0.02f * coord + 60.0f);
+}
+
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -185,7 +200,7 @@ inline CVector TransformFromObjectSpace(CEntity* ent, const CVector& offset)
     TransformPoint((RwV3d&)result, ent->m_placement, (RwV3d&)offset);
     return result;
 }
-int nMaxStreamingMemForDynamic;
+int nMaxStreamingMemForDynamic, nDynamicStreamingMemBumpStep;
 inline void BumpStreamingMemory(int megabytes)
 {
     *ms_memoryAvailable += megabytes * 1024 * 1024;
@@ -378,6 +393,7 @@ void JPatch()
     SET_TO(ms_colModelCache,        aml->GetSym(hGTASA, "_ZN10CCollision16ms_colModelCacheE"));
     SET_TO(_bf_12c,                 pGTASA + BYVER(0x9EF9D8 + 0x12C, 0xC8C180 + 0x14C));
     SET_TO(SetVehicleColour,        aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo16SetVehicleColourEhhhh"));
+    SET_TO(gStoredMats,             pGTASA + BYVER(0x99E53C, 0xB8DB50));
     #ifdef AML32
         SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
         SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));

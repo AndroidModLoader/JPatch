@@ -40,6 +40,17 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
+**Since v1.6.1**
+ - A fix for vehicle's entering task (thanks AliAssassiN!)
+ - **Wrong vehicle parts colors (thanks B1ack_&_Wh1te and AliAssassiN!)**
+ - Planes now have a toggleable smoke/dust (thanks BengbuGuards!)
+ - Falling star is now not a black line
+ - BengbuGuards: Implement jetpack hover button, also "lockable"
+ - Fixing a wrong value in carcols.dat (a mistakenly placed dot instead of comma, # 98 malachite poly)
+ - Automatical streaming memory buff if not enough for the game
+ - Fix planes generation coordinates (will partially fix planes that are crashing in front of a player)
+ - Fix JPatch crash after CJ dies :(
+
 **Since v1.6**
  - Colored zone names are back
  - Sand/Dust particles from bullets are limited because they are creating a lot of lag
@@ -50,9 +61,9 @@
  - CJ no more can drop JetPack while he's in air
  - CJ can leave any vehicle at high speeds
  - Weapon penalty clean-up when CJ dies
- - A fix for 2.10 crash (thanks fastman92!)
+ - **A fix for 2.10 crash (thanks fastman92!)**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
- - Fixed wall behind the fog (use default shaders!)
+ - Fixed wall behind the fog (only for default shaders!)
  - Remove stupid specular from peds
 
 **Since v1.5.1**
@@ -77,15 +88,20 @@
  - Check why player is forced to close the vehicle door
  - Check what i can do with RsGrabScreen
 
+**Since v1.6.1**
+ - Unused detonator animation is working
+ - Improved AND fixed Dynamic Streaming Memory
+ - Fixed a crash from **"Wrong vehicle parts colors"** fix
+ - A fix for vehicle's entering task (thanks AliAssassiN!)
+ - Fix planes generation coordinates (will partially fix planes that are crashing in front of a player)
+
 **Since v1.6**
  - Falling star is now not a black line
- - Unused detonator animation fix can be enabled (you need to put animations in your game files like on PC!)
  - Jetpack hovering is now "lockable"
  - Planes now have a toggleable smoke/dust (thanks BengbuGuards!)
- - Wrong vehicle parts colors (thanks B1ack_&_Wh1te!)
+ - **Wrong vehicle parts colors (thanks B1ack_&_Wh1te and AliAssassiN!)**
  - The camera is not rotating like a crazy when mouse/keyboard is connected (thanks AliAssassiN!)
  - The camera buffer is getting properly cleared. This is fixing "ghosting" underworld (thanks AliAssassiN!)
- - A fix for vehicle's entering task (thanks AliAssassiN!)
  - A little mistake by WarDrum related to holding a finger on widgets (thanks AliAssassiN!)
 
 **Since v1.5.1**
@@ -109,7 +125,7 @@
  - Fix for the wrong position (from the beta) of Bravura in a mission "You've Had Your Chips"
  - Michelle dating fix
  - Stealth kill with a knife does NOT require to be crouched anymore (as on PC)
- - RLEDecompress crash is fixed! (allocates more memory, for some reason Android is failing in allocating small memory chunks)
+ - RLEDecompress crash is fixed! (allocates more memory, for some reason Android is failing in allocating small memory chunks?)
 
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy

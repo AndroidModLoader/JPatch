@@ -1,3 +1,6 @@
+    HOOKPLT(GameProcess, pGTASA + 0x840198);
+    
+    
     // Animated textures
     if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
     {
@@ -98,8 +101,8 @@
     // Bring back penalty when CJ dies!
     if(cfg->GetBool("WeaponPenaltyIfDied", true, "Gameplay"))
     {
-        DiedPenalty_BackTo = pGTASA + 0x3CE2A8 + 0x1;
-        aml->Redirect(pGTASA + 0x3CE290 + 0x1, (uintptr_t)DiedPenalty_Inject);
+        DiedPenalty_BackTo = pGTASA + 0x3CE2A8;
+        aml->Redirect(pGTASA + 0x3CE290, (uintptr_t)DiedPenalty_Inject);
     }
 
     // Fixing a crosshair position by very stupid math
@@ -132,8 +135,9 @@
     // Fix enter-vehicle tasks
     if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
     {
-        aml->PlaceB(pGTASA + 0x4EEFE0, pGTASA + 0x4EF010);
-        HOOKBL(Patch_ExitVehicleJustDown, pGTASA + 0x4EF044);
+        aml->PlaceNOP(pGTASA + 0x4EF23C);
+        aml->PlaceB(pGTASA + 0x4EF27C, pGTASA + 0x4EF2F4);
+        HOOKBL(Patch_ExitVehicleJustDown, pGTASA + 0x4EF414);
     }
 
     // Fixes farclip glitch with wall (wardumb be like)
@@ -148,4 +152,67 @@
     {
         aml->Write32(pGTASA + 0x263810, ARMv8::MOVRegBits::CreateMOV(23, 8, false));
         aml->PlaceB(pGTASA + 0x264A94, pGTASA + 0x264B34);
+    }
+
+    // Wrong vehicle's parts colors!
+    if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
+    {
+        HOOKBL(ObjectRender_VehicleParts, pGTASA + 0x53E17C);
+    }
+
+    // Stunt smoke
+    if(cfg->GetBool("FixStuntSmoke", true, "Gameplay"))
+    {
+        HOOKBL(Plane_ProcessControl_Horn, pGTASA + 0x699418);
+    }
+
+    // Falling star.
+    if(cfg->GetBool("FallingStarColor", true, "Visual"))
+    {
+        HOOKBL(RenderState_Star, pGTASA + 0x6C34C4);
+    }
+    
+    // BengbuGuards: Jetpack Hover Button
+    if(cfg->GetBool("JetpackHovering", true, "Gameplay"))
+    {
+        HOOKBL(Jetpack_IsHeldDown, pGTASA + 0x4DD104);
+    }
+
+    // Fix the issue that player cannot kill with a knife if not crouching
+    if(cfg->GetBool("FixUncrouchedStealthKill", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x65354C, pGTASA + 0x654A20);
+    }
+
+    // Fixing a wrong value in carcols.dat
+    if(cfg->GetBool("CarColsDat_FixWrongValue", true, "Visual"))
+    {
+        HOOKBL(CarColsDatLoad_sscanf, pGTASA + 0x557F5C);
+    }
+
+    // Buff streaming memory (dynamic)
+    bDynStreamingMem = cfg->GetBool("DynamicStreamingMem", true, "Gameplay");
+    if(bDynStreamingMem)
+    {
+        fDynamicStreamingMemPercentage = 0.01f * cfg->GetInt("DynamicStreamingMem_Percentage", 80, "Gameplay");
+        if(fDynamicStreamingMemPercentage < 0.01f || fDynamicStreamingMemPercentage > 0.99f) bDynStreamingMem = false;
+        else
+        {
+            int valllue = cfg->GetInt("DynamicStreamingMem_MaxMBs", 1024, "Gameplay");
+            if(valllue < 32) valllue = 32;
+            else if(valllue > 4096) valllue = 4096;
+
+            nMaxStreamingMemForDynamic = 1024 * 1024 * valllue;
+
+            valllue = cfg->GetInt("DynamicStreamingMem_BumpStep", 8, "Gameplay");
+            if(valllue < 2) valllue = 2;
+            else if(valllue > 64) valllue = 64;
+            nDynamicStreamingMemBumpStep = valllue;
+        }
+    }
+
+    // Fix planes generation coordinates
+    if(cfg->GetBool("FixPlanesGenerationCoords", true, "Gameplay"))
+    {
+        HOOKBL(FindPlaneCoors_CheckCol, pGTASA + 0x69C660);
     }
