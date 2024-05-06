@@ -40,10 +40,26 @@
  - RE3: Fix R* optimization that prevents peds to spawn
  - RE3: Road reflections
  - Fix traffic lights
- 
+
 ### ***GTA:SA v2.10***
 **Since v1.6.2**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
+ - Removed "Please rate the game" message
+ - Removed IDE flag "ExtraAirResistance"
+ - Implement NoRadioCuts
+ - Sprinting on any surface is allowed
+ - Fix traffic lights
+ - Adjustable detailed water draw distance (known as water quadrant fix)
+ - PC-like money in HUD (disabled by default)
+ - **Climb-dying glitch SHOULD be fixed**
+ - RE3: Road reflections
+ - Tell the game we allow it to create more peds
+ - Tell the game we allow it to create more cars
+ - re3: Fix R\* optimization that prevents peds from spawn
+ - Fuzzy seek (the game does not load useless data from audio)
+ - 44100Hz audio support without a mod "OpenAL Update"
+ - Fixed emergency vehicles (FixStreamingDistScale)
+ - Fixed an annoying glitch with colorpicker in Tenderfender
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
@@ -219,7 +235,7 @@
  - Remove stupid specular from peds
  - Include objects in checks of FindGroundZ functions (may fix opcode 02CE after using 0107)
  - Automatical streaming memory buff if not enough for the game
- - Fixed (probably?) an annoying glitch with colorpicker in Tenderfender
+ - Fixed an annoying glitch with colorpicker in Tenderfender
  - ImprovedStreaming: Preload LODs (causes the game to freeze for a few seconds)
  - ImprovedStreaming: Preload animations (disabled by default)
  - ImprovedStreaming: Unloading of unused entities
@@ -250,7 +266,7 @@
  
  **Since v1.1.3**
  - Bring back a missing shoot button on S.W.A.T.
- - Fuzzy seek (without a mod)
+ - Fuzzy seek (the game does not load useless data from audio)
  - Fixed water cannons (firetruck/S.W.A.T.) on high FPS
  - An experimental fix of 034E opcode (move object) on high FPS
  - FramerateVigilante: Fixed physical objects push force
@@ -273,7 +289,7 @@
  - MTA: Thrown projectiles throw more accurately
  
  **Since v1.1**
- - Fixed emergency vehicles
+ - Fixed emergency vehicles (FixStreamingDistScale)
  - Moved save pickup in Madd Dogg's Mansion
  - Moved a bribe to the broken bridge from SF building
  - Moved a rifle pickup outside of the SF Stadium wall

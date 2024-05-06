@@ -338,9 +338,9 @@ DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
 {
     // Someone is using broken mods
     // So here is the workaround + a little value clamping
-    if(factor < 5.0f)
+    if(factor < 1.0f)
     {
-        fEmergencyVehiclesFix = 70.0f / 5.0f;
+        fEmergencyVehiclesFix = 70.0f / 1.0f;
     }
     else if(factor > 170.0f)
     {
@@ -930,11 +930,10 @@ __attribute__((optnone)) __attribute__((naked)) void LoadScene_Inject(void)
 }
 
 // Colorpicker
-typedef bool (*IsWTouched)(CWidget*);
 DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
 {
     static float prevVal = 0.0f;
-    if((*(IsWTouched*)(self->vtable() + 80))(self) != false) // IsTouched
+    if(self->IsTouched(NULL) != false) // IsTouched
     {
         CVector2D v; GetTouchPosition(&v, self->cachedPosNum);
         

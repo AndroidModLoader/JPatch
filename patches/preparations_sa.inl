@@ -100,8 +100,8 @@
         aml->Redirect(pGTASA + 0x3088BE + 0x1, (uintptr_t)DiedPenalty_Inject);
     }
 
-    // Fix emergency vehicles
-    if(cfg->GetBool("FixEmergencyVehicles", true, "Gameplay"))
+    // Fixes emergency vehicles
+    if(cfg->GetBool("FixStreamingDistScale", true, "Gameplay"))
     {
         EmergencyVeh_BackTo = pGTASA + 0x3DD88C + 0x1;
         aml->Redirect(pGTASA + 0x3DD87A + 0x1, (uintptr_t)EmergencyVeh_Inject);
@@ -757,6 +757,7 @@
     if(dist > 0)
     {
         if(dist < 24) dist = 24;
+        else if(dist <= 48 * 3) dist = 48 * 3;
         *DETAILEDWATERDIST = dist;
     }
     

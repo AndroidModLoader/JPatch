@@ -220,5 +220,123 @@
     // Now CJ is able to exit a vehicle and start moving immediately, without being forced to close the door
     if(cfg->GetBool("NotForcedToCloseVehDoor", true, "Gameplay"))
     {
-        HOOKBLX(DoorClosing_PadTarget, pGTASA + 0x60F990);
+        HOOKBL(DoorClosing_PadTarget, pGTASA + 0x60F990);
+    }
+    
+    // Removes "plis give us 5 stars plis plis"
+    if(cfg->GetBool("RemoveAskingToRate", true, "Others"))
+    {
+        aml->PlaceB(pGTASA + 0x411ACC, pGTASA + 0x411AD8);
+    }
+    
+    // Remove "ExtraAirResistance" flag
+    if(cfg->GetBool("NoExtraAirResistanceFlag", true, "Gameplay"))
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_ZN10CCullZones29DoExtraAirResistanceForPlayerEv"), (uintptr_t)ret0);
+    }
+    
+    // Allow all radio tracks to be played!
+    if(cfg->GetBool("NoRadioCuts", true, "Gameplay"))
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_Z14IsRemovedTracki"), (uintptr_t)ret0);
+        aml->PlaceB(pGTASA + 0x47CEF4, pGTASA + 0x47CFC0); // QueueUpTracksForStation
+        aml->PlaceB(pGTASA + 0x47F680, pGTASA + 0x47F738); // ChooseMusicTrackIndex
+        aml->PlaceB(pGTASA + 0x47F844, pGTASA + 0x47F93C); // ChooseIdentIndex
+        aml->PlaceB(pGTASA + 0x47FBE0, pGTASA + 0x47FC9C); // ChooseAdvertIndex
+        aml->PlaceB(pGTASA + 0x4805EC, pGTASA + 0x4806B8); // ChooseTalkRadioShow
+        aml->PlaceB(pGTASA + 0x4807A4, pGTASA + 0x480870); // ChooseDJBanterIndexFromList
+    }
+    
+    // Some kind of "Sprint Everywhere"
+    if(cfg->GetBool("SprintOnAnySurface", true, "Gameplay"))
+    {
+        aml->Redirect(aml->GetSym(hGTASA, "_ZN14SurfaceInfos_c12CantSprintOnEj"), (uintptr_t)ret0);
+    }
+    
+    // Peepo: Fix traffic lights
+    if(cfg->GetBool("FixTrafficLights", true, "Visual"))
+    {
+        HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
+        HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
+    }
+    
+    // Water Quadrant
+    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 3, "Visual");
+    if(dist > 0)
+    {
+        if(dist < 24) dist = 24;
+        else if(dist <= 48 * 3) dist = 48 * 3;
+        *DETAILEDWATERDIST = dist;
+    }
+    
+    // Money have 8 digits now? Exciting!
+    if(cfg->GetBool("PCStyledMoney", false, "Visual"))
+    {
+        HOOKBL(DrawMoney_sprintf, pGTASA + 0x37D4B8);
+    }
+
+    // Sweet's roof is not that tasty anymore
+    if(cfg->GetBool("FixClimbDying", true, "Gameplay"))
+    {
+        HOOKPLT(ClimbProcessPed, pGTASA + 0x83A6A0);
+    }
+
+    // Fix color picker widget
+    if(cfg->GetBool("FixColorPicker", true, "Visual"))
+    {
+        HOOKPLT(GetColorPickerValue, pGTASA + 0x829BE0);
+    }
+
+    // RE3: Road reflections
+    if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x6C6770);
+        aml->Write32(pGTASA + 0x6C6774, 0xBD407BE2);
+    }
+
+    // Bigger max count of peds
+    if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))
+    {
+        *(int*)aml->GetSym(hGTASA, "_ZN11CPopulation20MaxNumberOfPedsInUseE") = 0x23;
+        aml->Write32(pGTASA + 0x4D71E4, 0x52800469);
+        aml->Write32(pGTASA + 0x5CB4E4, 0x52800469);
+        aml->Write32(pGTASA + 0x5CC0E8, 0x52800468);
+        aml->Write32(pGTASA + 0x5CC0EC, 0x5280038A);
+    }
+
+    // Bigger max count of cars
+    if(cfg->GetBool("BuffMaxCarsCount", true, "Gameplay"))
+    {
+        *(int*)aml->GetSym(hGTASA, "_ZN8CCarCtrl20MaxNumberOfCarsInUseE") = 0x14;
+        aml->Write32(pGTASA + 0x4D71E8, 0x5280028B);
+    }
+
+    // RE3: Fix R* optimization that prevents peds to spawn
+    if(cfg->GetBool("Re3_PedSpawnDeoptimize", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x4D6420, 0x71000ABF);
+    }
+
+    // Just a fuzzy seek. Tell MPG123 to not load useless data.
+    if(cfg->GetBool("FuzzySeek", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x339134, 0x52846C02);
+        aml->Write32(pGTASA + 0x339404, 0x52846C02);
+    }
+
+    // 44100 Hz Audio support (without a mod OpenAL Update but works with it anyway)
+    if(cfg->GetBool("Allow44100HzAudio", true, "Gameplay"))
+    {
+        aml->Unprot(pGTASA + 0x749AA4, sizeof(int));
+        *(int*)(pGTASA + 0x749AA4) = 44100;
+    }
+
+    // Fixes emergency vehicles
+    if(cfg->GetBool("FixStreamingDistScale", true, "Gameplay"))
+    {
+        EmergencyVeh_BackTo = pGTASA + 0x4BBB50;
+        aml->Redirect(pGTASA + 0x4BBB38, (uintptr_t)EmergencyVeh_Inject);
+        HOOKPLT(SetFOV_Emergency, pGTASA + 0x846898);
+        aml->Write32(pGTASA + 0x4BBB70, 0x1E204002); // NOP "* 0.875f"
+        aml->PlaceNOP(pGTASA + 0x4BBB68, 1); // NOP "* 0.8f"
     }

@@ -414,3 +414,91 @@ DECL_HOOKb(DoorClosing_PadTarget, void* pad)
 {
     return DoorClosing_PadTarget(pad) || GetPedWalkLR(pad) != 0x00 || GetPedWalkUD(pad) != 0x00;
 }
+
+// Peepo: Fix traffic lights
+DECL_HOOKv(TrFix_RenderEffects)
+{
+    TrFix_RenderEffects();
+    BrightLightsRender();
+}
+DECL_HOOKv(TrFix_InitGame2nd, const char* a1)
+{
+    TrFix_InitGame2nd(a1);
+    BrightLightsInit();
+}
+
+// Money have 8 digits now? Exciting!
+DECL_HOOKi(DrawMoney_sprintf, char* buf, const char* fmt, int arg1)
+{
+    static const char* positiveT = "$%08d";
+    static const char* negativeT = "-$%07d";
+
+    const char* newFmt = (arg1 >= 0) ? positiveT : negativeT;
+    return DrawMoney_sprintf(buf, newFmt, arg1);
+}
+
+// ClimbDie
+DECL_HOOK(bool, ClimbProcessPed, CTask* self, CPed* target)
+{
+    float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
+    bool ret = ClimbProcessPed(self, target);
+    *ms_fTimeStep = save;
+    return ret;
+}
+
+// Colorpicker
+DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
+{
+    static float prevVal = 0.0f;
+    if(self->IsTouched(NULL) != false) // IsTouched
+    {
+        CVector2D v; GetTouchPosition(&v, self->cachedPosNum);
+        
+        float left = self->screenRect.left * 0.7f;
+        float right = self->screenRect.right * 0.7f;
+
+        float bottom = self->screenRect.bottom * 0.8f;
+        float top = self->screenRect.top * 0.8f;
+
+        if(v.x < left || v.x > right || v.y < top || v.y > bottom) return prevVal;
+
+        float ret = (int)(
+            8.0f * ((v.x - left) / (right - left)) + 8 * (int)(
+            8.0f * ((v.y - top) / (bottom - top))) );
+        prevVal = ret;
+
+        return ret;
+    }
+    return 0.0f;
+}
+
+// Fixes emergency vehicles
+uintptr_t EmergencyVeh_BackTo;
+__attribute__((optnone)) __attribute__((naked)) void EmergencyVeh_Inject(void)
+{
+    asm volatile(
+        "fmov s0, %w0\n"
+    :: "r" (fEmergencyVehiclesFix));
+    asm volatile(
+        "mov x8, %0\n"
+        "br x8\n"
+    :: "r" (EmergencyVeh_BackTo));
+}
+DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
+{
+    // Someone is using broken mods
+    // So here is the workaround + a little value clamping
+    if(factor < 1.0f)
+    {
+        fEmergencyVehiclesFix = 70.0f / 1.0f;
+    }
+    else if(factor > 170.0f)
+    {
+        fEmergencyVehiclesFix = 70.0f / 170.0f;
+    }
+    else
+    {
+        fEmergencyVehiclesFix = 70.0f / factor;
+    }
+    SetFOV_Emergency(factor, unused);
+}
