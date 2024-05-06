@@ -1000,7 +1000,7 @@ DECL_HOOKv(AddLight_LightPoles, unsigned char a1, CVector a2, CVector a3, float 
 #define GREEN_TEXTURE_ID 14
 inline void* GetDetailTexturePtr(int texId)
 {
-    return *(void**)(**(int**)(*detailTexturesStorage + 4 * (texId-1)) + *RasterExtOffset);
+    return *(void**)(**(uintptr_t**)(*detailTexturesStorage + sizeof(void*) * (texId-1)) + *RasterExtOffset);
 }
 
 DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
@@ -1371,7 +1371,6 @@ DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat f
 }
 
 // SunGlare
-void (*DoSunGlare)(CVehicle*);
 DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
 {
     RenderVehicle_SunGlare(self);
@@ -1469,7 +1468,6 @@ DECL_HOOKv(TaskSimpleUseGunSetMoveAnim, CTask* task, CPed* ped)
 }
 
 // Spread fix
-float *fPlayerAimRotRate;
 DECL_HOOK(bool, FireInstantHit, CWeapon *self, CEntity *a2, CVector *a3, CVector *a4, CEntity *a5, CVector *a6, CVector *a7, int a8, int a9)
 {
     *fPlayerAimRotRate = (rand() * 2.0f * M_PI) / (float)RAND_MAX;
@@ -1604,9 +1602,6 @@ DECL_HOOK(void*, ProcessHierarchy_BoatRadar, RpClump *clump, void *fn, char **st
 }
 
 // SilentPatch`s fix
-CVector *m_vecDirnLightToSun;
-CVector *m_VectorToSun;
-int *m_CurrentStoredValue;
 DECL_HOOKv(SetLightsWithTimeOfDayColour_DirLight)
 {
     *m_vecDirnLightToSun = m_VectorToSun[*m_CurrentStoredValue];

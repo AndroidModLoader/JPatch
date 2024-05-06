@@ -811,7 +811,6 @@
     // Vehicle sun glare
     if(cfg->GetBool("VehicleSunGlare", true, "Visual"))
     {
-        SET_TO(DoSunGlare, aml->GetSym(hGTASA, "_ZN8CVehicle10DoSunGlareEv"));
         HOOK(RenderVehicle_SunGlare, aml->GetSym(hGTASA, "_ZN8CVehicle6RenderEv"));
     }
         
@@ -908,7 +907,6 @@
     // Spread fix
     if(cfg->GetBool("WeaponSpreadFix", true, "Gameplay"))
     {
-        SET_TO(fPlayerAimRotRate, aml->GetSym(hGTASA, "fPlayerAimRotRate"));
         HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN7CWeapon14FireInstantHitEP7CEntityP7CVectorS3_S1_S3_S3_bb"));
     }
 

@@ -74,6 +74,10 @@ uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
 int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
 uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale;
+CVector *m_vecDirnLightToSun;
+CVector *m_VectorToSun;
+int *m_CurrentStoredValue;
+float *fPlayerAimRotRate;
 
 CPlayerInfo                 *WorldPlayers;
 CIntVector2D                *windowSize;
@@ -172,6 +176,7 @@ void (*SetVehicleColour)(CVehicleModelInfo*, uint8_t, uint8_t, uint8_t, uint8_t)
 CTask* (*GetActiveTask)(CTaskManager*);
 int16_t (*GetPedWalkLR)(void*);
 int16_t (*GetPedWalkUD)(void*);
+void (*DoSunGlare)(CVehicle*);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -323,6 +328,7 @@ void JPatch()
     SET_TO(GetActiveTask,           aml->GetSym(hGTASA, "_ZNK12CTaskManager13GetActiveTaskEv"));
     SET_TO(GetPedWalkLR,            aml->GetSym(hGTASA, "_ZN4CPad19GetPedWalkLeftRightEv"));
     SET_TO(GetPedWalkUD,            aml->GetSym(hGTASA, "_ZN4CPad16GetPedWalkUpDownEv"));
+    SET_TO(DoSunGlare,              aml->GetSym(hGTASA, "_ZN8CVehicle10DoSunGlareEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -398,11 +404,10 @@ void JPatch()
     SET_TO(_bf_12c,                 pGTASA + BYVER(0x9EF9D8 + 0x12C, 0xC8C180 + 0x14C));
     SET_TO(SetVehicleColour,        aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo16SetVehicleColourEhhhh"));
     SET_TO(gStoredMats,             pGTASA + BYVER(0x99E53C, 0xB8DB50));
-    #ifdef AML32
-        SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
-        SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
-        SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
-    #endif // AML32
+    SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
+    SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
+    SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
+    SET_TO(fPlayerAimRotRate,       aml->GetSym(hGTASA, "fPlayerAimRotRate"));
     // Variables End //
 
     // We need it for future fixes.

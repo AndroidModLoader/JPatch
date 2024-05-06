@@ -502,3 +502,78 @@ DECL_HOOKv(SetFOV_Emergency, float factor, bool unused)
     }
     SetFOV_Emergency(factor, unused);
 }
+
+// PS2 coronas
+DECL_HOOKv(RenderOneXLUSprite_Rotate_Aspect_PS2, CVector pos, CVector2D size, uint8_t r, uint8_t g, uint8_t b, int16_t intensity, float rz, float rotation, uint8_t alpha)
+{
+    RenderOneXLUSprite_Rotate_Aspect_PS2(pos, size, r, g, b, intensity, rz * 0.05f, rz, alpha);
+}
+
+// SilentPatch`s fix
+DECL_HOOKv(SetLightsWithTimeOfDayColour_DirLight)
+{
+    *m_vecDirnLightToSun = m_VectorToSun[*m_CurrentStoredValue];
+    SetLightsWithTimeOfDayColour_DirLight();
+}
+
+// FX particles distance multiplier!
+float fxMultiplier;
+float *fxUpdateFloat, *fxCreateParticlesFloat;
+DECL_HOOK(int64_t, FxUpdate_FxMult, FxSystem_c* self, RwCamera* camera, long double deltaTime)
+{
+    *fxUpdateFloat = 0.00390625 * fxMultiplier;
+    int64_t ret = FxUpdate_FxMult(self, camera, deltaTime);
+    *fxUpdateFloat = 0.00390625;
+    return ret;
+}
+DECL_HOOKv(CreateParticles_FxMult, void *self, float currTime, float deltaTime)
+{
+    *fxCreateParticlesFloat = 0.015625 * fxMultiplier;
+    CreateParticles_FxMult(self, currTime, deltaTime);
+    *fxCreateParticlesFloat = 0.015625;
+}
+
+// Spread fix
+DECL_HOOK(bool, FireInstantHit, CWeapon *self, CEntity *a2, CVector *a3, CVector *a4, CEntity *a5, CVector *a6, CVector *a7, int a8, int a9)
+{
+    *fPlayerAimRotRate = (rand() * 2.0f * M_PI) / (float)RAND_MAX;
+    return FireInstantHit(self, a2, a3, a4, a5, a6, a7, a8, a9);
+}
+
+// SunGlare
+DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
+{
+    RenderVehicle_SunGlare(self);
+    DoSunGlare(self);
+}
+
+// Interior radar
+DECL_HOOKv(DrawRadar, void* self)
+{
+    CPlayerPed* p = FindPlayerPed(-1);
+    if(!p || p->m_nInterior == 0 || IsOnAMission())
+        DrawRadar(self);
+}
+
+// Green-ish detail texture
+#define GREEN_TEXTURE_ID 14
+inline void* GetDetailTexturePtr(int texId)
+{
+    return *(void**)(**(uintptr_t**)(*detailTexturesStorage + sizeof(void*) * (texId-1)) + *RasterExtOffset);
+}
+DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
+{
+    if(texture == NULL)
+    {
+        emu_TextureSetDetailTexture(NULL, 0);
+        return;
+    }
+    if(texture == GetDetailTexturePtr(GREEN_TEXTURE_ID))
+    {
+        *textureDetail = 0;
+        emu_TextureSetDetailTexture(NULL, 0);
+        return;
+    }
+    emu_TextureSetDetailTexture(texture, tilingScale);
+    *textureDetail = 1;
+}

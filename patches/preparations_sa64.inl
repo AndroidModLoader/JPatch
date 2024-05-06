@@ -340,3 +340,117 @@
         aml->Write32(pGTASA + 0x4BBB70, 0x1E204002); // NOP "* 0.875f"
         aml->PlaceNOP(pGTASA + 0x4BBB68, 1); // NOP "* 0.8f"
     }
+
+    // AliAssassiN: Camera does not go crazy with mouse connected
+    if(cfg->GetBool("MouseFix", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x4DB614, 0xD0001BAB);
+        aml->Write32(pGTASA + 0x4DB618, 0xF947996B);
+    }
+
+    // AliAssassiN: Fixes "ghosting" when looking underground
+    if(cfg->GetBool("CompletelyClearCameraBuffer", true, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x4D7DB4, pGTASA + 0x4D7E2C);
+    }
+
+    // PS2 thingo
+    if(cfg->GetBool("PS2CoronaRotation", true, "Visual"))
+    {
+        HOOKBL(RenderOneXLUSprite_Rotate_Aspect_PS2, pGTASA + 0x6C6158);
+    }
+
+    // SilentPatch fix
+    if(cfg->GetBool("DirectionalSunLight", true, "Visual"))
+    {
+        HOOKPLT(SetLightsWithTimeOfDayColour_DirLight, pGTASA + 0x846C88);
+    }
+
+    // Fix airbubbles from the jaw (CJ is breathing with his ass, lololololol)
+    if(cfg->GetBool("AirBubblesFromJaw", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6586E4, 0xF9411C08);
+        aml->Write32(pGTASA + 0x6586EC, 0xF9411808);
+    }
+
+    // FX particles distance multiplier!
+    fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
+    if(fxMultiplier != 1 && fxMultiplier > 0.1)
+    {
+        aml->Unprot(pGTASA + 0x744490, sizeof(float));
+        SET_TO(fxCreateParticlesFloat, pGTASA + 0x744490);
+        HOOK(CreateParticles_FxMult, pGTASA + 0x438D64);
+        
+        aml->Unprot(pGTASA + 0x740AE4, sizeof(float));
+        SET_TO(fxUpdateFloat, pGTASA + 0x740AE4);
+        HOOKBL(FxUpdate_FxMult, pGTASA + 0x43E054);
+    }
+
+    // Fixes Corona sprites stretching at foggy weather
+    if(cfg->GetBool("FixCoronasStretching", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6C6120, 0x1E204044);
+    }
+
+    // BengbuGuards' idea #1
+    if(cfg->GetBool("FixSecondSiren", true, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x6B41E8, 1);
+        aml->PlaceNOP(pGTASA + 0x6B4214, 1);
+    }
+
+    // Spread fix
+    if(cfg->GetBool("WeaponSpreadFix", true, "Gameplay"))
+    {
+        HOOK(FireInstantHit, aml->GetSym(hGTASA, "_ZN7CWeapon14FireInstantHitEP7CEntityP7CVectorS3_S1_S3_S3_bb"));
+    }
+
+    // Renders shadows on all surfaces -> disables a flag
+    if(cfg->GetBool("DrawShadowsOnAllSurfaces", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6DF67C, 0x52800033);
+    }
+
+    // Game is checking if HP is < 1.0 but it may be lower!
+    if(cfg->GetBool("AllowCrouchWith1HP", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x660DC8, 0x1E281001);
+    }
+    
+    // Vehicle sun glare
+    if(cfg->GetBool("VehicleSunGlare", true, "Visual"))
+    {
+        HOOK(RenderVehicle_SunGlare, aml->GetSym(hGTASA, "_ZN8CVehicle6RenderEv"));
+    }
+    
+    // Minimap in interiors? Hell nah!
+    if(cfg->GetBool("NoInteriorRadar", true, "Visual"))
+    {
+        HOOKPLT(DrawRadar, pGTASA + 0x66F618);
+    }
+
+    // Fix greenish detail tex
+    if(cfg->GetBool("FixGreenTextures", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x2418B8, 1); // Dont set textureDetail variable! We'll handle it by ourselves!
+        HOOK(emu_TextureSetDetailTexture, aml->GetSym(hGTASA, "_Z27emu_TextureSetDetailTexturePvj"));
+    }
+
+    // Radar
+    if(cfg->GetBool("FixRadarStreaming", true, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x5283D4, pGTASA + 0x5283EC);
+    }
+
+    // AllowLicensePlatesForAllCars
+    if(cfg->GetBool("AllowLicensePlatesForAllCars", true, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x6A5E84, pGTASA + 0x6A5EC8);
+        aml->PlaceB(pGTASA + 0x6A5F58, pGTASA + 0x6A5F68);
+    }
+
+    // Show muzzle flash for the last bullet in magazine
+    if(cfg->GetBool("MuzzleFlashForLastBullet", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x5DFF28, 1);
+    }

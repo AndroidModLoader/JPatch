@@ -41,8 +41,8 @@
  - RE3: Road reflections
  - Fix traffic lights
 
-### ***GTA:SA v2.10***
-**Since v1.6.2**
+### ***GTA:SA v2.10 (64-bit)***
+**Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
  - Removed "Please rate the game" message
  - Removed IDE flag "ExtraAirResistance"
@@ -60,6 +60,23 @@
  - 44100Hz audio support without a mod "OpenAL Update"
  - Fixed emergency vehicles (FixStreamingDistScale)
  - Fixed an annoying glitch with colorpicker in Tenderfender
+ - The camera is not rotating like a crazy when mouse/keyboard is connected (thanks AliAssassiN!)
+ - The camera buffer is getting properly cleared. This is fixing "ghosting" underworld (thanks AliAssassiN!)
+ - Lamppost coronas are now rotating like on PS2
+ - Directional sunlight on entities (vehicles, peds)
+ - CJ is no longer breathing with his ass underwater
+ - FX particles draw distance scaler (default is x2.5)
+ - Fixed coronas stretching while the weather is foggy
+ - BengbuGuards: Second siren is now working
+ - Weapon spread fix
+ - Disable a flag to allow shadows to be drawed on all surfaces
+ - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
+ - Vehicle sun glare
+ - No minimap in interiors
+ - Fixed green textures (moved from SkyGFX Mobile)
+ - **Radar streaming should be fixed**
+ - Allow license plates to render on all vehicles
+ - Show muzzle flash for the last bullet
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
@@ -108,7 +125,7 @@
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Check what i can do with RsGrabScreen
 
-**Since v1.6.2**
+**Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
 
 **Since v1.6.1**
@@ -228,7 +245,7 @@
  **Since v1.2.3**
  - Goddamn static light shadows from PC!
  - Bumped a limit of static shadows!
- - Fixed green textures (moved from SkyGfx Mobile)
+ - Fixed green textures (moved from SkyGFX Mobile)
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
  
  **Since v1.2.1**
