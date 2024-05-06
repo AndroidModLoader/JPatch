@@ -1000,7 +1000,7 @@ DECL_HOOKv(AddLight_LightPoles, unsigned char a1, CVector a2, CVector a3, float 
 #define GREEN_TEXTURE_ID 14
 inline void* GetDetailTexturePtr(int texId)
 {
-    return *(void**)(**(uintptr_t**)(*detailTexturesStorage + sizeof(void*) * (texId-1)) + *RasterExtOffset);
+    return *(void**)((uintptr_t)(&(detailTextures->data[texId - 1]->raster->parent)) + *RasterExtOffset);
 }
 
 DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)

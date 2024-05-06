@@ -559,9 +559,9 @@ DECL_HOOKv(DrawRadar, void* self)
 #define GREEN_TEXTURE_ID 14
 inline void* GetDetailTexturePtr(int texId)
 {
-    return *(void**)(**(uintptr_t**)(*detailTexturesStorage + sizeof(void*) * (texId-1)) + *RasterExtOffset);
+    return *(void**)((uintptr_t)(&(detailTextures->data[texId - 1]->raster->parent)) + *RasterExtOffset);
 }
-DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
+DECL_HOOKv(emu_TextureSetDetailTexture, RwTexture* texture, unsigned int tilingScale)
 {
     if(texture == NULL)
     {

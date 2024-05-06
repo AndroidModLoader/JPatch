@@ -71,7 +71,7 @@ struct VehiclePartsPair
 VehiclePartsPair* gStoredMats;
 bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
-int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *detailTexturesStorage, *textureDetail, *ms_iActiveSequence;
+int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *textureDetail, *ms_iActiveSequence;
 uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale;
 CVector *m_vecDirnLightToSun;
@@ -177,6 +177,7 @@ CTask* (*GetActiveTask)(CTaskManager*);
 int16_t (*GetPedWalkLR)(void*);
 int16_t (*GetPedWalkUD)(void*);
 void (*DoSunGlare)(CVehicle*);
+TDBArray<RwTexture*> *detailTextures;
 
 inline int GetSectorForCoord(int coord)
 {
@@ -372,7 +373,7 @@ void JPatch()
     SET_TO(ms_memoryUsed,           aml->GetSym(hGTASA, "_ZN10CStreaming13ms_memoryUsedE"));
     SET_TO(ms_memoryAvailable,      aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE"));
     SET_TO(fSpriteBrightness,       pGTASA + BYVER(0x966590, 0xBD760C));
-    SET_TO(detailTexturesStorage,   aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE") + 8); // pGTASA + 0x6BD1D8
+    SET_TO(detailTextures,          aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE"));
     SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
     SET_TO(ms_iActiveSequence,      aml->GetSym(hGTASA, "_ZN14CTaskSequences18ms_iActiveSequenceE"));
     SET_TO(RasterExtOffset,         aml->GetSym(hGTASA, "RasterExtOffset"));
