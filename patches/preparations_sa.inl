@@ -1166,7 +1166,6 @@
     if(cfg->GetBool("FixWrongCarDetailsColor", true, "Visual"))
     {
         HOOKBLX(ObjectRender_VehicleParts, pGTASA + 0x454F5A + 0x1);
-        //aml->PlaceB(pGTASA + 0x454F02 + 0x1, pGTASA + 0x454F58 + 0x1);
     }
 
     // AliAssassiN: Camera does not go crazy with mouse connected
@@ -1200,7 +1199,13 @@
     // Fix planes generation coordinates
     if(cfg->GetBool("FixPlanesGenerationCoords", true, "Gameplay"))
     {
-        HOOKBL(FindPlaneCoors_CheckCol, pGTASA + 0x69C660);
+        HOOKBLX(FindPlaneCoors_CheckCol, pGTASA + 0x578FA8 + 0x1);
+    }
+
+    // Now CJ is able to exit a vehicle and start moving immediately, without being forced to close the door
+    if(cfg->GetBool("NotForcedToCloseVehDoor", true, "Gameplay"))
+    {
+        HOOKBLX(DoorClosing_PadTarget, pGTASA + 0x501BD0 + 0x1);
     }
     
 

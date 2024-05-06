@@ -2003,6 +2003,12 @@ DECL_HOOKb(FindPlaneCoors_CheckCol, int X, int Y, CColBox* box, CColSphere* sphe
     return FindPlaneCoors_CheckCol(GetSectorForCoord(X), GetSectorForCoord(Y), box, sphere, A, B);
 }
 
+// Now CJ is able to exit a vehicle and start moving immediately, without being forced to close the door
+DECL_HOOKb(DoorClosing_PadTarget, void* pad)
+{
+    return DoorClosing_PadTarget(pad) || GetPedWalkLR(pad) != 0x00 || GetPedWalkUD(pad) != 0x00;
+}
+
 
 
 

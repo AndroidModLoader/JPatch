@@ -42,6 +42,9 @@
  - Fix traffic lights
  
 ### ***GTA:SA v2.10***
+**Since v1.6.2**
+ - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
+
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
  - **Wrong vehicle parts colors (thanks B1ack_&_Wh1te and AliAssassiN!)**
@@ -87,8 +90,10 @@
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
- - Check why player is forced to close the vehicle door
  - Check what i can do with RsGrabScreen
+
+**Since v1.6.2**
+ - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
 
 **Since v1.6.1**
  - Unused detonator animation is working

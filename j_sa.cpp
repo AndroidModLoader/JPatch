@@ -170,6 +170,8 @@ void (*RunIdleCam)(CIdleCam*);
 void (*SetColTrianglePlane)(CColTrianglePlane*, CVector*, CColTriangle*);
 void (*SetVehicleColour)(CVehicleModelInfo*, uint8_t, uint8_t, uint8_t, uint8_t);
 CTask* (*GetActiveTask)(CTaskManager*);
+int16_t (*GetPedWalkLR)(void*);
+int16_t (*GetPedWalkUD)(void*);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -319,6 +321,8 @@ void JPatch()
     SET_TO(RunIdleCam,              aml->GetSym(hGTASA, "_ZN8CIdleCam3RunEv"));
     SET_TO(SetColTrianglePlane,     aml->GetSym(hGTASA, "_ZN17CColTrianglePlane3SetEPK7CVectorR12CColTriangle"));
     SET_TO(GetActiveTask,           aml->GetSym(hGTASA, "_ZNK12CTaskManager13GetActiveTaskEv"));
+    SET_TO(GetPedWalkLR,            aml->GetSym(hGTASA, "_ZN4CPad19GetPedWalkLeftRightEv"));
+    SET_TO(GetPedWalkUD,            aml->GetSym(hGTASA, "_ZN4CPad16GetPedWalkUpDownEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

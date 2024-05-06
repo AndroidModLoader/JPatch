@@ -216,3 +216,9 @@
     {
         HOOKBL(FindPlaneCoors_CheckCol, pGTASA + 0x69C660);
     }
+
+    // Now CJ is able to exit a vehicle and start moving immediately, without being forced to close the door
+    if(cfg->GetBool("NotForcedToCloseVehDoor", true, "Gameplay"))
+    {
+        HOOKBLX(DoorClosing_PadTarget, pGTASA + 0x60F990);
+    }
