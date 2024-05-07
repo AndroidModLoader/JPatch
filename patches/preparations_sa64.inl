@@ -458,7 +458,7 @@
     // Random license plates
     if(cfg->GetBool("RandomLicensePlates", true, "Visual"))
     {
-        HOOKBLX(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x5829F2 + 0x1);
+        HOOKBL(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x5829F2 + 0x1);
     }
 
     // Fix "You have worked out enough for today, come back tomorrow!"
