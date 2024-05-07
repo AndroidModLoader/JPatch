@@ -87,6 +87,14 @@
  - Classic CJ's shadow
  - FramerateVigilante: CarSlowDownSpeedFix
  - Skimmer Plane can be properly get out of water
+ - Cinematic camera when double tapping the camera mode switch button
+ - re3: Make cars and peds to not despawn when you look away
+ - Dont kill peds when jacking their car, monster!
+ - Fixed ped animation after being attacked with parachute (inspired *by Alexander Polyak*)
+ - Cloud saves can be disabled (NOT disabled by default)
+ - Always drawable wanted stars (disabled by default)
+ - Better ForceDXT
+ - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)

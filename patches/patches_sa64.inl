@@ -748,3 +748,60 @@ __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inje
         "LDR X8, [X8,#0xE50]\n"
         "BR X16\n");
 }
+
+// Cinematic camera
+bool toggledCinematic = false;
+DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
+{
+    PlayerInfoProcess_Cinematic(info, playerNum);
+
+    // Do it for the local player only.
+    if(info == &WorldPlayers[0])
+    {
+        if(!*bRunningCutscene &&
+           info->pPed->m_pVehicle != NULL &&
+           info->pPed->m_nPedState == PEDSTATE_DRIVING)
+        {
+            if(info->pPed->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_TRAIN &&
+               Touch_IsDoubleTapped(WIDGETID_CAMERAMODE, true, 1))
+            {
+                toggledCinematic = !TheCamera->m_bForceCinemaCam;
+                TheCamera->m_bForceCinemaCam = toggledCinematic;
+
+                memset(m_pWidgets[WIDGETID_CAMERAMODE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
+            }
+        }
+        else
+        {
+            if(toggledCinematic)
+            {
+                TheCamera->m_bForceCinemaCam = false;
+                *bDidWeProcessAnyCinemaCam = false;
+                if(!*bRunningCutscene &&
+                   TheCamera->pTargetEntity == NULL)
+                {
+                    RestoreCamera(TheCamera);
+                    SetCameraDirectlyBehindForFollowPed(TheCamera);
+                }
+                m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
+                toggledCinematic = false;
+            }
+        }
+    }
+}
+
+// Para dmg anim fix
+DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
+{
+    bool bNeedFix = *(eWeaponType*)(self + 36) == WEAPON_PARACHUTE;
+    
+    if(bNeedFix) *(eWeaponType*)(self + 36) = WEAPON_UNARMED;
+    ComputeDamageAnim(self, victim, a2);
+    if(bNeedFix) *(eWeaponType*)(self + 36) = WEAPON_PARACHUTE;
+}
+
+// Force DXT
+DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
+{
+    LoadTexDBThumbs(dbName, unk, (format == DF_Default) ? DF_DXT : format);
+}

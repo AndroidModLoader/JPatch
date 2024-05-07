@@ -528,3 +528,58 @@
         SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D4;
         aml->Redirect(pGTASA + 0x6AD4C4, (uintptr_t)SkimmerWaterResistance_Inject);
     }
+
+    // Cinematic vehicle camera on double tap
+    if(cfg->GetBool("CinematicCameraOnDoubleTap", true, "Gameplay"))
+    {
+        HOOKPLT(PlayerInfoProcess_Cinematic, pGTASA + 0x846998);
+    }
+
+    // RE3: Make cars and peds to not despawn when you look away
+    if(cfg->GetBool("Re3_ExtOffscreenDespRange", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x3B06E0, pGTASA + 0x3B0728); // Vehicles
+        aml->PlaceB(pGTASA + 0x5CDAF8, pGTASA + 0x5CDBE4); // Peds
+    }
+
+    // Dont kill peds when jacking their car, monster!
+    if(cfg->GetBool("DontKillPedsOnCarJacking", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x5FF4C4, pGTASA + 0x5FF4DC);
+    }
+    
+    // Equipped parachute attacked anim fix
+    if(cfg->GetBool("EquippedParaAttackAnimFix", true, "Visual"))
+    {
+        HOOK(ComputeDamageAnim, aml->GetSym(hGTASA, "_ZN12CEventDamage17ComputeDamageAnimEP4CPedb"));
+    }
+    
+    if(cfg->GetBool("DisableCloudSaves", false, "Gameplay"))
+    {
+        aml->Write8(aml->GetSym(hGTASA, "UseCloudSaves"), 0x00);
+    }
+    
+    // Always show wanted stars even if we're not breakin the law
+    if(cfg->GetBool("AlwaysDrawWantedStars", false, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x37E174, pGTASA + 0x37E1A4);
+    }
+    
+    // An improved ForceDXT
+    if(cfg->GetBool("ForceLoadDXT", false, "Gameplay"))
+    {
+        HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime4LoadEPKcb21TextureDatabaseFormat"));
+    }
+    
+    // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
+    if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x6FEB6C, pGTASA + 0x6FEC84);
+    }
+
+    // Car generators in an interior now work properly
+    if(cfg->GetBool("CorrectPoliceScannerLocations", true, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x74AC98, "WESTP", 6);
+        aml->Write(pGTASA + 0x74AD40, "????", 5);
+    }

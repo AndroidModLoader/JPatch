@@ -1357,14 +1357,7 @@ __attribute__((optnone)) __attribute__((naked)) void PedCountCalc_Inject2(void)
 // Force DXT
 DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
 {
-    if(format == DF_Default)
-    {
-        LoadTexDBThumbs(dbName, unk, DF_DXT);
-    }
-    else
-    {
-        LoadTexDBThumbs(dbName, unk, format);
-    }
+    LoadTexDBThumbs(dbName, unk, (format == DF_Default) ? DF_DXT : format);
 }
 
 // SunGlare
