@@ -62,6 +62,9 @@ float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 #define fAspectCorrectionDiv (*ms_fAspectRatio / ar43)
 #define GetTimeStep() (*ms_fTimeStep)
 #define GetTimeStepInSeconds() (*ms_fTimeStep / 50.0f)
+#define GetTimeStepMagic() (*ms_fTimeStep / fMagic)
+#define GetTimeStepInvMagic() (fMagic / *ms_fTimeStep)
+
 struct VehiclePartsPair
 {
     RpMaterial* material;
@@ -73,7 +76,7 @@ bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDi
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
 int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *textureDetail, *ms_iActiveSequence;
 uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
-float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale, *mod_HandlingManager_off4;
 CVector *m_vecDirnLightToSun;
 CVector *m_VectorToSun;
 int *m_CurrentStoredValue;
@@ -100,6 +103,7 @@ void                        *g_surfaceInfos;
 RwTexture                   **ms_pRemapTexture;
 CIdleCam                    *gIdleCam;
 CLinkList<CCollisionData*>  *ms_colModelCache;
+TDBArray<RwTexture*>        *detailTextures;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -177,7 +181,7 @@ CTask* (*GetActiveTask)(CTaskManager*);
 int16_t (*GetPedWalkLR)(void*);
 int16_t (*GetPedWalkUD)(void*);
 void (*DoSunGlare)(CVehicle*);
-TDBArray<RwTexture*> *detailTextures;
+void (*SetTaxiLight)(CAutomobile*, bool);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -330,6 +334,7 @@ void JPatch()
     SET_TO(GetPedWalkLR,            aml->GetSym(hGTASA, "_ZN4CPad19GetPedWalkLeftRightEv"));
     SET_TO(GetPedWalkUD,            aml->GetSym(hGTASA, "_ZN4CPad16GetPedWalkUpDownEv"));
     SET_TO(DoSunGlare,              aml->GetSym(hGTASA, "_ZN8CVehicle10DoSunGlareEv"));
+    SET_TO(SetTaxiLight,            aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -409,6 +414,7 @@ void JPatch()
     SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
     SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
     SET_TO(fPlayerAimRotRate,       aml->GetSym(hGTASA, "fPlayerAimRotRate"));
+    SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYVER(0x6777C8, 0x84CFB8))) + 4); // FLA
     // Variables End //
 
     // We need it for future fixes.

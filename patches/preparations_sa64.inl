@@ -454,3 +454,77 @@
     {
         aml->PlaceNOP(pGTASA + 0x5DFF28, 1);
     }
+
+    // Random license plates
+    if(cfg->GetBool("RandomLicensePlates", true, "Visual"))
+    {
+        HOOKBLX(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x5829F2 + 0x1);
+    }
+
+    // Fix "You have worked out enough for today, come back tomorrow!"
+    if(cfg->GetBool("FixGymWorkoutDate", true, "SCMFixes"))
+    {
+        Opcode0835_BackTo = pGTASA + 0x3378CE + 0x1;
+        aml->Redirect(pGTASA + 0x401E84, (uintptr_t)Opcode0835_Inject);
+    }
+
+    // Michelle dating fix
+    if(cfg->GetBool("MichelleDatingFix", true, "SCMFixes"))
+    {
+        Opcode039E_BackTo = pGTASA + 0x415DA0;
+        aml->Redirect(pGTASA + 0x414798, (uintptr_t)Opcode039E_Inject);
+    }
+
+    // Inverse swimming controls to dive/go up (to match PC version)
+    if(cfg->GetBool("InverseSwimmingDivingControl", true, "Gameplay"))
+    {
+        HOOKBL(TaskSwim_ProcessInput, pGTASA + 0x6562C8);
+        HOOKBL(GetPedWalkUpDown_Swimming, pGTASA + 0x656A1C);
+        aml->Write32(pGTASA + 0x6571F4, 0xD000072A);
+        aml->Write32(pGTASA + 0x6571F8, 0xBD4E9D44);
+    }
+
+    // Guess by the name
+    if(cfg->GetBool("FixParachuteLandingAnim", true, "Visual"))
+    {
+        HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x673E84);
+    }
+
+    // Unused detonator animation is in the ped.ifp, lol
+    if(cfg->GetBool("UnusedDetonatorAnimation", true, "Visual"))
+    {
+        HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
+    }
+    
+    // Taxi lights (obviously)
+    if(cfg->GetBool("TaxiLights", true, "Visual"))
+    {
+        HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
+    }
+    
+    // Fix Adjustable.cfg loading?
+    // UPD: Introduced another glitch, so its unfixed. yet.
+    // UD2: Fixed with a much better way. But another glitch arrived with X-coord shifting
+    if(cfg->GetBool("FixAdjustableSizeLowering", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x33D6E8, 0x1E229000);
+    }
+
+    // Classic CJ shadow
+    if(cfg->GetBool("FixClassicCJShadow", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x6DCFF0, pGTASA + 0x6DD014);
+    }
+
+    // Car Slowdown Fix
+    if(cfg->GetBool("FixCarSlowdownHighFPS", true, "Gameplay"))
+    {
+        HOOKPLT(ProcessVehicleWheel, pGTASA + 0x83FE78);
+    }
+    
+    // Fix Skimmer plane
+    if (cfg->GetBool("SkimmerPlaneFix", true, "Gameplay"))
+    {
+        SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D4;
+        aml->Redirect(pGTASA + 0x6AD4C4, (uintptr_t)SkimmerWaterResistance_Inject);
+    }

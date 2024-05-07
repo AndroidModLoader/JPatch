@@ -103,7 +103,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
                 #ifndef SWIMSPEED_FIX
                     -0.1f;
                 #else
-                    (-0.1f * (*ms_fTimeStep / fMagic));
+                    (-0.1f * GetTimeStepMagic());
                 #endif
             }
             break;
@@ -113,7 +113,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
             vecPedMoveSpeed   += cosf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y * ped->GetForward();
             vecPedMoveSpeed.z += (sinf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y + 0.01f)
             #ifdef SWIMSPEED_FIX
-                / (*ms_fTimeStep / fMagic)
+                / GetTimeStepMagic()
             #endif
             ;
             break;
@@ -141,7 +141,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     float fTheTimeStep = powf(0.9f, GetTimeStep());
     vecPedMoveSpeed *= (1.0f - fTheTimeStep)
     #ifdef SWIMSPEED_FIX
-        * (fMagic / *ms_fTimeStep)
+        * GetTimeStepInvMagic()
     #endif
     ;
     ped->m_vecMoveSpeed *= fTheTimeStep;
@@ -227,7 +227,7 @@ extern "C" float ProcessBuoyancy_Patch(CPhysical* physical)
         CPed* ped = (CPed*)physical;
         if (ped->IsPlayer()) // we only need this for player, due to swim bug
         {
-            return (1.0f + ((*ms_fTimeStep / fMagic) / 1.5f)) * (*ms_fTimeStep / fMagic);
+            return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
         }
     }
     return *ms_fTimeStep;
@@ -371,7 +371,7 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
 uintptr_t SkimmerWaterResistance_BackTo;
 extern "C" float SkimmerWaterResistance_Patch(void)
 {
-    return 30.0f * (*ms_fTimeStep / fMagic);
+    return 30.0f * GetTimeStepMagic();
 }
 __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inject(void)
 {
@@ -523,7 +523,7 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessCommands800To899_Inj
 uintptr_t PhysicalApplyCollision_BackTo;
 extern "C" void PhysicalApplyCollision_Patch(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed)
 {
-    force *= *ms_fTimeStep / fMagic;
+    force *= GetTimeStepMagic();
     PhysicalApplyForce(self, force, point, updateTurnSpeed);
 }
 __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_Inject(void)
@@ -539,11 +539,10 @@ __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_Inje
 }
 
 // Car Slowdown Fix
-float *mod_HandlingManager_off4;
 DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint,
         int32_t wheelsOnGround, float thrust, float brake, float adhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, uint16_t wheelStatus)
 {
-    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 = 0.9f * (*ms_fTimeStep / fMagic);
+    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 *= GetTimeStepMagic();
     ProcessVehicleWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, wheelId, wheelSpeed, wheelState, wheelStatus);
     *mod_HandlingManager_off4 = save;
 }
@@ -552,7 +551,7 @@ DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& whee
 float *fRotorFinalSpeed, *fRotor1Speed, *fRotor2Speed;
 DECL_HOOKv(Heli_ProcessFlyingStuff, CHeli* self)
 {
-    *fRotor1Speed = 0.00454545454f * *fRotorFinalSpeed * (*ms_fTimeStep / fMagic);
+    *fRotor1Speed = 0.00454545454f * *fRotorFinalSpeed * GetTimeStepMagic();
     *fRotor2Speed = 3.0f * *fRotor1Speed;
     Heli_ProcessFlyingStuff(self);
 }
@@ -567,8 +566,8 @@ DECL_HOOKv(CloudsUpdate_Re3)
 {
     float s = sinf(TheCamera->m_fOrientation - 0.85f);
 
-    *CloudsRotation += *WeatherWind * s * 0.0025f * (*ms_fTimeStep / fMagic);
-    *CloudsIndividualRotation += (*WeatherWind * *ms_fTimeStep + 0.3f * (*ms_fTimeStep / fMagic)) * 60.0f;
+    *CloudsRotation += *WeatherWind * s * 0.0025f * GetTimeStepMagic();
+    *CloudsIndividualRotation += (*WeatherWind * *ms_fTimeStep + 0.3f * GetTimeStepMagic()) * 60.0f;
 }
 
 uint32_t* ThreadLaunch_GagNameSet;
@@ -1130,8 +1129,6 @@ DECL_HOOKv(EntMdlNoCreate, CEntity *self, uint32_t mdlIdx)
 }
 
 // Taxi lights
-void (*SetTaxiLight)(CAutomobile*, bool);
-CAutomobile* pLastPlayerTaxi = NULL;
 DECL_HOOKv(AutomobileRender, CAutomobile* self)
 {
     AutomobileRender(self);

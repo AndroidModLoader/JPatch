@@ -160,7 +160,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
                 #ifndef SWIMSPEED_FIX
                     -0.1f;
                 #else
-                    (-0.1f * (*ms_fTimeStep / fMagic));
+                    (-0.1f * GetTimeStepMagic());
                 #endif
             }
             break;
@@ -170,7 +170,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
             vecPedMoveSpeed   += cosf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y * ped->GetForward();
             vecPedMoveSpeed.z += (sinf(task->m_fRotationX) * ped->m_vecAnimMovingShiftLocal.y + 0.01f)
             #ifdef SWIMSPEED_FIX
-                / (*ms_fTimeStep / fMagic)
+                / GetTimeStepMagic()
             #endif
             ;
             break;
@@ -198,7 +198,7 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     float fTheTimeStep = powf(0.9f, GetTimeStep());
     vecPedMoveSpeed *= (1.0f - fTheTimeStep)
     #ifdef SWIMSPEED_FIX
-        * (fMagic / *ms_fTimeStep)
+        * GetTimeStepInvMagic()
     #endif
     ;
     ped->m_vecMoveSpeed *= fTheTimeStep;
@@ -283,7 +283,7 @@ extern "C" float ProcessBuoyancy_Patch(CPhysical* physical)
         CPed* ped = (CPed*)physical;
         if (ped->IsPlayer()) // we only need this for player, due to swim bug
         {
-            return (1.0f + ((*ms_fTimeStep / fMagic) / 1.5f)) * (*ms_fTimeStep / fMagic);
+            return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
         }
     }
     return *ms_fTimeStep;
@@ -576,4 +576,175 @@ DECL_HOOKv(emu_TextureSetDetailTexture, RwTexture* texture, unsigned int tilingS
     }
     emu_TextureSetDetailTexture(texture, tilingScale);
     *textureDetail = 1;
+}
+
+// Random license plates
+DECL_HOOK(char*, GetCustomCarPlateText_SetModelIdx, CVehicleModelInfo* mi)
+{
+    char *text = GetCustomCarPlateText(mi);
+    if(!text)
+    {
+        text = (char*)&mi->m_szPlateText[0];
+        GeneratePlateText(text, 8);
+        text[8] = 0;
+    }
+    return text;
+}
+
+// Fix "You have worked out enough for today, come back tomorrow!"
+uintptr_t Opcode0835_BackTo;
+extern "C" uintptr_t Opcode0835_Patch(CRunningScript* script)
+{
+    char *scriptName = script->ScriptName;
+    if(!strncasecmp(scriptName, "gymbike", 8) || !strncasecmp(scriptName, "gymbenc", 8) || !strncasecmp(scriptName, "gymtrea", 8) || !strncasecmp(scriptName, "gymdumb", 8))
+    {
+        ScriptParams[0].i = *ms_nGameClockDays;
+        ScriptParams[1].i = *ms_nGameClockMonths;
+    }
+    else
+    {
+        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
+        ScriptParams[1].i = -1;
+    }
+    return Opcode0835_BackTo;
+}
+__attribute__((optnone)) __attribute__((naked)) void Opcode0835_Inject(void)
+{
+    asm volatile(
+        "MOV X0, X19\n"
+        "BL Opcode0835_Patch\n"
+        "MOV W1, #2\n"
+        "BR X8\n");
+}
+
+// Michelle dating fix
+uintptr_t Opcode039E_BackTo;
+extern "C" uintptr_t Opcode039E_Patch(CRunningScript* script, CPed* ped)
+{
+    char *scriptName = script->ScriptName;
+    if(strncasecmp(scriptName, "gfdate", 7) != 0)
+    {
+        ped->m_PedFlags.bDontDragMeOutCar = ScriptParams[1].i;
+    }
+    return Opcode039E_BackTo;
+}
+__attribute__((optnone)) __attribute__((naked)) void Opcode039E_Inject(void)
+{
+    asm volatile(
+        "MOV X1, X8\n"
+        "BL Opcode039E_Patch\n"
+        "BR X0\n");
+}
+
+// Inverse swimming controls to dive/go up (to match PC version)
+eSwimState curSwimState = SWIM_TREAD;
+DECL_HOOKv(TaskSwim_ProcessInput, CTaskSimpleSwim *self, CPlayerPed *ped)
+{
+    curSwimState = self->m_nSwimState;
+    TaskSwim_ProcessInput(self, ped);
+}
+DECL_HOOK(int, GetPedWalkUpDown_Swimming, void* pad)
+{
+    switch(curSwimState)
+    {
+        case SWIM_UNDERWATER_SPRINTING:
+        case SWIM_DIVE_UNDERWATER:
+            return -GetPedWalkUpDown_Swimming(pad);
+
+        default:
+            return GetPedWalkUpDown_Swimming(pad);
+    }
+}
+
+// ParaLand Anim fix
+DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
+{
+    CPed* ped = self->pPed;
+    if(ped->m_WeaponSlots[ped->m_nCurrentWeapon].m_eWeaponType == eWeaponType::WEAPON_PARACHUTE)
+    {
+        auto anim = RpAnimBlendClumpGetAssociation(ped->m_pRwClump, "FALL_front");
+        if(anim != NULL)
+        {
+            anim->m_bitsFlag |= ANIMATION_FREEZE_LAST_FRAME;
+            anim->m_fBlendDelta = -1000.0f;
+
+            CTask* task = TaskConstructor();
+            TaskStartNamedAnim(task, "PARA_Land", "PARACHUTE", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL | ANIMATION_TRANSLATE_Y | ANIMATION_TRANSLATE_X, 10.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+            SetTask(&ped->m_pPedIntelligence->m_taskManager, task, TASK_PRIMARY_PRIMARY, false);
+        }
+    }
+    PlayerInfoProcess_ParachuteAnim(self, playerNum);
+}
+
+// Unused detonator animation is in the ped.ifp, lol
+DECL_HOOKv(UseDetonator, CEntity* ent)
+{
+    UseDetonator(ent);
+
+    if(ent->m_nType == eEntityType::ENTITY_TYPE_PED)
+    {
+        CTask* task = TaskConstructor();
+        //TaskStartNamedAnim(task, "BOMBER", "DETONATOR", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+        TaskStartNamedAnim(task, "bomber", "ped", ANIMATION_UNLOCK_LAST_FRAME | ANIMATION_PARTIAL, 4.0f, -1, true, *ms_iActiveSequence > -1, false, false);
+        SetTask(&((CPed*)ent)->m_pPedIntelligence->m_taskManager, task, TASK_PRIMARY_PRIMARY, false);
+    }
+}
+
+// Taxi lights
+DECL_HOOKv(AutomobileRender, CAutomobile* self)
+{
+    AutomobileRender(self);
+    
+    if(self->m_nModelIndex == 420 ||
+       self->m_nModelIndex == 438)
+    {
+        CPlayerPed* p = FindPlayerPed(-1);
+        
+        if(self->vehicleFlags.bEngineOn &&
+           self->m_pDriver &&
+           self->m_nNumPassengers == 0 &&
+           self->m_fHealth > 0)
+        {
+            SetTaxiLight(self, true);
+        }
+        else
+        {
+            SetTaxiLight(self, false);
+        }
+    }
+}
+
+// Car Slowdown Fix
+DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint,
+        int32_t wheelsOnGround, float thrust, float brake, float adhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, uint16_t wheelStatus)
+{
+    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 *= GetTimeStepMagic();
+    ProcessVehicleWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, wheelId, wheelSpeed, wheelState, wheelStatus);
+    *mod_HandlingManager_off4 = save;
+}
+
+// SkimmerPlaneFix
+// Changed the way it works, because ms_fTimeStep cannot be the same at the mod start (it is 0 at the mod start anyway)
+uintptr_t SkimmerWaterResistance_BackTo;
+extern "C" float SkimmerWaterResistance_Patch(void)
+{
+    return 30.0f * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inject(void)
+{
+    asm volatile(
+        "STR X8, [SP, #-16]\n" // PUSH {X8}
+        "FADD S3, S4, S3\n"
+        "FMUL S0, S1, S0\n"
+        "FMOV W21, S0\n"
+        "BL SkimmerWaterResistance_Patch\n"
+        "FMOV S4, S0\n");
+    asm volatile(
+        "MOV X16, %0\n"
+    :: "r" (SkimmerWaterResistance_BackTo));
+    asm volatile(
+        "LDR X8, [SP], #16\n" // POP {X8}
+        "FMOV S0, W21\n"
+        "LDR X8, [X8,#0xE50]\n"
+        "BR X16\n");
 }

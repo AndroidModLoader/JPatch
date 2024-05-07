@@ -315,7 +315,6 @@
     // Car Slowdown Fix
     if(cfg->GetBool("FixCarSlowdownHighFPS", true, "Gameplay"))
     {
-        SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + 0x6777C8)) + 4); // FLA
         HOOKPLT(ProcessVehicleWheel, pGTASA + 0x66FC7C);
     }
 
@@ -701,7 +700,6 @@
     // Taxi lights (obviously)
     if(cfg->GetBool("TaxiLights", true, "Visual"))
     {
-        SET_TO(SetTaxiLight, aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
         HOOK(AutomobileRender, aml->GetSym(hGTASA, "_ZN11CAutomobile6RenderEv"));
     }
     

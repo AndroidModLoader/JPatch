@@ -77,6 +77,16 @@
  - **Radar streaming should be fixed**
  - Allow license plates to render on all vehicles
  - Show muzzle flash for the last bullet
+ - Vehicles license plates now random
+ - "You have worked out enough for today, come back tomorrow!" glitch is fixed
+ - Michelle dating fix
+ - Parachute landing animation fix
+ - Unused detonator animation is working
+ - Taxi lights are activated
+ - Fix Adjustable.cfg sizes lowering on smartphones with an aspect ratio bigger than 16:9 (has a lil glitch with x position shifting)
+ - Classic CJ's shadow
+ - FramerateVigilante: CarSlowDownSpeedFix
+ - Skimmer Plane can be properly get out of water
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
