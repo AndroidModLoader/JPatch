@@ -304,6 +304,12 @@ DECL_HOOK(float, PedCreationDistMult_Offscreen)
     return 2.6f * PedCreationDistMult_Offscreen();
 }
 
+// FX particles distance multiplier!
+float fxMultiplier;
+DECL_HOOK(float, LoadFX_atof, char* str)
+{
+    return fxMultiplier * LoadFX_atof(str);
+}
 
 
 

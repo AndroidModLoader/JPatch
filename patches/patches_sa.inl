@@ -1520,6 +1520,14 @@ DECL_HOOKv(PlayerInfoProcess_ParachuteAnim, CPlayerInfo* self, int playerNum)
     PlayerInfoProcess_ParachuteAnim(self, playerNum);
 }
 
+// FX particles distance multiplier!
+float fxMultiplier;
+DECL_HOOKv(LoadFX_sscanf, char* buf, char* fmt, char* randomAssBuffer, float* readVal)
+{
+    LoadFX_sscanf(buf, fmt, randomAssBuffer, readVal);
+    *readVal *= fxMultiplier;
+}
+
 // Unused detonator animation is in the ped.ifp, lol
 DECL_HOOKv(UseDetonator, CEntity* ent)
 {

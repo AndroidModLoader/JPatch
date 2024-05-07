@@ -253,9 +253,15 @@
         aml->Write(pGTAVC + 0x1C2E3C, "\xB1\xEE\x00\x7A", 4); // CPed::Fight -> unlock move FIGHTMOVE_KNEE
         aml->Write8(pGTAVC + 0x1C5520, 0x01); // CheckForPedsOnGroundToAttack -> 4 >> PED_IN_FRONT_OF_ATTACKER
     }
-    
 
-
+    // FX particles distance multiplier!
+    fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
+    if(fxMultiplier != 1)
+    {
+        if(fxMultiplier < 0.1) fxMultiplier = 0.1f;
+        else if(fxMultiplier > 20) fxMultiplier = 20.0f;
+        HOOKBLX(LoadFX_atof, pGTAVC + 0x1F6500);
+    }
 
 
 

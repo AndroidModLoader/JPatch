@@ -514,19 +514,10 @@ DECL_HOOKv(SetLightsWithTimeOfDayColour_DirLight)
 
 // FX particles distance multiplier!
 float fxMultiplier;
-float *fxUpdateFloat, *fxCreateParticlesFloat;
-DECL_HOOK(int64_t, FxUpdate_FxMult, FxSystem_c* self, RwCamera* camera, long double deltaTime)
+DECL_HOOKv(LoadFX_sscanf, char* buf, char* fmt, char* randomAssBuffer, float* readVal)
 {
-    *fxUpdateFloat = 0.00390625 * fxMultiplier;
-    int64_t ret = FxUpdate_FxMult(self, camera, deltaTime);
-    *fxUpdateFloat = 0.00390625;
-    return ret;
-}
-DECL_HOOKv(CreateParticles_FxMult, void *self, float currTime, float deltaTime)
-{
-    *fxCreateParticlesFloat = 0.015625 * fxMultiplier;
-    CreateParticles_FxMult(self, currTime, deltaTime);
-    *fxCreateParticlesFloat = 0.015625;
+    LoadFX_sscanf(buf, fmt, randomAssBuffer, readVal);
+    *readVal *= fxMultiplier;
 }
 
 // Spread fix

@@ -947,11 +947,14 @@
     }
 
     // FX particles distance multiplier!
-    float fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
-    if(fxMultiplier != 1 && fxMultiplier > 0.1)
+    fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
+    if(fxMultiplier != 1)
     {
-        aml->Unprot(pGTASA + 0x368C7C, sizeof(float)); *(float*)(pGTASA + 0x368C7C) = 0.015625 * fxMultiplier;
-        aml->Unprot(pGTASA + 0x36EC34, sizeof(float)); *(float*)(pGTASA + 0x36EC34) = 0.00390625 * fxMultiplier;
+        if(fxMultiplier < 0.1) fxMultiplier = 0.1f;
+        else if(fxMultiplier > 20) fxMultiplier = 20.0f;
+        HOOKBLX(LoadFX_sscanf, pGTASA + 0x46DC28);
+        HOOKBLX(LoadFX_sscanf, pGTASA + 0x46E00C);
+        HOOKBLX(LoadFX_sscanf, pGTASA + 0x46E03A);
     }
 
     // A long awaiting radio animation... Why do you need it so bad?
@@ -1209,6 +1212,18 @@
     if(cfg->GetBool("FixWheelsRotationSpeed", true, "Visual"))
     {
         HOOKBLX(ProcessWheelRotation_FPS, pGTASA + 0x557FC6);
+    }
+    
+    // Reflections are based on player's neck when it's not a cutscene (WTF???)
+    if(cfg->GetBool("FixReflectionsCenter", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x5C4F24);
+    }
+    
+    // Reflection's quality
+    if(cfg->GetBool("DoubleReflectionsRenderSize", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x5C49E6, "\x4F\xF4\x80\x64", 4);
     }
     
 

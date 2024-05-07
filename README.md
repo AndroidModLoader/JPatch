@@ -16,6 +16,9 @@
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
 
+**Since v1.7**
+ - FX particles draw distance scaler (default is x2.5)
+
 **Since v1.5.1**
  - Bringing back a framelimiter (may be inaccurate)
  - Water texture scrolling speed fix on high FPS
@@ -97,6 +100,8 @@
  - Better ForceDXT
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
  - Fix wheels rotation speed on high FPS
+ - Reflections are now centered on a camera instead of *player's neck*
+ - Reflections are now bigger in quality (1024x1024 instead of default 512x512 at **max quality**)
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
@@ -148,6 +153,9 @@
 **Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
  - Fix wheels rotation speed on high FPS
+ - Reflections are now centered on a camera instead of *player's neck*
+ - Reflections are now bigger in quality (1024x1024 instead of default 512x512 at **max quality**)
+ - Fixed FX distance multiplier (caused a glitch, reworked)
 
 **Since v1.6.1**
  - Unused detonator animation is working

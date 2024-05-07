@@ -375,15 +375,13 @@
 
     // FX particles distance multiplier!
     fxMultiplier = cfg->GetFloat("FxDistanceMult", 2.5f, "Visual");
-    if(fxMultiplier != 1 && fxMultiplier > 0.1)
+    if(fxMultiplier != 1)
     {
-        aml->Unprot(pGTASA + 0x744490, sizeof(float));
-        SET_TO(fxCreateParticlesFloat, pGTASA + 0x744490);
-        HOOK(CreateParticles_FxMult, pGTASA + 0x438D64);
-        
-        aml->Unprot(pGTASA + 0x740AE4, sizeof(float));
-        SET_TO(fxUpdateFloat, pGTASA + 0x740AE4);
-        HOOKBL(FxUpdate_FxMult, pGTASA + 0x43E054);
+        if(fxMultiplier < 0.1) fxMultiplier = 0.1f;
+        else if(fxMultiplier > 20) fxMultiplier = 20.0f;
+        HOOKBL(LoadFX_sscanf, pGTASA + 0x559AC8);
+        HOOKBL(LoadFX_sscanf, pGTASA + 0x559F48);
+        HOOKBL(LoadFX_sscanf, pGTASA + 0x559F78);
     }
 
     // Fixes Corona sprites stretching at foggy weather
@@ -588,4 +586,16 @@
     if(cfg->GetBool("FixWheelsRotationSpeed", true, "Visual"))
     {
         HOOKBL(ProcessWheelRotation_FPS, pGTASA + 0x67875C);
+    }
+    
+    // Reflections are based on player's neck when it's not a cutscene (WTF???)
+    if(cfg->GetBool("FixReflectionsCenter", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x6E9508);
+    }
+    
+    // Reflection's quality
+    if(cfg->GetBool("DoubleReflectionsRenderSize", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6E8F60, 0x52808009);
     }
