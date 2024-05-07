@@ -487,7 +487,7 @@
     // Guess by the name
     if(cfg->GetBool("FixParachuteLandingAnim", true, "Visual"))
     {
-        HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x673E84);
+        HOOKPLT(PlayerInfoProcess_ParachuteAnim, pGTASA + 0x846998);
     }
 
     // Unused detonator animation is in the ped.ifp, lol
@@ -582,4 +582,10 @@
     {
         aml->Write(pGTASA + 0x74AC98, "WESTP", 6);
         aml->Write(pGTASA + 0x74AD40, "????", 5);
+    }
+    
+    // Fix wheels rotation speed on high FPS
+    if(cfg->GetBool("FixWheelsRotationSpeed", true, "Visual"))
+    {
+        HOOKBL(ProcessWheelRotation_FPS, pGTASA + 0x67875C);
     }

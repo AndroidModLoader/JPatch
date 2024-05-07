@@ -220,15 +220,11 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
 }
 
 uintptr_t ProcessBuoyancy_BackTo;
-extern "C" float ProcessBuoyancy_Patch(CPhysical* physical)
+extern "C" float ProcessBuoyancy_Patch(CPed* physical)
 {
-    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED)
+    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED && physical->IsPlayer())
     {
-        CPed* ped = (CPed*)physical;
-        if (ped->IsPlayer()) // we only need this for player, due to swim bug
-        {
-            return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
-        }
+        return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
     }
     return *ms_fTimeStep;
 }
@@ -1991,6 +1987,12 @@ DECL_HOOKb(FindPlaneCoors_CheckCol, int X, int Y, CColBox* box, CColSphere* sphe
 DECL_HOOKb(DoorClosing_PadTarget, void* pad)
 {
     return DoorClosing_PadTarget(pad) || GetPedWalkLR(pad) != 0x00 || GetPedWalkUD(pad) != 0x00;
+}
+
+// Fix wheels rotation speed on high FPS
+DECL_HOOK(float, ProcessWheelRotation_FPS, CVehicle *self, tWheelState WheelState, const CVector *vecForward, const CVector *WheelSpeed, float fRadius)
+{
+    return ProcessWheelRotation_FPS(self, WheelState, vecForward, WheelSpeed, fRadius) * GetTimeStep();
 }
 
 

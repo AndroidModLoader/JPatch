@@ -43,6 +43,7 @@
 
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.7**
+ - **Fix broken Swimming Speed Fix** (bruh)
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
  - Removed "Please rate the game" message
  - Removed IDE flag "ExtraAirResistance"
@@ -95,6 +96,7 @@
  - Always drawable wanted stars (disabled by default)
  - Better ForceDXT
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
+ - Fix wheels rotation speed on high FPS
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)
@@ -145,6 +147,7 @@
 
 **Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
+ - Fix wheels rotation speed on high FPS
 
 **Since v1.6.1**
  - Unused detonator animation is working

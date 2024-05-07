@@ -61,9 +61,9 @@ float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 #define fAspectCorrection (*ms_fAspectRatio - ar43)
 #define fAspectCorrectionDiv (*ms_fAspectRatio / ar43)
 #define GetTimeStep() (*ms_fTimeStep)
-#define GetTimeStepInSeconds() (*ms_fTimeStep / 50.0f)
-#define GetTimeStepMagic() (*ms_fTimeStep / fMagic)
-#define GetTimeStepInvMagic() (fMagic / *ms_fTimeStep)
+#define GetTimeStepInSeconds() (GetTimeStep() / 50.0f)
+#define GetTimeStepMagic() (GetTimeStep() / fMagic)
+#define GetTimeStepInvMagic() (fMagic / GetTimeStep())
 
 struct VehiclePartsPair
 {

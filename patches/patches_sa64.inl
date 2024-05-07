@@ -276,15 +276,11 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     }
 }
 uintptr_t ProcessBuoyancy_BackTo;
-extern "C" float ProcessBuoyancy_Patch(CPhysical* physical)
+extern "C" float ProcessBuoyancy_Patch(CPed* physical)
 {
-    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED)
+    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED && physical->IsPlayer())
     {
-        CPed* ped = (CPed*)physical;
-        if (ped->IsPlayer()) // we only need this for player, due to swim bug
-        {
-            return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
-        }
+        return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
     }
     return *ms_fTimeStep;
 }
@@ -295,9 +291,9 @@ __attribute__((optnone)) __attribute__((naked)) void ProcessBuoyancy_Inject(void
         "BL ProcessBuoyancy_Patch");
     asm volatile("MOV X16, %0" :: "r"(ProcessBuoyancy_BackTo));
     asm volatile(
-        "FMOV S2, W0\n"
-        "LDR S0, [X19 ,#0xCC]\n"
-        "LDR S1, [X19 ,#0x7C]\n"
+        "FMOV S2, S0\n"
+        "LDR S0, [X19, #0xCC]\n"
+        "LDR S1, [X19, #0x7C]\n"
         "BR X16");
 }
 
@@ -804,4 +800,10 @@ DECL_HOOKv(ComputeDamageAnim, uintptr_t self, CPed* victim, bool a2)
 DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat format)
 {
     LoadTexDBThumbs(dbName, unk, (format == DF_Default) ? DF_DXT : format);
+}
+
+// Fix wheels rotation speed on high FPS
+DECL_HOOK(float, ProcessWheelRotation_FPS, CVehicle *self, tWheelState WheelState, const CVector *vecForward, const CVector *WheelSpeed, float fRadius)
+{
+    return ProcessWheelRotation_FPS(self, WheelState, vecForward, WheelSpeed, fRadius) * GetTimeStep();
 }

@@ -1205,6 +1205,12 @@
         HOOKBLX(DoorClosing_PadTarget, pGTASA + 0x501BD0 + 0x1);
     }
     
+    // Fix wheels rotation speed on high FPS
+    if(cfg->GetBool("FixWheelsRotationSpeed", true, "Visual"))
+    {
+        HOOKBLX(ProcessWheelRotation_FPS, pGTASA + 0x557FC6);
+    }
+    
 
 
 
