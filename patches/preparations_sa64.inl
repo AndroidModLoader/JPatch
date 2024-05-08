@@ -600,6 +600,95 @@
         HOOKBL(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
     }
 
+    // Bigger distance for light coronas
+    if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6C7A68, 0xF0000389); // CEntity::ProcessLightsForEntity
+        aml->Write32(pGTASA + 0x6C7A78, 0xBD4C1520); // CEntity::ProcessLightsForEntity
+
+        aml->Write32(pGTASA + 0x4331A0, 0xF0001828); // CTrafficLights::DisplayActualLight
+        aml->Write32(pGTASA + 0x4331A4, 0xBD4C1506); // CTrafficLights::DisplayActualLight
+
+        aml->Write32(pGTASA + 0x6864C0, 0x900005AA); // CBike::PreRender
+        aml->Write32(pGTASA + 0x6864E8, 0xBD4C1541); // CBike::PreRender
+
+        aml->Write32(pGTASA + 0x686434, 0x900005AA); // CBike::PreRender
+        aml->Write32(pGTASA + 0x68645C, 0xBD4C1541); // CBike::PreRender
+
+        aml->Write32(pGTASA + 0x695F18, 0xB0000529); // CHeli::SearchLightCone
+        aml->Write32(pGTASA + 0x695F3C, 0xBD4C1529); // CHeli::SearchLightCone
+
+        aml->Write32(pGTASA + 0x67ADC0, 0x90000608); // CAutomobile::PreRender
+        aml->Write32(pGTASA + 0x67ADD0, 0xBD4C1503); // CAutomobile::PreRender
+
+        aml->Write32(pGTASA + 0x67B0B4, 0xF00005E9); // CAutomobile::PreRender
+        aml->Write32(pGTASA + 0x67B0C8, 0xBD4C152B); // CAutomobile::PreRender
+
+        aml->Write32(pGTASA + 0x67C1AC, 0xD00005E8); // CAutomobile::PreRender
+        aml->Write32(pGTASA + 0x67C1B4, 0xBD4C1501); // CAutomobile::PreRender
+    }
+
+    // Bigger distance for light shadows
+    if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x4331A4, 0xBD419506); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write32(pGTASA + 0x4D3904, 0xBD419508); // CFireManager::Update, 40 -> 120
+        fLightDist = 120.0f; // For thingies below \/
+    }
+
+    // Bring back light shadows from poles!
+    if(cfg->GetBool("BackPolesLightShadow", true, "Visual"))
+    {
+        HOOKBL(GetBaseEffect_AddLight, pGTASA + 0x6C7AC0);
+        HOOKPLT(ProcessLightsForEntity_ItSelf, pGTASA + 0x849858);
+        HOOKBL(ProcessLightsForEntity_AddLight, pGTASA + 0x6C8564);
+        HOOKBL(ProcessLightsForEntity_AddLight, pGTASA + 0x6C84F8);
+    }
+
+    // Allows the game to render even more light shadows on the ground
+    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
+    {
+        // Static shadows?
+        asShadowsStored_NEW = new CRegisteredShadow[0xFF + 1]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * (0xFF + 1));
+        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
+        aml->Write(pGTASA + 0x84D7F8, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
+        aml->Write(pGTASA + 0x8511F8, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        
+        // Registered Shadows:
+        // CShadows::StoreShadowToBeRendered
+        aml->Write32(pGTASA + 0x6DDC3C, 0xF103F93F);
+        aml->Write32(pGTASA + 0x6DDC5C, 0xF103F93F);
+        aml->Write32(pGTASA + 0x6DDC7C, 0xF103F93F);
+        aml->Write32(pGTASA + 0x6DDC9C, 0xF103F93F);
+        aml->Write32(pGTASA + 0x6DDCBC, 0xF103F93F);
+        aml->Write32(pGTASA + 0x6DDCE8, 0xF103F93F);
+        // CShadows::StoreShadowToBeRendered (2nd arg is RwTexture*)
+        aml->Write32(pGTASA + 0x6DDD74, 0xF103F93F);
+        // CShadows::StoreShadowForVehicle
+        aml->Write32(pGTASA + 0x6DE328, 0x7103F95F);
+        aml->Write32(pGTASA + 0x6DE37C, 0x7103F95F);
+        // CShadows::StoreShadowForPedObject
+        aml->Write32(pGTASA + 0x6DE738, 0xF103F95F);
+        // CShadows::StoreRealTimeShadow
+        aml->Write32(pGTASA + 0x6DEA5C, 0xF103F93F);
+        // CShadows::RenderExtraPlayerShadows
+        aml->Write32(pGTASA + 0x6E2480, 0x7103F93F);
+        aml->Write32(pGTASA + 0x6E24A4, 0x7103F93F);
+
+        // Static Shadows:
+        // CShadows::StoreStaticShadow
+        aml->Write32(pGTASA + 0x6DD798, 0xF103FD1F);
+        aml->Write32(pGTASA + 0x6DD7C4, 0x7103FD7F);
+        // CShadows::RenderStaticShadows
+        aml->Write32(pGTASA + 0x6E024C, 0xF104025F);
+        aml->Write32(pGTASA + 0x6E0260, 0xF104029F);
+        // CShadows::UpdateStaticShadows
+        aml->Write32(pGTASA + 0x6E1BB4, 0xF104011F);
+        
+        HOOKPLT(RenderStaticShadows, pGTASA + 0x846A00);
+        HOOKPLT(InitShadows, pGTASA + 0x83EFC0);
+    }
+
 
 
 

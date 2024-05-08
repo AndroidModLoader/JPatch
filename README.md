@@ -45,6 +45,11 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.7.1**
+ - Goddamn static light shadows from PC!
+ - Bumped a limit of static shadows!
+ - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
+
 **Since v1.7**
  - **Fix broken Swimming Speed Fix** (bruh)
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)

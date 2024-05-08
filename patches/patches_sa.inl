@@ -960,7 +960,7 @@ extern "C" void ProcessLightsForEntity_Patch(CEntity* ent, C2dEffect* eff, int e
     {
         float intensity = ((float)eff->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
-        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+        StoreStaticShadow((uintptr_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
                            128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
     }
 }
@@ -1018,7 +1018,7 @@ DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
 // Static shadows
 DECL_HOOKv(RenderStaticShadows, bool a1)
 {
-    for(int i = 0; i < 0xFF; ++i)
+    for(int i = 48; i < 256; ++i)
     {
         aStaticShadows_NEW[i].m_bRendered = false;
     }

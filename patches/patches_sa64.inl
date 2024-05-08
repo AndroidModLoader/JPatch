@@ -814,3 +814,93 @@ DECL_HOOKv(FxInfoMan_FXLeak, uintptr_t self_x58)
     }
     FxInfoMan_FXLeak(self_x58);
 }
+
+// Bring back light shadows from poles!
+uintptr_t ProcessLightsForEntity_BackTo;
+float fLightDist = 40.0f;
+/*CVector vecEffCenterTmp;
+extern "C" void ProcessLightsForEntity_Patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
+{
+    if(bDoLight && eff->light.m_fShadowSize != 0)
+    {
+        float intensity = ((float)eff->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
+        float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
+        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+                           128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+    }
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_Inject(void)
+{
+    asm volatile(
+        "LDR.W R10, [SP, #0xB8]\n"
+        "MOV R0, R9\n"
+        "PUSH {R1-R11}\n"
+        "LDR R1, [SP, #28]\n"
+        "LDR R2, [SP, #20]\n"
+        "LDR R3, [SP, #12]\n"
+        "BL ProcessLightsForEntity_Patch\n"
+        "POP {R1-R11}\n");
+    asm volatile(
+        "MOV PC, %0\n"
+    :: "r" (ProcessLightsForEntity_BackTo));
+}
+DECL_HOOKv(AddLight_LightPoles, unsigned char a1, CVector a2, CVector a3, float a4, float a5, float a6, float a7, unsigned char a8, bool a9, CEntity* a10)
+{
+    AddLight_LightPoles(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+
+    // This is going to be a workaround
+    // because i dont freakin understand
+    // why does this stupid TransformPoint
+    // is failed and a position in stack
+    // is wrong, like 1 million Z. WTF
+    vecEffCenterTmp = a2;
+}*/
+
+CEntity* lastEntityEffect;
+C2dEffect* lastEffect;
+int lastEffectNum;
+DECL_HOOK(C2dEffect*, GetBaseEffect_AddLight, CBaseModelInfo* mi, int i)
+{
+    lastEffect = GetBaseEffect_AddLight(mi, i);
+    lastEffectNum = i;
+    return lastEffect;
+}
+DECL_HOOKv(ProcessLightsForEntity_AddLight, UInt8 Type, CVector Coors, CVector Dir, float Range, float Red, float Green, float Blue, UInt8 FogEffect, bool bCastsShadowFromPlayerCarAndPed, CEntity *pArgCastingEntity)
+{
+    ProcessLightsForEntity_AddLight(Type, Coors, Dir, Range, Red, Green, Blue, FogEffect, bCastsShadowFromPlayerCarAndPed, pArgCastingEntity);
+    if(lastEffect->light.m_fShadowSize != 0)
+    {
+        float intensity = ((float)lastEffect->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
+        float zDist = lastEffect->light.m_nShadowZDistance ? lastEffect->light.m_nShadowZDistance : 15.0f;
+
+        StoreStaticShadow((uintptr_t)lastEntityEffect + lastEffectNum, 2, lastEffect->light.m_pShadowTex, &Coors, lastEffect->light.m_fShadowSize, 0.0f, 0.0f, -lastEffect->light.m_fShadowSize,
+                           128, intensity * lastEffect->light.m_color.red, intensity * lastEffect->light.m_color.green, intensity * lastEffect->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+    }
+}
+DECL_HOOKv(ProcessLightsForEntity_ItSelf, CEntity* self)
+{
+    lastEntityEffect = self;
+    ProcessLightsForEntity_ItSelf(self);
+}
+
+// Static shadows
+DECL_HOOKv(RenderStaticShadows, bool a1)
+{
+    for(int i = 48; i < 256; ++i)
+    {
+        aStaticShadows_NEW[i].m_bRendered = false;
+    }
+    RenderStaticShadows(a1);
+}
+DECL_HOOKv(InitShadows)
+{
+    static CPolyBunch bunchezTail[BUNCHTAILS_EX];
+    
+    InitShadows();
+    for(int i = 0; i < BUNCHTAILS_EX-1; ++i)
+    {
+        bunchezTail[i].pNext = &bunchezTail[i+1];
+    }
+    bunchezTail[BUNCHTAILS_EX-1].pNext = NULL;
+    aPolyBunches[360-1].pNext = &bunchezTail[0];
+}
