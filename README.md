@@ -98,10 +98,10 @@
  - Cloud saves can be disabled (NOT disabled by default)
  - Always drawable wanted stars (disabled by default)
  - Better ForceDXT
- - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
  - Fix wheels rotation speed on high FPS
  - Reflections are now centered on a camera instead of *player's neck*
  - Reflections are now bigger in quality (1024x1024 instead of default 512x512 at **max quality**)
+ - Fixed a small FX system leakage when using custom effects mod
 
 **Since v1.6.1**
  - A fix for vehicle's entering task (thanks AliAssassiN!)

@@ -523,8 +523,8 @@
     // Fix Skimmer plane
     if (cfg->GetBool("SkimmerPlaneFix", true, "Gameplay"))
     {
-        SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D4;
-        aml->Redirect(pGTASA + 0x6AD4C4, (uintptr_t)SkimmerWaterResistance_Inject);
+        SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D8;
+        aml->Redirect(pGTASA + 0x6AD4C8, (uintptr_t)SkimmerWaterResistance_Inject);
     }
 
     // Cinematic vehicle camera on double tap
@@ -568,12 +568,6 @@
     {
         HOOK(LoadTexDBThumbs, aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime4LoadEPKcb21TextureDatabaseFormat"));
     }
-    
-    // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
-    if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
-    {
-        aml->PlaceB(pGTASA + 0x6FEB6C, pGTASA + 0x6FEC84);
-    }
 
     // Car generators in an interior now work properly
     if(cfg->GetBool("CorrectPoliceScannerLocations", true, "Gameplay"))
@@ -599,3 +593,22 @@
     {
         aml->Write32(pGTASA + 0x6E8F60, 0x52808009);
     }
+    
+    // Fix FX memory leak
+    if(cfg->GetBool("FixFXLeak", true, "Gameplay"))
+    {
+        HOOKBL(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
+    }
+
+
+
+
+
+
+
+    
+    // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
+    //if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
+    //{
+    //    aml->PlaceB(pGTASA + 0x6FEB6C, pGTASA + 0x6FEC84);
+    //}

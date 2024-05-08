@@ -618,6 +618,7 @@ extern "C" uintptr_t Opcode039E_Patch(CRunningScript* script, CPed* ped)
 __attribute__((optnone)) __attribute__((naked)) void Opcode039E_Inject(void)
 {
     asm volatile(
+        "MOV X0, X19\n"
         "MOV X1, X8\n"
         "BL Opcode039E_Patch\n"
         "BR X0\n");
@@ -720,10 +721,11 @@ extern "C" float SkimmerWaterResistance_Patch(void)
 __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inject(void)
 {
     asm volatile(
-        "STR X8, [SP, #-16]\n" // PUSH {X8}
+        "STR X8, [SP, #-16]!\n" // PUSH {X8}
         "FADD S3, S4, S3\n"
         "FMUL S0, S1, S0\n"
-        "FMOV W21, S0\n"
+        "FMOV W21, S0\n" // backup
+        "FMOV W23, S1\n" // backup
         "BL SkimmerWaterResistance_Patch\n"
         "FMOV S4, S0\n");
     asm volatile(
@@ -732,7 +734,9 @@ __attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inje
     asm volatile(
         "LDR X8, [SP], #16\n" // POP {X8}
         "FMOV S0, W21\n"
-        "LDR X8, [X8,#0xE50]\n"
+        "FMOV S1, W23\n"
+        "CMP W10, #0x1CC\n"
+        "LDR X8, [X8, #0xE50]\n"
         "BR X16\n");
 }
 
@@ -797,4 +801,16 @@ DECL_HOOKv(LoadTexDBThumbs, const char* dbName, int unk, TextureDatabaseFormat f
 DECL_HOOK(float, ProcessWheelRotation_FPS, CVehicle *self, tWheelState WheelState, const CVector *vecForward, const CVector *WheelSpeed, float fRadius)
 {
     return ProcessWheelRotation_FPS(self, WheelState, vecForward, WheelSpeed, fRadius) * GetTimeStep();
+}
+
+// Fix FX memory leak
+DECL_HOOKv(FxInfoMan_FXLeak, uintptr_t self_x58)
+{
+    RwTexture** texturePtr4 = (RwTexture**)(self_x58 - 0x58 + 0x30);
+    if(*texturePtr4)
+    {
+        RwTextureDestroy(*texturePtr4);
+        *texturePtr4 = NULL;
+    }
+    FxInfoMan_FXLeak(self_x58);
 }

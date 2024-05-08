@@ -1759,7 +1759,7 @@ __attribute__((optnone)) __attribute__((naked)) void RLE_Inject(void)
 }
 
 // Fix FX memory leak
-DECL_HOOKv(FxInfoMan_FXLeak, int self_44)
+DECL_HOOKv(FxInfoMan_FXLeak, uintptr_t self_44)
 {
     RwTexture** texturePtr4 = (RwTexture**)(self_44 - 44 + 24);
     if(*texturePtr4)
