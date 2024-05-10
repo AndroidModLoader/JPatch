@@ -643,6 +643,11 @@
         HOOKPLT(ProcessLightsForEntity_ItSelf, pGTASA + 0x849858);
         HOOKBL(ProcessLightsForEntity_AddLight, pGTASA + 0x6C8564);
         HOOKBL(ProcessLightsForEntity_AddLight, pGTASA + 0x6C84F8);
+
+        // We are not passing argument "pArgCastingEntity" (always NULL)
+        // We will use it for "bCurrentlyActive" variable.
+        aml->Write32(pGTASA + 0x6C84EC, 0x2A1A03E3);
+        aml->Write32(pGTASA + 0x6C8560, 0x2A1A03E3);
     }
 
     // Allows the game to render even more light shadows on the ground
@@ -693,11 +698,22 @@
 
 
 
-
-
     
     // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
     //if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
     //{
     //    aml->PlaceB(pGTASA + 0x6FEB6C, pGTASA + 0x6FEC84);
     //}
+
+    // Camera is saving screenshots?
+    /*if(cfg->GetBool("FixScreenGrabber", true, "Gameplay"))
+    {
+        // 821F20
+
+        HOOK(Patch_psGrabScreen, aml->GetSym(hGTASA, "_Z12psGrabScreenP8RwCamera"));
+        //HOOKBL(TakePhoto, pGTASA + 0x7010EC);
+        //HOOKBL(ShowRasterIdle, pGTASA + 0x4D8FE0);
+        HOOKBL(ShowRasterIdle, pGTASA + 0x4D9254);
+        HOOKBL(jpeg_samplecopy, pGTASA + 0x56A0E8);
+        HOOKBL(jpeg_samplecopy, pGTASA + 0x56A1EC);
+    }*/

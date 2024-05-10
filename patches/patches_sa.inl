@@ -956,12 +956,20 @@ float fLightDist = 40.0f;
 CVector vecEffCenterTmp;
 extern "C" void ProcessLightsForEntity_Patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
 {
-    if(bDoLight && eff->light.m_fShadowSize != 0)
+    if(eff->light.m_fShadowSize != 0)
     {
-        float intensity = ((float)eff->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
+        float intensity = ((eff->light.m_nShadowColorMultiplier * 0.125f * *fSpriteBrightness) / 256.0f);
         float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
-        StoreStaticShadow((uintptr_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
-                           128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+        if(bDoLight)
+        {
+            StoreStaticShadow((uintptr_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+                            128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+        }
+        else
+        {
+            StoreStaticShadow((uintptr_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
+                            0, 0, 0, 0, zDist, 1.0f, fLightDist, false, 0.0f);
+        }
     }
 }
 __attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_Inject(void)

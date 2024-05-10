@@ -72,15 +72,16 @@ struct VehiclePartsPair
     RwTexture* texture;
 }; // 
 VehiclePartsPair* gStoredMats;
-bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene;
+bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene, *ms_bTakePhoto;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
 int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *textureDetail, *ms_iActiveSequence;
 uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
-float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale, *mod_HandlingManager_off4;
+float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_fLightsOnGroundBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale, *mod_HandlingManager_off4;
 CVector *m_vecDirnLightToSun;
 CVector *m_VectorToSun;
 int *m_CurrentStoredValue;
 float *fPlayerAimRotRate;
+CVector2D *m_vecCachedPos;
 
 CPlayerInfo                 *WorldPlayers;
 CIntVector2D                *windowSize;
@@ -140,7 +141,11 @@ void (*LoadAllRequestedModels)(bool bOnlyPriorityRequests);
 void (*AddAnimBlockRef)(int animBlock);
 void (*TimerStop)();
 void (*TimerUpdate)();
+#ifdef AML32
 void (*GetTouchPosition)(CVector2D*, int cachedPosNum);
+#else
+CVector2D (*GetTouchPosition)(int cachedPosNum);
+#endif
 bool (*StoreStaticShadow)(uintptr_t id, uint8_t type, RwTexture* texture, CVector* posn, float frontX, float frontY, float sideX, float sideY, int16_t intensity, uint8_t red, uint8_t green, uint8_t blue, float zDistane, float scale, float drawDistance, bool temporaryShadow, float upDistance);
 void (*TransformPoint)(RwV3d& point, const CSimpleTransform& placement, const RwV3d& vecPos);
 CAnimBlendAssociation* (*RpAnimBlendClumpGetAssociation)(RpClump*, const char*);
@@ -182,6 +187,13 @@ int16_t (*GetPedWalkLR)(void*);
 int16_t (*GetPedWalkUD)(void*);
 void (*DoSunGlare)(CVehicle*);
 void (*SetTaxiLight)(CAutomobile*, bool);
+RwImage* (*RwImageCreate)(int, int, int);
+void (*RwImageAllocatePixels)(RwImage*);
+void (*RwImageSetFromRaster)(RwImage*, RwRaster*);
+void (*SetDirMyDocuments)();
+void (*FileMgrSetDir)(const char* dirName);
+void (*JPegCompressScreenToFile)(RwCamera*, const char*);
+bool (*RwGrabScreen)(RwCamera*, const char*);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -335,6 +347,13 @@ void JPatch()
     SET_TO(GetPedWalkUD,            aml->GetSym(hGTASA, "_ZN4CPad16GetPedWalkUpDownEv"));
     SET_TO(DoSunGlare,              aml->GetSym(hGTASA, "_ZN8CVehicle10DoSunGlareEv"));
     SET_TO(SetTaxiLight,            aml->GetSym(hGTASA, "_ZN11CAutomobile12SetTaxiLightEb"));
+    SET_TO(RwImageCreate,           aml->GetSym(hGTASA, "_Z13RwImageCreateiii"));
+    SET_TO(RwImageAllocatePixels,   aml->GetSym(hGTASA, "_Z21RwImageAllocatePixelsP7RwImage"));
+    SET_TO(RwImageSetFromRaster,    aml->GetSym(hGTASA, "_Z20RwImageSetFromRasterP7RwImageP8RwRaster"));
+    SET_TO(SetDirMyDocuments,       aml->GetSym(hGTASA, "_ZN8CFileMgr17SetDirMyDocumentsEv"));
+    SET_TO(FileMgrSetDir,           aml->GetSym(hGTASA, "_ZN8CFileMgr6SetDirEPKc"));
+    SET_TO(JPegCompressScreenToFile, aml->GetSym(hGTASA, "_Z24JPegCompressScreenToFileP8RwCameraPKc"));
+    SET_TO(RwGrabScreen,            aml->GetSym(hGTASA, "_Z12RwGrabScreenP8RwCameraPc"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -378,6 +397,7 @@ void JPatch()
     SET_TO(ms_memoryUsed,           aml->GetSym(hGTASA, "_ZN10CStreaming13ms_memoryUsedE"));
     SET_TO(ms_memoryAvailable,      aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE"));
     SET_TO(fSpriteBrightness,       pGTASA + BYVER(0x966590, 0xBD760C));
+    SET_TO(m_fLightsOnGroundBrightness, pGTASA + BYVER(0x9665A4, 0xBD7620));
     SET_TO(detailTextures,          aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE"));
     SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
     SET_TO(ms_iActiveSequence,      aml->GetSym(hGTASA, "_ZN14CTaskSequences18ms_iActiveSequenceE"));
@@ -414,7 +434,9 @@ void JPatch()
     SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
     SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
     SET_TO(fPlayerAimRotRate,       aml->GetSym(hGTASA, "fPlayerAimRotRate"));
+    SET_TO(m_vecCachedPos,          aml->GetSym(hGTASA, "_ZN15CTouchInterface14m_vecCachedPosE"));
     SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYVER(0x6777C8, 0x84CFB8))) + 4); // FLA
+    SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
     // Variables End //
 
     // We need it for future fixes.

@@ -49,6 +49,7 @@
  - Goddamn static light shadows from PC!
  - Bumped a limit of static shadows!
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
+ - Fix accidentally broken "Colorpicker widget". I am sorry.
 
 **Since v1.7**
  - **Fix broken Swimming Speed Fix** (bruh)
@@ -153,7 +154,7 @@
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
- - Check what i can do with RsGrabScreen
+ - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scale and repeated?!)
 
 **Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)

@@ -448,7 +448,7 @@ DECL_HOOK(float, GetColorPickerValue, CWidgetRegionColorPicker* self)
     static float prevVal = 0.0f;
     if(self->IsTouched(NULL) != false) // IsTouched
     {
-        CVector2D v; GetTouchPosition(&v, self->cachedPosNum);
+        CVector2D v = m_vecCachedPos[self->cachedPosNum];
         
         float left = self->screenRect.left * 0.7f;
         float right = self->screenRect.right * 0.7f;
@@ -816,46 +816,8 @@ DECL_HOOKv(FxInfoMan_FXLeak, uintptr_t self_x58)
 }
 
 // Bring back light shadows from poles!
-uintptr_t ProcessLightsForEntity_BackTo;
 float fLightDist = 40.0f;
-/*CVector vecEffCenterTmp;
-extern "C" void ProcessLightsForEntity_Patch(CEntity* ent, C2dEffect* eff, int effectNum, int bDoLight)
-{
-    if(bDoLight && eff->light.m_fShadowSize != 0)
-    {
-        float intensity = ((float)eff->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
-        float zDist = eff->light.m_nShadowZDistance ? eff->light.m_nShadowZDistance : 15.0f;
-        StoreStaticShadow((uint32_t)ent + effectNum, 2, eff->light.m_pShadowTex, &vecEffCenterTmp, eff->light.m_fShadowSize, 0.0f, 0.0f, -eff->light.m_fShadowSize,
-                           128, intensity * eff->light.m_color.red, intensity * eff->light.m_color.green, intensity * eff->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
-    }
-}
-__attribute__((optnone)) __attribute__((naked)) void ProcessLightsForEntity_Inject(void)
-{
-    asm volatile(
-        "LDR.W R10, [SP, #0xB8]\n"
-        "MOV R0, R9\n"
-        "PUSH {R1-R11}\n"
-        "LDR R1, [SP, #28]\n"
-        "LDR R2, [SP, #20]\n"
-        "LDR R3, [SP, #12]\n"
-        "BL ProcessLightsForEntity_Patch\n"
-        "POP {R1-R11}\n");
-    asm volatile(
-        "MOV PC, %0\n"
-    :: "r" (ProcessLightsForEntity_BackTo));
-}
-DECL_HOOKv(AddLight_LightPoles, unsigned char a1, CVector a2, CVector a3, float a4, float a5, float a6, float a7, unsigned char a8, bool a9, CEntity* a10)
-{
-    AddLight_LightPoles(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
-
-    // This is going to be a workaround
-    // because i dont freakin understand
-    // why does this stupid TransformPoint
-    // is failed and a position in stack
-    // is wrong, like 1 million Z. WTF
-    vecEffCenterTmp = a2;
-}*/
-
+uintptr_t ProcessLightsForEntity_BackTo;
 CEntity* lastEntityEffect;
 C2dEffect* lastEffect;
 int lastEffectNum;
@@ -867,14 +829,23 @@ DECL_HOOK(C2dEffect*, GetBaseEffect_AddLight, CBaseModelInfo* mi, int i)
 }
 DECL_HOOKv(ProcessLightsForEntity_AddLight, UInt8 Type, CVector Coors, CVector Dir, float Range, float Red, float Green, float Blue, UInt8 FogEffect, bool bCastsShadowFromPlayerCarAndPed, CEntity *pArgCastingEntity)
 {
-    ProcessLightsForEntity_AddLight(Type, Coors, Dir, Range, Red, Green, Blue, FogEffect, bCastsShadowFromPlayerCarAndPed, pArgCastingEntity);
+    ProcessLightsForEntity_AddLight(Type, Coors, Dir, Range, Red, Green, Blue, FogEffect, bCastsShadowFromPlayerCarAndPed, NULL);
     if(lastEffect->light.m_fShadowSize != 0)
     {
-        float intensity = ((float)lastEffect->light.m_nShadowColorMultiplier / 256.0f) * 0.1f * *fSpriteBrightness;
+        float intensity = ((lastEffect->light.m_nShadowColorMultiplier * 0.125f * *fSpriteBrightness) / 256.0f);
         float zDist = lastEffect->light.m_nShadowZDistance ? lastEffect->light.m_nShadowZDistance : 15.0f;
 
-        StoreStaticShadow((uintptr_t)lastEntityEffect + lastEffectNum, 2, lastEffect->light.m_pShadowTex, &Coors, lastEffect->light.m_fShadowSize, 0.0f, 0.0f, -lastEffect->light.m_fShadowSize,
-                           128, intensity * lastEffect->light.m_color.red, intensity * lastEffect->light.m_color.green, intensity * lastEffect->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+        bool bCurrentlyActive = *(bool*)(&pArgCastingEntity);
+        if(bCurrentlyActive)
+        {
+            StoreStaticShadow((uintptr_t)lastEntityEffect + lastEffectNum, 2, lastEffect->light.m_pShadowTex, &Coors, lastEffect->light.m_fShadowSize, 0.0f, 0.0f, -lastEffect->light.m_fShadowSize,
+                            128, intensity * lastEffect->light.m_color.red, intensity * lastEffect->light.m_color.green, intensity * lastEffect->light.m_color.blue, zDist, 1.0f, fLightDist, false, 0.0f);
+        }
+        else
+        {
+            StoreStaticShadow((uintptr_t)lastEntityEffect + lastEffectNum, 2, lastEffect->light.m_pShadowTex, &Coors, lastEffect->light.m_fShadowSize, 0.0f, 0.0f, -lastEffect->light.m_fShadowSize,
+                            0, 0, 0, 0, zDist, 1.0f, fLightDist, false, 0.0f);
+        }
     }
 }
 DECL_HOOKv(ProcessLightsForEntity_ItSelf, CEntity* self)
@@ -903,4 +874,55 @@ DECL_HOOKv(InitShadows)
     }
     bunchezTail[BUNCHTAILS_EX-1].pNext = NULL;
     aPolyBunches[360-1].pNext = &bunchezTail[0];
+}
+
+// Camera is saving screenshots?
+DECL_HOOK(RwImage*, Patch_psGrabScreen, RwCamera* camera)
+{
+    if(!camera || !camera->framebuf) return NULL;
+
+    RwImage* newImage = RwImageCreate(camera->framebuf->width, camera->framebuf->height, 32);
+    if(newImage)
+    {
+        RwImageAllocatePixels(newImage);
+		RwImageSetFromRaster(newImage, camera->framebuf);
+    }
+    return newImage;
+}
+DECL_HOOKb(TakePhoto, CWeapon* self, CEntity* unused, CVector* cameraPos)
+{
+    static uint32_t nextAllowedPic = 0;
+    if(nextAllowedPic < *m_snTimeInMilliseconds)
+    {
+        nextAllowedPic = *m_snTimeInMilliseconds + 200;
+
+        TimerStop();
+        SetDirMyDocuments();
+        JPegCompressScreenToFile(TheCamera->m_pRwCamera, "screenshot_test.jpg");
+        FileMgrSetDir("");
+        TimerUpdate();
+    }
+
+    return TakePhoto(self, unused, cameraPos);
+}
+DECL_HOOKv(ShowRasterIdle, RwCamera* camera)
+{
+    static uint32_t nextAllowedPic = 0;
+    if(nextAllowedPic < *m_snTimeInMilliseconds)
+    {
+        nextAllowedPic = *m_snTimeInMilliseconds + 5000;
+
+        TimerStop();
+        SetDirMyDocuments();
+        //JPegCompressScreenToFile(camera, "screenshot_test.jpg");
+        RwGrabScreen(camera, "screenshot_test.bmp");
+        FileMgrSetDir("");
+        TimerUpdate();
+    }
+    ShowRasterIdle(camera);
+}
+DECL_HOOKv(jpeg_samplecopy, uint8_t **input_array, int source_row, uint8_t **output_array, int dest_row, int num_rows, uint num_cols)
+{
+    jpeg_samplecopy(input_array, source_row, output_array, dest_row, num_rows, num_cols);
+    logger->Info("jpeg_samplecopy: dest_row (i) = %d, num_rows (height) = %d, num_cols (width) = %d", dest_row, num_rows, num_cols);
 }
