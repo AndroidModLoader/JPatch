@@ -1234,6 +1234,22 @@
         aml->PlaceNOP(pGTASA + 0x3C07E6 + 0x1, 2);
         aml->PlaceNOP(pGTASA + 0x3C082C + 0x1, 2);
     }
+
+    // Now all vehicles should have a shadow
+    if(cfg->GetBool("FixVehicleShadows", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x5B95CE + 0x1);
+        aml->PlaceNOP(pGTASA + 0x5B95D2 + 0x1);
+        aml->PlaceNOP(pGTASA + 0x5B97E6 + 0x1, 3);
+        aml->PlaceB(pGTASA + 0x5B95D6, pGTASA + 0x5B9798 + 0x1);
+    }
+
+    // That's for the fix above. Cuz they're ugly as hell by default, EWWW...
+    if(cfg->GetBool("BiggerCarShadowsDistance", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x5B979C, "\x9F\xED\xD0\x2A\xB0\xEE\x42\x1A", 8);
+        aml->WriteFloat(pGTASA + 0x5B9AE0, 320.0f);
+    }
     
 
 

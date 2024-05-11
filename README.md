@@ -57,6 +57,9 @@
  - Fixed red marker cannot be placed on the right side of the screen
  - VitaPort: Fixed Heli/Plane camera
  - An ability to remove FOV-effect while driving a car (NoVehicleFOVEffect, not applied by default)
+ - MTA: Disable GTA vehicle detachment at rotation
+ - Now all vehicles have shadows (Trains, some airplanes and etc)
+ - **Cars (only cars because of a limit)** now have a bigger shadow draw distance
 
 **Since v1.7.1**
  - Goddamn static light shadows from PC!
@@ -167,11 +170,13 @@
  - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
- - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scale and repeated?!)
+ - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
 
 **Since v1.7.2**
  - Little fixes for previous JPatch fixes
  - An ability to remove FOV-effect while driving a car (NoVehicleFOVEffect, not applied by default)
+ - Now all vehicles have shadows (Trains, some airplanes and etc)
+ - **Cars (only cars because of a limit)** now have a bigger shadow draw distance
 
 **Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)
