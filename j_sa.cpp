@@ -44,6 +44,9 @@ union ScriptVariables
     void*    p;
 };
 
+// fMagic = 1.6666667:
+// ARM64: Closest is 1.665 at 0x739EF4
+
 static constexpr float ar43 = 4.0f / 3.0f;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
@@ -79,7 +82,7 @@ uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTime
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_fLightsOnGroundBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale, *mod_HandlingManager_off4;
 CVector *m_vecDirnLightToSun;
 CVector *m_VectorToSun;
-int *m_CurrentStoredValue;
+int *m_CurrentStoredValue, *currArea;
 float *fPlayerAimRotRate;
 CVector2D *m_vecCachedPos;
 
@@ -194,6 +197,7 @@ void (*SetDirMyDocuments)();
 void (*FileMgrSetDir)(const char* dirName);
 void (*JPegCompressScreenToFile)(RwCamera*, const char*);
 bool (*RwGrabScreen)(RwCamera*, const char*);
+void (*ApplyTurnForce)(CPhysical*, CVector, CVector);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -354,6 +358,7 @@ void JPatch()
     SET_TO(FileMgrSetDir,           aml->GetSym(hGTASA, "_ZN8CFileMgr6SetDirEPKc"));
     SET_TO(JPegCompressScreenToFile, aml->GetSym(hGTASA, "_Z24JPegCompressScreenToFileP8RwCameraPKc"));
     SET_TO(RwGrabScreen,            aml->GetSym(hGTASA, "_Z12RwGrabScreenP8RwCameraPc"));
+    SET_TO(ApplyTurnForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyTurnForceE7CVectorS0_"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -437,6 +442,7 @@ void JPatch()
     SET_TO(m_vecCachedPos,          aml->GetSym(hGTASA, "_ZN15CTouchInterface14m_vecCachedPosE"));
     SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYVER(0x6777C8, 0x84CFB8))) + 4); // FLA
     SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
+    SET_TO(currArea,                aml->GetSym(hGTASA, "_ZN5CGame8currAreaE"));
     // Variables End //
 
     // We need it for future fixes.

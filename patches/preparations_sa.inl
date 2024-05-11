@@ -277,7 +277,7 @@
     // Fix water cannon on a high fps
     if(cfg->GetBool("FixHighFPSWaterCannons", true, "Gameplay"))
     {
-        HOOKPLT(WaterCannonRender, pGTASA + 0x67432C);
+        HOOKPLT(WaterCannonsRender, pGTASA + 0x6715F0);
         HOOKPLT(WaterCannonUpdate, pGTASA + 0x6702EC);
     }
 
@@ -451,8 +451,9 @@
     // RE3: Road reflections
     if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     {
-        RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
-        aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_Inject);
+        //RoadReflections_BackTo = pGTASA + 0x5A2EA4 + 0x1;
+        //aml->Redirect(pGTASA + 0x5A2E94 + 0x1, (uintptr_t)RoadReflections_Inject);
+        aml->Write(pGTASA + 0x5A2E9C, "\x2F\x98\x00\xBF", 4);
     }
 
     // Helicopter's rotor blur
@@ -873,8 +874,9 @@
     if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
     {
         aml->Unprot(pGTASA + 0x4DD9E8, sizeof(float));
-        SET_TO(float_4DD9E8, pGTASA + 0x4DD9E8);
-        HOOK(TaskSimpleUseGunSetMoveAnim, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
+        *(float*)(pGTASA + 0x4DD9E8) = 0.015f;
+        //SET_TO(float_4DD9E8, pGTASA + 0x4DD9E8);
+        //HOOK(TaskSimpleUseGunSetMoveAnim, aml->GetSym(hGTASA, "_ZN17CTaskSimpleUseGun11SetMoveAnimEP4CPed"));
     }
 
     // AllowLicensePlatesForAllCars
@@ -1224,6 +1226,13 @@
     if(cfg->GetBool("DoubleReflectionsRenderSize", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5C49E6, "\x4F\xF4\x80\x64", 4);
+    }
+
+    // An ability to remove FOV-effect while driving a car
+    if(cfg->GetBool("NoVehicleFOVEffect", false, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x3C07E6 + 0x1, 2);
+        aml->PlaceNOP(pGTASA + 0x3C082C + 0x1, 2);
     }
     
 

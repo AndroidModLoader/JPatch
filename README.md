@@ -45,6 +45,19 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.7.2**
+ - Another crash fix... I hate myself... *facepalm*
+ - A count of max loading screens can be changed now (default is 7)
+ - Probably fixed walking AND aiming on high FPS
+ - Fixed water cannons (firetruck/S.W.A.T.) on high FPS
+ - An experimental fix of 034E opcode (move object) on high FPS
+ - FramerateVigilante: Fixed physical objects push force
+ - MTA: Increase intensity of vehicle tail light corona
+ - MTA: Thrown projectiles throw more accurately
+ - Fixed red marker cannot be placed on the right side of the screen
+ - VitaPort: Fixed Heli/Plane camera
+ - An ability to remove FOV-effect while driving a car (NoVehicleFOVEffect, not applied by default)
+
 **Since v1.7.1**
  - Goddamn static light shadows from PC!
  - Bumped a limit of static shadows!
@@ -155,6 +168,10 @@
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scale and repeated?!)
+
+**Since v1.7.2**
+ - Little fixes for previous JPatch fixes
+ - An ability to remove FOV-effect while driving a car (NoVehicleFOVEffect, not applied by default)
 
 **Since v1.7**
  - CJ is now able to exit vehicle without closing the door (https://github.com/AndroidModLoader/JPatch/issues/28)

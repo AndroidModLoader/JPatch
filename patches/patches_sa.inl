@@ -356,8 +356,8 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
     {
         int x, y;
         LIB_PointerGetCoordinates(*lastDevice, &x, &y, NULL);
-        if(y > 0.85f * RsGlobal->maximumHeight &&
-           x > ((float)RsGlobal->maximumWidth - 0.7f * RsGlobal->maximumHeight)) return;
+        if(y > 0.88f * RsGlobal->maximumHeight &&
+           x > ((float)RsGlobal->maximumWidth - 0.87f * RsGlobal->maximumHeight)) return;
     }
     PlaceRedMarker_MarkerFix(canPlace);
 }
@@ -478,10 +478,10 @@ DECL_HOOK(int, mpg123_param, void* mh, int key, long val, int ZERO, double fval)
 }
 
 // Fix water cannon
-DECL_HOOKv(WaterCannonRender, void* self)
+DECL_HOOKv(WaterCannonsRender)
 {
     float save = *ms_fTimeStep; *ms_fTimeStep = fMagic;
-    WaterCannonRender(self);
+    WaterCannonsRender();
     *ms_fTimeStep = save;
 }
 DECL_HOOKv(WaterCannonUpdate, void* self, int frames)
@@ -1140,8 +1140,6 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
     if(self->m_nModelIndex == 420 ||
        self->m_nModelIndex == 438)
     {
-        CPlayerPed* p = FindPlayerPed(-1);
-        
         if(self->vehicleFlags.bEngineOn &&
            self->m_pDriver &&
            self->m_nNumPassengers == 0 &&
@@ -1159,8 +1157,7 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
 // Interior radar
 DECL_HOOKv(DrawRadar, void* self)
 {
-    CPlayerPed* p = FindPlayerPed(-1);
-    if(!p || p->m_nInterior == 0 || IsOnAMission())
+    if(*currArea == 0 || IsOnAMission())
         DrawRadar(self);
 }
 
@@ -1648,13 +1645,13 @@ extern "C" uintptr_t Opcode0835_Patch(CRunningScript* script)
     char *scriptName = script->ScriptName;
     if(!strncasecmp(scriptName, "gymbike", 8) || !strncasecmp(scriptName, "gymbenc", 8) || !strncasecmp(scriptName, "gymtrea", 8) || !strncasecmp(scriptName, "gymdumb", 8))
     {
-        ScriptParams[0].i = *ms_nGameClockDays;
-        ScriptParams[1].i = *ms_nGameClockMonths;
+        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
+        ScriptParams[1].i = -1;
     }
     else
     {
-        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
-        ScriptParams[1].i = -1;
+        ScriptParams[0].i = *ms_nGameClockDays;
+        ScriptParams[1].i = *ms_nGameClockMonths;
     }
     return Opcode0835_BackTo;
 }

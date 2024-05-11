@@ -58,8 +58,12 @@
     if(cfg->GetBool("FixWaterPhysics", true, "Gameplay"))
     {
         HOOKBL(ProcessSwimmingResistance, pGTASA + 0x6565F0);
-        ProcessBuoyancy_BackTo = pGTASA + 0x691E94;
-        aml->Redirect(pGTASA + 0x691E80, (uintptr_t)ProcessBuoyancy_Inject);
+        HOOKPLT(ProcBuo, pGTASA + 0x842270);
+        SET_TO(buoyancyTimescaleReplacement, pGTASA + 0x691E84); UNPROT(buoyancyTimescaleReplacement, sizeof(float));
+        aml->Write32(pGTASA + 0x691E80, 0x14000002);
+        aml->Write32(pGTASA + 0x691E88, 0x90000009);
+        aml->Write32(pGTASA + 0x691E8C, 0xBD4E8522);
+        aml->Write32(pGTASA + 0x691E90, 0xD503201F);
     }
 
     // Fix stealable items sucking
@@ -121,7 +125,10 @@
     // Colored zone names are back
     if(cfg->GetBool("ColoredZoneNames", true, "Visual"))
     {
-        aml->PlaceNOP(pGTASA + 0x51D9C0, 1);
+        aml->Write32(pGTASA + 0x51D9D8, 0x39403102);
+        aml->Write32(pGTASA + 0x51D9DC, 0x39403503);
+        aml->Write32(pGTASA + 0x51D9E0, 0x35000061);
+        aml->Write32(pGTASA + 0x51D9E4, 0x35000042);
     }
 
     // A fix for 2.10 crash (thanks fastman92!)
@@ -424,7 +431,7 @@
     // Minimap in interiors? Hell nah!
     if(cfg->GetBool("NoInteriorRadar", true, "Visual"))
     {
-        HOOKPLT(DrawRadar, pGTASA + 0x66F618);
+        HOOKBL(DrawRadar, pGTASA + 0x51F8E0);
     }
 
     // Fix greenish detail tex
@@ -462,7 +469,7 @@
     // Fix "You have worked out enough for today, come back tomorrow!"
     if(cfg->GetBool("FixGymWorkoutDate", true, "SCMFixes"))
     {
-        Opcode0835_BackTo = pGTASA + 0x3378CE + 0x1;
+        Opcode0835_BackTo = pGTASA + 0x403768;
         aml->Redirect(pGTASA + 0x401E84, (uintptr_t)Opcode0835_Inject);
     }
 
@@ -491,7 +498,7 @@
     // Unused detonator animation is in the ped.ifp, lol
     if(cfg->GetBool("UnusedDetonatorAnimation", true, "Visual"))
     {
-        HOOKPLT(UseDetonator, pGTASA + 0x66FD94);
+        HOOKPLT(UseDetonator, pGTASA + 0x840048);
     }
     
     // Taxi lights (obviously)
@@ -523,8 +530,9 @@
     // Fix Skimmer plane
     if (cfg->GetBool("SkimmerPlaneFix", true, "Gameplay"))
     {
-        SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D8;
-        aml->Redirect(pGTASA + 0x6AD4C8, (uintptr_t)SkimmerWaterResistance_Inject);
+        //SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D8;
+        //aml->Redirect(pGTASA + 0x6AD4C8, (uintptr_t)SkimmerWaterResistance_Inject);
+        HOOKBL(ApplyBoatWaterResistance, pGTASA + 0x6AD124);
     }
 
     // Cinematic vehicle camera on double tap
@@ -693,6 +701,87 @@
         HOOKPLT(RenderStaticShadows, pGTASA + 0x846A00);
         HOOKPLT(InitShadows, pGTASA + 0x83EFC0);
     }
+
+    // Can now use a gun!
+    if(cfg->GetBool("HighFPSAimingWalkingFix", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x5DF790, 0x90000AA9);
+        aml->Write32(pGTASA + 0x5DF794, 0xBD48D521);
+    }
+    
+    // Max mobilesc0,mobilesc1,...,mobilesc### for us
+    mobilescCount = cfg->GetInt("MaxLoadingScreens", 7, "Visual");
+    if(mobilescCount > 0 && mobilescCount != 7)
+    {
+        HOOKBL(LoadSplash_sscanf, pGTASA + 0x520154);
+    }
+
+    // Fix water cannon on a high fps
+    if(cfg->GetBool("FixHighFPSWaterCannons", true, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x6EF5AC);
+        aml->Write32(pGTASA + 0x6EF598, 0xD0000249);
+        aml->Write32(pGTASA + 0x6EF59C, 0xBD4EF520);
+    }
+
+    // Fix moving objects on a high fps (through the scripts)
+    if(cfg->GetBool("FixHighFPSOpcode034E", true, "SCMFixes"))
+    {
+        HOOKBL(CollectParams_034E, pGTASA + 0x4129B8);
+    }
+
+    // Fix pushing force
+    if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
+    {
+        HOOKBL(ApplyForce_Collision, pGTASA + 0x4E6634);
+        HOOKBL(ApplyForce_Collision, pGTASA + 0x4E6A04);
+    }
+
+    // Increase intensity of vehicle tail light corona (MTA:SA)
+    // Is this even working on Android?
+    if(cfg->GetBool("IncreaseTailLightIntensity", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x6B503C, 0x52801E05);
+    }
+
+    // THROWN projectiles throw more accurately (MTA:SA)
+    if(cfg->GetBool("ThrownProjectilesAccuracy", true, "Gameplay"))
+    {
+        aml->PlaceB(pGTASA + 0x700F70 + 0x1, pGTASA + 0x701074 + 0x1);
+    }
+
+    // Fix red marker that cannot be placed in a menu on ultrawide screens
+    // Kinda trashy fix...
+    // This glitch is annoying me on v2.10!!! Time to fix it!!!
+    if(cfg->GetBool("FixRedMarkerUnplaceable", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x368D20, 0xF0001E49);
+        aml->Write32(pGTASA + 0x368D24, 0xBD48C920);
+        aml->Write32(pGTASA + 0x368D54, 0x1E2D1863);
+        HOOKBL(PlaceRedMarker_MarkerFix, pGTASA + 0x369814);
+    }
+
+    // Can now rotate the camera inside the heli/plane?
+    // https://github.com/TheOfficialFloW/gtasa_vita/blob/6417775e182b0c8b789cc9a0c1161e6f1b43814f/loader/main.c#L736
+    if(cfg->GetBool("UnstuckHeliCamera", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x4A02E0, 0xD2800000);
+        aml->Write32(pGTASA + 0x4A0E94, 0xD2800000);
+        aml->Write32(pGTASA + 0x4A1258, 0xD2800000);
+        aml->Write32(pGTASA + 0x4DF9F0, 0xD2800000);
+        aml->Write32(pGTASA + 0x4DFDB4, 0xD2800000);
+    }
+
+    // An ability to remove FOV-effect while driving a car
+    if(cfg->GetBool("NoVehicleFOVEffect", false, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x4A025C, 1);
+        aml->PlaceNOP(pGTASA + 0x4A02A4, 1);
+        aml->PlaceNOP(pGTASA + 0x4A02C8, 1);
+    }
+
+
+
 
 
 

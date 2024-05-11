@@ -275,26 +275,18 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
         ped->m_vecMoveSpeed.z = std::max(ped->m_vecMoveSpeed.z, 0.0f);
     }
 }
-uintptr_t ProcessBuoyancy_BackTo;
-extern "C" float ProcessBuoyancy_Patch(CPed* physical)
+float *buoyancyTimescaleReplacement;
+DECL_HOOKb(ProcBuo, void *self, CPed *pPhysical, float fBouyConst, CVector *pCentreOfBuoyancy, CVector *pBuoyancyForce)
 {
-    if (physical->m_nType == eEntityType::ENTITY_TYPE_PED && physical->IsPlayer())
+    if (pPhysical->m_nType == eEntityType::ENTITY_TYPE_PED && pPhysical->IsPlayer())
     {
-        return (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
+        *buoyancyTimescaleReplacement = (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
     }
-    return *ms_fTimeStep;
-}
-__attribute__((optnone)) __attribute__((naked)) void ProcessBuoyancy_Inject(void)
-{
-    asm volatile(
-        "MOV X0, X19\n"
-        "BL ProcessBuoyancy_Patch");
-    asm volatile("MOV X16, %0" :: "r"(ProcessBuoyancy_BackTo));
-    asm volatile(
-        "FMOV S2, S0\n"
-        "LDR S0, [X19, #0xCC]\n"
-        "LDR S1, [X19, #0x7C]\n"
-        "BR X16");
+    else
+    {
+        *buoyancyTimescaleReplacement = *ms_fTimeStep;
+    }
+    return ProcBuo(self, pPhysical, fBouyConst, pCentreOfBuoyancy, pBuoyancyForce);
 }
 
 // Fixing a crosshair by very stupid math
@@ -537,9 +529,10 @@ DECL_HOOKv(RenderVehicle_SunGlare, CVehicle* self)
 // Interior radar
 DECL_HOOKv(DrawRadar, void* self)
 {
-    CPlayerPed* p = FindPlayerPed(-1);
-    if(!p || p->m_nInterior == 0 || IsOnAMission())
+    if(*currArea == 0 || IsOnAMission())
+    {
         DrawRadar(self);
+    }
 }
 
 // Green-ish detail texture
@@ -585,13 +578,13 @@ extern "C" uintptr_t Opcode0835_Patch(CRunningScript* script)
     char *scriptName = script->ScriptName;
     if(!strncasecmp(scriptName, "gymbike", 8) || !strncasecmp(scriptName, "gymbenc", 8) || !strncasecmp(scriptName, "gymtrea", 8) || !strncasecmp(scriptName, "gymdumb", 8))
     {
-        ScriptParams[0].i = *ms_nGameClockDays;
-        ScriptParams[1].i = *ms_nGameClockMonths;
+        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
+        ScriptParams[1].i = -1;
     }
     else
     {
-        ScriptParams[0].i = StatTypesInt[14]; // 134 = Days passed in game
-        ScriptParams[1].i = -1;
+        ScriptParams[0].i = *ms_nGameClockDays;
+        ScriptParams[1].i = *ms_nGameClockMonths;
     }
     return Opcode0835_BackTo;
 }
@@ -601,7 +594,7 @@ __attribute__((optnone)) __attribute__((naked)) void Opcode0835_Inject(void)
         "MOV X0, X19\n"
         "BL Opcode0835_Patch\n"
         "MOV W1, #2\n"
-        "BR X8\n");
+        "BR X0\n");
 }
 
 // Michelle dating fix
@@ -686,8 +679,6 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
     if(self->m_nModelIndex == 420 ||
        self->m_nModelIndex == 438)
     {
-        CPlayerPed* p = FindPlayerPed(-1);
-        
         if(self->vehicleFlags.bEngineOn &&
            self->m_pDriver &&
            self->m_nNumPassengers == 0 &&
@@ -713,31 +704,40 @@ DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& whee
 
 // SkimmerPlaneFix
 // Changed the way it works, because ms_fTimeStep cannot be the same at the mod start (it is 0 at the mod start anyway)
-uintptr_t SkimmerWaterResistance_BackTo;
-extern "C" float SkimmerWaterResistance_Patch(void)
+// UPD: Changed the way again!
+DECL_HOOKv(ApplyBoatWaterResistance, CVehicle* self, tBoatHandlingData *boatHandling, float fImmersionDepth)
 {
-    return 30.0f * GetTimeStepMagic();
-}
-__attribute__((optnone)) __attribute__((naked)) void SkimmerWaterResistance_Inject(void)
-{
-    asm volatile(
-        "STR X8, [SP, #-16]!\n" // PUSH {X8}
-        "FADD S3, S4, S3\n"
-        "FMUL S0, S1, S0\n"
-        "FMOV W21, S0\n" // backup
-        "FMOV W23, S1\n" // backup
-        "BL SkimmerWaterResistance_Patch\n"
-        "FMOV S4, S0\n");
-    asm volatile(
-        "MOV X16, %0\n"
-    :: "r" (SkimmerWaterResistance_BackTo));
-    asm volatile(
-        "LDR X8, [SP], #16\n" // POP {X8}
-        "FMOV S0, W21\n"
-        "FMOV S1, W23\n"
-        "CMP W10, #0x1CC\n"
-        "LDR X8, [X8, #0xE50]\n"
-        "BR X16\n");
+    float fSpeedMult = sq(fImmersionDepth) * self->m_pHandling->fSuspensionForce * self->m_fMass / 1000.0F;
+    if (self->m_nModelIndex == 460) // MODEL_SKIMMER
+    {
+        fSpeedMult *= 30.0F;
+    }
+    fSpeedMult *= GetTimeStepMagic();
+
+    auto fMoveDotProduct = DotProduct(self->m_vecMoveSpeed, self->GetForward());
+    fSpeedMult *= sq(fMoveDotProduct) + 0.05F;
+    fSpeedMult += 1.0F;
+    fSpeedMult = fabsf(fSpeedMult);
+    fSpeedMult = 1.0F / fSpeedMult;
+
+    float fUsedTimeStep = GetTimeStep() * 0.5F;
+    auto vecSpeedMult = (boatHandling->vecMoveResistance * fSpeedMult).Pow(fUsedTimeStep);
+
+    CVector vecMoveSpeedMatrixDotProduct = self->GetMatrix()->InverseTransformVector(self->m_vecMoveSpeed);
+    self->m_vecMoveSpeed = vecMoveSpeedMatrixDotProduct * vecSpeedMult;
+
+    auto fMassMult = (vecSpeedMult.y - 1.0F) * self->m_vecMoveSpeed.y * self->m_fMass;
+    CVector vecTransformedMoveSpeed = self->GetMatrix()->TransformVector(self->m_vecMoveSpeed);
+    self->m_vecMoveSpeed = vecTransformedMoveSpeed;
+
+    auto vecDown = self->GetUp() * -1.0F;
+    auto vecTurnForce = self->GetForward() * fMassMult;
+    ApplyTurnForce(self, vecTurnForce, vecDown);
+
+    if (self->m_vecMoveSpeed.z <= 0.0F)
+        self->m_vecMoveSpeed.z *= ((1.0F - vecSpeedMult.z) * 0.5F + vecSpeedMult.z);
+    else
+        self->m_vecMoveSpeed.z *= vecSpeedMult.z;
 }
 
 // Cinematic camera
@@ -875,6 +875,61 @@ DECL_HOOKv(InitShadows)
     bunchezTail[BUNCHTAILS_EX-1].pNext = NULL;
     aPolyBunches[360-1].pNext = &bunchezTail[0];
 }
+
+// Max loading splashes
+int mobilescCount = 7;
+int DoRand(int max)
+{
+    srand(time(NULL));
+    return (int)(((double)rand() / (double)RAND_MAX) * max);
+}
+DECL_HOOKv(LoadSplash_sscanf, char* buf, const char* fmt, int randArg)
+{
+    LoadSplash_sscanf(buf, fmt, DoRand(mobilescCount));
+}
+
+// Moving objs (opcode 034E)
+DECL_HOOKv(CollectParams_034E, CRunningScript* script, int count)
+{
+    CollectParams_034E(script, count);
+
+    float scale = 30.0f / *game_FPS;
+    ScriptParams[4].f *= scale;
+    ScriptParams[5].f *= scale;
+    ScriptParams[6].f *= scale;
+}
+
+// Fix pushing force
+DECL_HOOKv(ApplyForce_Collision, CPhysical *self, CVector vecForce, CVector vecOffset, bool bValidTorque)
+{
+    ApplyForce_Collision(self, vecForce * GetTimeStepMagic(), vecOffset, bValidTorque);
+}
+
+// Marker fix
+DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
+{
+    if(canPlace)
+    {
+        int x, y;
+        LIB_PointerGetCoordinates(*lastDevice, &x, &y, NULL);
+        if(y > 0.88f * RsGlobal->maximumHeight &&
+           x > ((float)RsGlobal->maximumWidth - 0.87f * RsGlobal->maximumHeight)) return;
+    }
+    PlaceRedMarker_MarkerFix(canPlace);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Camera is saving screenshots?
 DECL_HOOK(RwImage*, Patch_psGrabScreen, RwCamera* camera)
