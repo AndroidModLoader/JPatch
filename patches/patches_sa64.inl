@@ -276,9 +276,9 @@ DECL_HOOKv(ProcessSwimmingResistance, CTaskSimpleSwim* task, CPed* ped)
     }
 }
 float *buoyancyTimescaleReplacement;
-DECL_HOOKb(ProcBuo, void *self, CPed *pPhysical, float fBouyConst, CVector *pCentreOfBuoyancy, CVector *pBuoyancyForce)
+DECL_HOOKb(ProcessPedBuoyancy, void *self, CPed *pPed, float fBouyConst, CVector *pCentreOfBuoyancy, CVector *pBuoyancyForce)
 {
-    if (pPhysical->m_nType == eEntityType::ENTITY_TYPE_PED && pPhysical->IsPlayer())
+    if (pPed->IsPlayer())
     {
         *buoyancyTimescaleReplacement = (1.0f + (GetTimeStepMagic() / 1.5f)) * GetTimeStepMagic();
     }
@@ -286,7 +286,9 @@ DECL_HOOKb(ProcBuo, void *self, CPed *pPhysical, float fBouyConst, CVector *pCen
     {
         *buoyancyTimescaleReplacement = *ms_fTimeStep;
     }
-    return ProcBuo(self, pPhysical, fBouyConst, pCentreOfBuoyancy, pBuoyancyForce);
+    bool ret = ProcessPedBuoyancy(self, pPed, fBouyConst, pCentreOfBuoyancy, pBuoyancyForce);
+    *buoyancyTimescaleReplacement = *ms_fTimeStep;
+    return ret;
 }
 
 // Fixing a crosshair by very stupid math

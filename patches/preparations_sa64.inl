@@ -1,5 +1,10 @@
     HOOKPLT(GameProcess, pGTASA + 0x840198);
     
+
+    // I am using a function at 0x692B14 as my variables storage.
+    // This function is unused and most likely never will be,
+    // so should be safe
+
     
     // Animated textures
     if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
@@ -58,11 +63,10 @@
     if(cfg->GetBool("FixWaterPhysics", true, "Gameplay"))
     {
         HOOKBL(ProcessSwimmingResistance, pGTASA + 0x6565F0);
-        HOOKPLT(ProcBuo, pGTASA + 0x842270);
-        SET_TO(buoyancyTimescaleReplacement, pGTASA + 0x691E84); UNPROT(buoyancyTimescaleReplacement, sizeof(float));
-        aml->Write32(pGTASA + 0x691E80, 0x14000002);
-        aml->Write32(pGTASA + 0x691E88, 0x90000009);
-        aml->Write32(pGTASA + 0x691E8C, 0xBD4E8522);
+        HOOKBL(ProcessPedBuoyancy, pGTASA + 0x5980F0);
+        SET_TO(buoyancyTimescaleReplacement, pGTASA + 0x692B14); UNPROT(buoyancyTimescaleReplacement, sizeof(float));
+        aml->Write32(pGTASA + 0x691E80, 0xB0000009);
+        aml->Write32(pGTASA + 0x691E84, 0xBD4B1522);
         aml->Write32(pGTASA + 0x691E90, 0xD503201F);
     }
 
