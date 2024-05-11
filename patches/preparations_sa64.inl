@@ -463,7 +463,7 @@
     // Random license plates
     if(cfg->GetBool("RandomLicensePlates", true, "Visual"))
     {
-        HOOKBL(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x5829F2 + 0x1);
+        HOOKBL(GetCustomCarPlateText_SetModelIdx, pGTASA + 0x6A6668);
     }
 
     // Fix "You have worked out enough for today, come back tomorrow!"
@@ -605,7 +605,7 @@
     // Fix FX memory leak
     if(cfg->GetBool("FixFXLeak", true, "Gameplay"))
     {
-        HOOKBL(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
+        HOOKBL(FxInfoMan_FXLeak, pGTASA + 0x43EA5C);
     }
 
     // Bigger distance for light coronas
@@ -747,7 +747,7 @@
     // THROWN projectiles throw more accurately (MTA:SA)
     if(cfg->GetBool("ThrownProjectilesAccuracy", true, "Gameplay"))
     {
-        aml->PlaceB(pGTASA + 0x700F70 + 0x1, pGTASA + 0x701074 + 0x1);
+        aml->PlaceB(pGTASA + 0x700F70, pGTASA + 0x701074);
     }
 
     // Fix red marker that cannot be placed in a menu on ultrawide screens
@@ -778,6 +778,12 @@
         aml->PlaceNOP(pGTASA + 0x4A025C, 1);
         aml->PlaceNOP(pGTASA + 0x4A02A4, 1);
         aml->PlaceNOP(pGTASA + 0x4A02C8, 1);
+    }
+
+    // Disable GTA vehicle detachment at rotation awkwardness
+    if(cfg->GetBool("FixVehicleDetachmentAtRot", true, "Visual"))
+    {
+        aml->PlaceB(pGTASA + 0x4EA3B8, pGTASA + 0x4EA5D0);
     }
 
 

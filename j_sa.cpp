@@ -127,6 +127,7 @@ eBulletFxType (*GetBulletFx)(void* self, unsigned int surfaceId);
 void (*LIB_PointerGetCoordinates)(int, int*, int*, float*);
 bool (*Touch_IsDoubleTapped)(WidgetIDs, bool doTapEffect, int idkButBe1);
 bool (*Touch_IsHeldDown)(WidgetIDs, int idkButBe1);
+void (*Touch_ClearTapHistory)(WidgetIDs);
 void (*SetCameraDirectlyBehindForFollowPed)(CCamera*);
 void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
@@ -290,6 +291,7 @@ void JPatch()
     SET_TO(LIB_PointerGetCoordinates, aml->GetSym(hGTASA, "_Z25LIB_PointerGetCoordinatesiPiS_Pf"));
     SET_TO(Touch_IsDoubleTapped,    aml->GetSym(hGTASA, "_ZN15CTouchInterface14IsDoubleTappedENS_9WidgetIDsEbi"));
     SET_TO(Touch_IsHeldDown,        aml->GetSym(hGTASA, "_ZN15CTouchInterface10IsHeldDownENS_9WidgetIDsEi"));
+    SET_TO(Touch_ClearTapHistory,   aml->GetSym(hGTASA, "_ZN15CTouchInterface15ClearTapHistoryENS_9WidgetIDsE"));
     SET_TO(SetCameraDirectlyBehindForFollowPed, aml->GetSym(hGTASA, "_ZN7CCamera48SetCameraDirectlyBehindForFollowPed_CamOnAStringEv"));
     SET_TO(RestoreCamera,           aml->GetSym(hGTASA, "_ZN7CCamera7RestoreEv"));
     SET_TO(FindPlayerVehicle,       aml->GetSym(hGTASA, "_Z17FindPlayerVehicleib"));

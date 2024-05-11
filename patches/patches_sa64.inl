@@ -375,6 +375,7 @@ DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
     static bool holdTheButton = false;
     if(Touch_IsDoubleTapped(WIDGETID_VEHICLEEXHAUST, true, 1))
     {
+        memset(m_pWidgets[WIDGETID_VEHICLEEXHAUST]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
         holdTheButton = !holdTheButton;
         return holdTheButton;
     }
@@ -750,6 +751,7 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
     if(info == &WorldPlayers[0])
     {
         if(!*bRunningCutscene &&
+           info->pRemoteVehicle == NULL &&
            info->pPed->m_pVehicle != NULL &&
            info->pPed->m_nPedState == PEDSTATE_DRIVING)
         {
