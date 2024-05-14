@@ -9,7 +9,7 @@
     // Animated textures
     if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
     {
-        //aml->Write8(aml->GetSym(hGTASA, "RunUVAnim"), true);
+        aml->Write8(aml->GetSym(hGTASA, "RunUVAnim"), true);
         aml->PlaceNOP(pGTASA + 0x25F5EC, 1);
         aml->PlaceNOP(pGTASA + 0x25EDC8, 1);
     }
@@ -147,7 +147,7 @@
     if(cfg->GetBool("FixEnterVehicleTasks", true, "Gameplay"))
     {
         aml->PlaceNOP(pGTASA + 0x4EF23C);
-        aml->PlaceB(pGTASA + 0x4EF27C, pGTASA + 0x4EF2F4);
+        aml->PlaceB(pGTASA + 0x4EF274, pGTASA + 0x4EF2F4);
         HOOKBL(Patch_ExitVehicleJustDown, pGTASA + 0x4EF414);
     }
 
