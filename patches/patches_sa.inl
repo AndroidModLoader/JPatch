@@ -2010,6 +2010,24 @@ DECL_HOOK(float, ProcessWheelRotation_FPS, CVehicle *self, tWheelState WheelStat
     return ProcessWheelRotation_FPS(self, WheelState, vecForward, WheelSpeed, fRadius) * GetTimeStep();
 }
 
+// Now all vehicles should have a shadow
+DECL_HOOKv(TrainPreRender, CVehicle* self)
+{
+    TrainPreRender(self);
+    StoreShadowForVehicle(self, 6); // 6 = VEHICLE_TYPE_TRAIN
+}
+DECL_HOOKv(BoatPreRender, CVehicle* self)
+{
+    BoatPreRender(self);
+    StoreShadowForVehicle(self, 5); // 5 = VEHICLE_TYPE_BOAT
+}
+
+// This fixes black bushes and more things
+DECL_HOOKv(VTXShader_CamBasedNormal_snprintf, int a1, int a2, const char* str)
+{
+    VTXShader_CamBasedNormal_snprintf(a1, a2, "Out_LightingColor = clamp(AmbientLightColor * MaterialAmbient.xyz, 0.5, 1.0);");
+}
+
 
 
 

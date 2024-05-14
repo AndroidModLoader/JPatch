@@ -45,6 +45,11 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.7.3**
+ - Not only airplanes but also trains and boats have shadows
+ - Fixed a glitch with bushes/trees switching their color to black
+ - If car is far enough, shadow will be classic (instead of NO SHADOWS)
+
 **Since v1.7.2**
  - Another crash fix... I hate myself... *facepalm*
  - A count of max loading screens can be changed now (default is 7)
@@ -58,7 +63,7 @@
  - VitaPort: Fixed Heli/Plane camera
  - An ability to remove FOV-effect while driving a car (NoVehicleFOVEffect, not applied by default)
  - MTA: Disable GTA vehicle detachment at rotation
- - Now all vehicles have shadows (Trains, some airplanes and etc)
+ - Now all airplanes have shadows
  - **Cars (only cars because of a limit)** now have a bigger shadow draw distance
 
 **Since v1.7.1**
@@ -171,6 +176,10 @@
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
+
+**Since v1.7.3**
+ - Not only airplanes but also trains and boats have shadows
+ - Fixed a glitch with bushes/trees switching their color to black
 
 **Since v1.7.2**
  - Little fixes for previous JPatch fixes

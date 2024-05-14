@@ -1242,6 +1242,8 @@
         aml->PlaceNOP(pGTASA + 0x5B95D2 + 0x1);
         aml->PlaceNOP(pGTASA + 0x5B97E6 + 0x1, 3);
         aml->PlaceB(pGTASA + 0x5B95D6, pGTASA + 0x5B9798 + 0x1);
+        HOOKPLT(TrainPreRender, pGTASA + 0x66E154);
+        HOOKPLT(BoatPreRender, pGTASA + 0x66DA78);
     }
 
     // That's for the fix above. Cuz they're ugly as hell by default, EWWW...
@@ -1249,6 +1251,12 @@
     {
         aml->Write(pGTASA + 0x5B979C, "\x9F\xED\xD0\x2A\xB0\xEE\x42\x1A", 8);
         aml->WriteFloat(pGTASA + 0x5B9AE0, 320.0f);
+    }
+
+    // This fixes black bushes and more things
+    if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
+    {
+        HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x1CF44C);
     }
     
 

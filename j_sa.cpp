@@ -199,6 +199,7 @@ void (*FileMgrSetDir)(const char* dirName);
 void (*JPegCompressScreenToFile)(RwCamera*, const char*);
 bool (*RwGrabScreen)(RwCamera*, const char*);
 void (*ApplyTurnForce)(CPhysical*, CVector, CVector);
+void (*StoreShadowForVehicle)(CVehicle*, int);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -361,6 +362,7 @@ void JPatch()
     SET_TO(JPegCompressScreenToFile, aml->GetSym(hGTASA, "_Z24JPegCompressScreenToFileP8RwCameraPKc"));
     SET_TO(RwGrabScreen,            aml->GetSym(hGTASA, "_Z12RwGrabScreenP8RwCameraPc"));
     SET_TO(ApplyTurnForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyTurnForceE7CVectorS0_"));
+    SET_TO(StoreShadowForVehicle,   aml->GetSym(hGTASA, "_ZN8CShadows21StoreShadowForVehicleEP8CVehicle12VEH_SHD_TYPE"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

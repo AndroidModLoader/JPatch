@@ -797,6 +797,8 @@
         aml->PlaceNOP(pGTASA + 0x6DDF04);
         aml->PlaceNOP(pGTASA + 0x6DE028);
         aml->PlaceB(pGTASA + 0x6DDF14, pGTASA + 0x6DDFDC);
+        HOOKPLT(TrainPreRender, pGTASA + 0x83D0E8);
+        HOOKPLT(BoatPreRender, pGTASA + 0x83C330);
     }
 
     // That's for the fix above. Cuz they're ugly as hell by default, EWWW...
@@ -805,6 +807,18 @@
         aml->Write32(pGTASA + 0x6DDFE0, 0x900002E9);
         aml->Write32(pGTASA + 0x6DDFE4, 0xBD418922);
         aml->Write32(pGTASA + 0x6DDFE8, 0x1E204041);
+    }
+
+    // Drawing shadows as it's classic shadows for really far vehicles
+    if(cfg->GetBool("DrawCarShadowsClassicAtDist", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6DDFFC, 0x5400220A);
+    }
+
+    // This fixes black bushes and more things
+    if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
+    {
+        HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
     }
 
     
