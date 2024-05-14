@@ -85,6 +85,7 @@ CVector *m_VectorToSun;
 int *m_CurrentStoredValue, *currArea;
 float *fPlayerAimRotRate;
 CVector2D *m_vecCachedPos;
+bool *bGameStarted;
 
 CPlayerInfo                 *WorldPlayers;
 CIntVector2D                *windowSize;
@@ -447,6 +448,7 @@ void JPatch()
     SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYVER(0x6777C8, 0x84CFB8))) + 4); // FLA
     SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
     SET_TO(currArea,                aml->GetSym(hGTASA, "_ZN5CGame8currAreaE"));
+    SET_TO(bGameStarted,            pGTASA + BYVER(0x9599B8, 0xBC2880));
     // Variables End //
 
     // We need it for future fixes.

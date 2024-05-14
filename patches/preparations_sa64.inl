@@ -10,6 +10,7 @@
     if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
     {
         aml->Write8(aml->GetSym(hGTASA, "RunUVAnim"), true);
+        aml->PlaceNOP(pGTASA + 0x25EE0C, 1);
         aml->PlaceNOP(pGTASA + 0x25F5EC, 1);
         aml->PlaceNOP(pGTASA + 0x25EDC8, 1);
     }
@@ -819,6 +820,19 @@
     if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
     {
         HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
+    }
+
+    // The fix "PCDirLightsCount" is not gonna work now. So lets remove an optimisation instead.
+    if(cfg->GetBool("BiggerLightsCountOutside", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6F621C, 0x52800075);
+        aml->PlaceNOP(pGTASA + 0x6F6220, 1);
+    }
+
+    // Screw that "sleep" while loading a game!
+    if(cfg->GetBool("SpeedUpLoading", true, "Gameplay"))
+    {
+        HOOKBL(MainLoopThreadSleep, pGTASA + 0x70A4E0);
     }
 
     

@@ -316,6 +316,43 @@ DECL_HOOKv(DrawCrosshair)
 }
 
 // Enter-Vehicle tasks
+inline bool IsEnterVehicleTask(eTaskType type)
+{
+    switch(type)
+    {
+        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER:
+        case TASK_COMPLEX_ENTER_CAR_AS_DRIVER:
+        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER_TIMED:
+        case TASK_COMPLEX_ENTER_CAR_AS_DRIVER_TIMED:
+        case TASK_COMPLEX_ENTER_BOAT_AS_DRIVER:
+        case TASK_COMPLEX_ENTER_ANY_CAR_AS_DRIVER:
+        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER_WAIT:
+        case TASK_COMPLEX_ENTER_LEADER_CAR_AS_PASSENGER:
+        case TASK_GROUP_ENTER_CAR:
+        case TASK_GROUP_ENTER_CAR_AND_PERFORM_SEQUENCE:
+        case TASK_SIMPLE_CAR_GET_IN:
+        case TASK_COMPLEX_SWIM_AND_CLIMB_OUT:
+            return true;
+
+        default: return false;
+    }
+}
+inline bool IsExitVehicleTask(eTaskType type)
+{
+    switch(type)
+    {
+        case TASK_COMPLEX_LEAVE_CAR:
+        case TASK_COMPLEX_LEAVE_CAR_AND_DIE:
+        case TASK_COMPLEX_LEAVE_CAR_AND_FLEE:
+        case TASK_COMPLEX_LEAVE_CAR_AND_WANDER:
+        case TASK_COMPLEX_LEAVE_ANY_CAR:
+        case TASK_COMPLEX_LEAVE_BOAT:
+        case TASK_COMPLEX_LEAVE_CAR_AS_PASSENGER_WAIT:
+            return true;
+
+        default: return false;
+    }
+}
 DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVehicle, bool bEntering, CVector *vecVehicle)
 {
     if(Patch_ExitVehicleJustDown(pad, bCheckTouch, pVehicle, bEntering, vecVehicle))
@@ -327,8 +364,10 @@ DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVe
         if(!task) return true;
 
         eTaskType type = task->GetTaskType();
-        return type != TASK_SIMPLE_JETPACK && type != TASK_SIMPLE_GANG_DRIVEBY && type != TASK_COMPLEX_EVASIVE_DIVE_AND_GET_UP &&
-               type != TASK_SIMPLE_NAMED_ANIM && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL);
+        /*return type != TASK_SIMPLE_JETPACK && type != TASK_SIMPLE_GANG_DRIVEBY && type != TASK_COMPLEX_EVASIVE_DIVE_AND_GET_UP &&
+               type != TASK_SIMPLE_NAMED_ANIM && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL);*/
+        if(type == TASK_COMPLEX_IN_WATER) return true;
+        return !IsEnterVehicleTask(type) && !IsExitVehicleTask(type) && (type < TASK_COMPLEX_GO_TO_CAR_DOOR_AND_STAND_STILL || type > TASK_SIMPLE_CAR_FALL_OUT) && task->MakeAbortable(player, ABORT_PRIORITY_URGENT, NULL);
     }
     return false;
 }
@@ -938,6 +977,12 @@ DECL_HOOKv(BoatPreRender, CVehicle* self)
 DECL_HOOKv(VTXShader_CamBasedNormal_snprintf, int a1, int a2, const char* str)
 {
     VTXShader_CamBasedNormal_snprintf(a1, a2, "Out_LightingColor = clamp(AmbientLightColor * MaterialAmbient.xyz, 0.5, 1.0);");
+}
+
+// Screw that "sleep" while loading a game!
+DECL_HOOKv(MainLoopThreadSleep, int uS)
+{
+    //if(*bGameStarted) MainLoopThreadSleep(uS);
 }
 
 
