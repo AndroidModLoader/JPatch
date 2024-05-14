@@ -9,7 +9,7 @@
     // Animated textures
     if(cfg->GetBool("EnableAnimatedTextures", true, "Visual"))
     {
-        //aml->Write8(aml->GetSym(hGTASA, "RunUVAnim"), true);
+        aml->Write8(aml->GetSym(hGTASA, "RunUVAnim"), true);
         aml->PlaceNOP(pGTASA + 0x25F5EC, 1);
         aml->PlaceNOP(pGTASA + 0x25EDC8, 1);
     }
