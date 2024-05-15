@@ -539,9 +539,14 @@ __attribute__((optnone)) __attribute__((naked)) void PhysicalApplyCollision_Inje
 DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint,
         int32_t wheelsOnGround, float thrust, float brake, float adhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, uint16_t wheelStatus)
 {
-    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 *= GetTimeStepMagic();
+    *mod_HandlingManager_off4 = 0.9f * GetTimeStepMagic();
     ProcessVehicleWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, wheelId, wheelSpeed, wheelState, wheelStatus);
-    *mod_HandlingManager_off4 = save;
+}
+DECL_HOOKv(ProcessBikeWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint, int32_t wheelsOnGround,
+        float thrust, float brake, float adhesion, float sideadhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, int wheelspecial, uint16_t wheelStatus)
+{
+    *mod_HandlingManager_off4 = 0.9f * GetTimeStepMagic();
+    ProcessBikeWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, sideadhesion, wheelId, wheelSpeed, wheelState, wheelspecial, wheelStatus);
 }
 
 // Heli rotor

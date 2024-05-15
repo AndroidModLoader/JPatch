@@ -530,6 +530,7 @@
     if(cfg->GetBool("FixCarSlowdownHighFPS", true, "Gameplay"))
     {
         HOOKPLT(ProcessVehicleWheel, pGTASA + 0x83FE78);
+        HOOKPLT(ProcessBikeWheel, pGTASA + 0x846A90);
     }
     
     // Fix Skimmer plane
@@ -829,10 +830,20 @@
         aml->PlaceNOP(pGTASA + 0x6F6220, 1);
     }
 
-    // Screw that "sleep" while loading a game!
-    if(cfg->GetBool("SpeedUpLoading", true, "Gameplay"))
+    // Searchlights are too fast...
+    if(cfg->GetBool("FixSearchlightHighFPS", true, "Gameplay"))
     {
-        HOOKBL(MainLoopThreadSleep, pGTASA + 0x70A4E0);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425C2C);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425D5C);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CA0);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CF8);
+    }
+
+    // Fix
+    if(cfg->GetBool("FixCruisingVehiclesSpeed", true, "Gameplay"))
+    {
+        HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3AD0A4);
+        HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3B0F60);
     }
 
     

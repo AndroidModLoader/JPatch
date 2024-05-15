@@ -739,9 +739,14 @@ DECL_HOOKv(AutomobileRender, CAutomobile* self)
 DECL_HOOKv(ProcessVehicleWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint,
         int32_t wheelsOnGround, float thrust, float brake, float adhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, uint16_t wheelStatus)
 {
-    float save = *mod_HandlingManager_off4; *mod_HandlingManager_off4 *= GetTimeStepMagic();
+    *mod_HandlingManager_off4 = 0.9f * GetTimeStepMagic();
     ProcessVehicleWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, wheelId, wheelSpeed, wheelState, wheelStatus);
-    *mod_HandlingManager_off4 = save;
+}
+DECL_HOOKv(ProcessBikeWheel, CVehicle* self, CVector& wheelFwd, CVector& wheelRight, CVector& wheelContactSpeed, CVector& wheelContactPoint, int32_t wheelsOnGround,
+        float thrust, float brake, float adhesion, float sideadhesion, int8_t wheelId, float* wheelSpeed, void* wheelState, int wheelspecial, uint16_t wheelStatus)
+{
+    *mod_HandlingManager_off4 = 0.9f * GetTimeStepMagic();
+    ProcessBikeWheel(self, wheelFwd, wheelRight, wheelContactSpeed, wheelContactPoint, wheelsOnGround, thrust, brake, adhesion, sideadhesion, wheelId, wheelSpeed, wheelState, wheelspecial, wheelStatus);
 }
 
 // SkimmerPlaneFix
@@ -979,10 +984,17 @@ DECL_HOOKv(VTXShader_CamBasedNormal_snprintf, int a1, int a2, const char* str)
     VTXShader_CamBasedNormal_snprintf(a1, a2, "Out_LightingColor = clamp(AmbientLightColor * MaterialAmbient.xyz, 0.5, 1.0);");
 }
 
-// Screw that "sleep" while loading a game!
-DECL_HOOKv(MainLoopThreadSleep, int uS)
+// Searchlights are too fast!
+DECL_HOOK(float, SearchLight_sqrtf, float a)
 {
-    //if(*bGameStarted) MainLoopThreadSleep(uS);
+    return SearchLight_sqrtf(a) * GetTimeStepMagic();
+}
+
+// Cruisign speed
+DECL_HOOKv(CurvePoint_SpeedFPS, const CVector *startCoors, const CVector *endCoors, const CVector *startDir, const CVector *endDir, float Time, Int32 TraverselTimeInMillis, CVector *resultCoor, CVector *resultSpeed)
+{
+    CurvePoint_SpeedFPS(startCoors, endCoors, startDir, endDir, Time, TraverselTimeInMillis, resultCoor, resultSpeed);
+    *resultSpeed *= GetTimeStepMagic();
 }
 
 

@@ -316,6 +316,7 @@
     if(cfg->GetBool("FixCarSlowdownHighFPS", true, "Gameplay"))
     {
         HOOKPLT(ProcessVehicleWheel, pGTASA + 0x66FC7C);
+        HOOKPLT(ProcessBikeWheel, pGTASA + 0x673F10);
     }
 
     // Heli rotor speed fix
