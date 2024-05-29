@@ -47,8 +47,10 @@
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
- - Fixed a glitch with bushes/trees switching their color to black
  - If car is far enough, shadow will be classic (instead of NO SHADOWS)
+ - Probably fixed searchlights speed at high FPS
+ - An experimental fix for crazy cruising speed for vehicles
+ - Some other issues are fixed now... duh
 
 **Since v1.7.2**
  - Another crash fix... I hate myself... *facepalm*
@@ -176,10 +178,10 @@
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
+ - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
- - Fixed a glitch with bushes/trees switching their color to black
 
 **Since v1.7.2**
  - Little fixes for previous JPatch fixes

@@ -817,12 +817,6 @@
         aml->Write32(pGTASA + 0x6DDFFC, 0x5400220A);
     }
 
-    // This fixes black bushes and more things
-    if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
-    {
-        HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
-    }
-
     // The fix "PCDirLightsCount" is not gonna work now. So lets remove an optimisation instead.
     if(cfg->GetBool("BiggerLightsCountOutside", true, "Visual"))
     {
@@ -844,6 +838,12 @@
     {
         HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3AD0A4);
         HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3B0F60);
+    }
+
+    // This fixes black bushes and more things
+    //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
+    {
+        //HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
     }
 
     
