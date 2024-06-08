@@ -45,6 +45,10 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.8**
+ - Some cut effects from the game are back
+ - Able to skip "drive"
+
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
  - If car is far enough, shadow will be classic (instead of NO SHADOWS)
@@ -166,7 +170,6 @@
  - Animated textures (UVAnim)
  - Vertex Weights
  - Swimming speed
- - Fixed primary color resetting to the white after doing paintjob
  - Fixed sky multitude (a glitch on high speeds)
  - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
  
@@ -178,7 +181,12 @@
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
+   - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
+
+**Since v1.8**
+ - Some cut effects from the game are back
+ - Able to skip "drive"
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
@@ -382,7 +390,6 @@
  - Fixed sky multitude (a glitch on high speeds)
  - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
  - Sand/Dust particles from bullets are limited because they are creating a lot of lag
- - Fixed primary color resetting to the white after doing paintjob
  - Fixed red marker cannot be placed on the right side of the screen
  
  **Since v1.0**

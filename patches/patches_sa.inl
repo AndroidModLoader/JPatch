@@ -398,12 +398,12 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
            info->m_pPed->m_nPedState == PEDSTATE_DRIVING)
         {
             if(info->m_pPed->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_TRAIN &&
-               Touch_IsDoubleTapped(WIDGETID_CAMERAMODE, true, 1))
+               Touch_IsDoubleTapped(WIDGET_CAM_TOGGLE, true, 1))
             {
                 toggledCinematic = !TheCamera->m_bEnabledCinematicCamera;
                 TheCamera->m_bEnabledCinematicCamera = toggledCinematic;
 
-                memset(m_pWidgets[WIDGETID_CAMERAMODE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
+                memset(m_pWidgets[WIDGET_CAM_TOGGLE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
             }
         }
         else
@@ -418,7 +418,7 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
                     RestoreCamera(TheCamera);
                     SetCameraDirectlyBehindForFollowPed(TheCamera);
                 }
-                m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
+                m_pWidgets[WIDGET_CAM_TOGGLE]->enabled = false;
                 toggledCinematic = false;
             }
         }
@@ -1785,13 +1785,13 @@ DECL_HOOKv(FxInfoMan_FXLeak, uintptr_t self_44)
 DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
 {
     static bool holdTheButton = false;
-    if(Touch_IsDoubleTapped(WIDGETID_VEHICLEEXHAUST, true, 1))
+    if(Touch_IsDoubleTapped(WIDGET_NITRO, true, 1))
     {
-        memset(m_pWidgets[WIDGETID_VEHICLEEXHAUST]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
+        memset(m_pWidgets[WIDGET_NITRO]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
         holdTheButton = !holdTheButton;
         return holdTheButton;
     }
-    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1) ^ holdTheButton;
+    return WidgetIsTouched(WIDGET_NITRO, NULL, 1) ^ holdTheButton;
 }
 
 // Re-implement idle camera like on PC/PS2
@@ -2064,6 +2064,62 @@ DECL_HOOKv(BoatPreRender, CVehicle* self)
 {
     BoatPreRender(self);
     StoreShadowForVehicle(self, 5); // 5 = VEHICLE_TYPE_BOAT
+}
+
+// Missing effects that are on PC but not on Mobile (from SkyGFX)
+DECL_HOOKv(PostProcess_CCTV)
+{
+    if(*m_bFog)
+    {
+        PostEffectsFog();
+    }
+
+    if(*m_bCCTV)
+    {
+        PostProcess_CCTV();
+    }
+}
+DECL_HOOKv(RenderEffects_WaterCannons)
+{
+    RenderEffects_WaterCannons();
+
+    RenderWaterFog();
+    RenderMovingFog();
+    RenderVolumetricClouds();
+}
+
+// Cant skip drive
+inline bool SkipButtonActivated()
+{
+    //CPad* pad = GetPad(0);
+    CWidget* widget = m_pWidgets[WIDGET_SKIP_CUTSCENE];
+    if(widget)
+    {
+        return TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
+    }
+    return false;
+}
+DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
+{
+    if(UpdateSkip_SkipCanBeActivated() && SkipButtonActivated())
+    {
+        CPlayerPed* player = FindPlayerPed(-1);
+        CTask* taskLeave = FindActiveTaskByType(&player->m_pIntelligence->m_TaskMgr, TASK_COMPLEX_LEAVE_CAR);
+        if(!taskLeave)
+        {
+            *SkipState = 2;
+            GetPad(0)->DisablePlayerControls |= 0x100;
+
+            SetFadeColour(TheCamera, 0, 0, 0);
+            CameraFade(TheCamera, 2.5f, 0);
+            *SkipTimer = *m_snTimeInMilliseconds + 3000;
+
+            uint16_t* gxtText = TextGet(TheText, "SKIP");
+            if(gxtText) AddBigMessage(gxtText, 4500, 1);
+        }
+        return true;
+    }
+    return false;
 }
 
 // This fixes black bushes and more things

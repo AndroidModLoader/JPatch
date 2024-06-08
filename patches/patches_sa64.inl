@@ -414,13 +414,13 @@ DECL_HOOKv(RenderState_Star, int a1, int a2)
 DECL_HOOKb(Jetpack_IsHeldDown, int id, int enableWidget)
 {
     static bool holdTheButton = false;
-    if(Touch_IsDoubleTapped(WIDGETID_VEHICLEEXHAUST, true, 1))
+    if(Touch_IsDoubleTapped(WIDGET_NITRO, true, 1))
     {
-        memset(m_pWidgets[WIDGETID_VEHICLEEXHAUST]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
+        memset(m_pWidgets[WIDGET_NITRO]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
         holdTheButton = !holdTheButton;
         return holdTheButton;
     }
-    return WidgetIsTouched(WIDGETID_VEHICLEEXHAUST, NULL, 1) ^ holdTheButton;
+    return WidgetIsTouched(WIDGET_NITRO, NULL, 1) ^ holdTheButton;
 }
 
 // Fixing a wrong value in carcols.dat
@@ -802,12 +802,12 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
            info->pPed->m_nPedState == PEDSTATE_DRIVING)
         {
             if(info->pPed->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_TRAIN &&
-               Touch_IsDoubleTapped(WIDGETID_CAMERAMODE, true, 1))
+               Touch_IsDoubleTapped(WIDGET_CAM_TOGGLE, true, 1))
             {
                 toggledCinematic = !TheCamera->m_bForceCinemaCam;
                 TheCamera->m_bForceCinemaCam = toggledCinematic;
 
-                memset(m_pWidgets[WIDGETID_CAMERAMODE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
+                memset(m_pWidgets[WIDGET_CAM_TOGGLE]->tapTimes, 0, sizeof(float)*10); // CWidget::ClearTapHistory in a better way
             }
         }
         else
@@ -822,7 +822,7 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
                     RestoreCamera(TheCamera);
                     SetCameraDirectlyBehindForFollowPed(TheCamera);
                 }
-                m_pWidgets[WIDGETID_CAMERAMODE]->enabled = false;
+                m_pWidgets[WIDGET_CAM_TOGGLE]->enabled = false;
                 toggledCinematic = false;
             }
         }
@@ -990,7 +990,103 @@ DECL_HOOK(float, SearchLight_sqrtf, float a)
     return SearchLight_sqrtf(a) * GetTimeStepMagic();
 }
 
-// Cruisign speed
+// Missing effects that are on PC but not on Mobile (from SkyGFX)
+/*DECL_HOOKv(RenderPostEffects)
+{
+    if(*m_bDisableAllPostEffect) return;
+
+    static RwRaster* effectsBuffer, *bak;
+    static bool done = false;
+    static uint32_t counter = 0;
+    if(!done)
+    {
+        done = true;
+        effectsBuffer = RwRasterCreate(Scene->camera->framebuf->width, Scene->camera->framebuf->height, Scene->camera->framebuf->depth, rwRASTERTYPECAMERATEXTURE);
+    }
+
+    if(++counter > 1200)
+    {
+        RsCameraShowRaster(Scene->camera);
+
+        RwRenderStateSet(rwRENDERSTATETEXTUREADDRESS, (void*)rwTEXTUREADDRESSCLAMP);
+        RwCameraEndUpdate(Scene->camera);
+        RwRasterPushContext(effectsBuffer);
+        RwRasterRenderFast(Scene->camera->framebuf, 0, 0);
+        RwRasterPopContext();
+        RsCameraBeginUpdate(Scene->camera);
+
+        counter = 0;
+    }
+
+    bak = *pRasterFrontBuffer;
+    *pRasterFrontBuffer = effectsBuffer;
+    RenderPostEffects();
+    *pRasterFrontBuffer = bak;
+}*/
+DECL_HOOKv(PostProcess_CCTV)
+{
+    /*float speed = FindPlayerPed(-1)->m_vecMoveSpeed.Magnitude();
+    if(speed < 1.0f)
+    {
+        CVehicle* vehicle = FindPlayerVehicle(-1, false);
+        if(vehicle) speed = vehicle->m_vecMoveSpeed.Magnitude();
+    }
+    SpeedFX(speed);*/
+
+    if(*m_bFog)
+    {
+        PostEffectsFog();
+    }
+
+    if(*m_bCCTV)
+    {
+        PostProcess_CCTV();
+    }
+}
+DECL_HOOKv(RenderEffects_WaterCannons)
+{
+    RenderEffects_WaterCannons();
+
+    RenderWaterFog();
+    RenderMovingFog();
+    RenderVolumetricClouds();
+}
+
+// Cant skip drive
+inline bool SkipButtonActivated()
+{
+    //CPad* pad = GetPad(0);
+    CWidget* widget = m_pWidgets[WIDGET_SKIP_CUTSCENE];
+    if(widget)
+    {
+        return TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
+    }
+    return false;
+}
+DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
+{
+    if(UpdateSkip_SkipCanBeActivated() && SkipButtonActivated())
+    {
+        CPlayerPed* player = FindPlayerPed(-1);
+        CTask* taskLeave = FindActiveTaskByType(&player->m_pPedIntelligence->m_taskManager, TASK_COMPLEX_LEAVE_CAR);
+        if(!taskLeave)
+        {
+            *SkipState = 2;
+            GetPad(0)->DisablePlayerControls |= 0x100;
+
+            SetFadeColour(TheCamera, 0, 0, 0);
+            CameraFade(TheCamera, 2.5f, 0);
+            *SkipTimer = *m_snTimeInMilliseconds + 3000;
+
+            uint16_t* gxtText = TextGet(TheText, "SKIP");
+            if(gxtText) AddBigMessage(gxtText, 4500, 1);
+        }
+        return true;
+    }
+    return false;
+}
+
+// Cruising speed (experimental...)
 DECL_HOOKv(CurvePoint_SpeedFPS, const CVector *startCoors, const CVector *endCoors, const CVector *startDir, const CVector *endDir, float Time, Int32 TraverselTimeInMillis, CVector *resultCoor, CVector *resultSpeed)
 {
     CurvePoint_SpeedFPS(startCoors, endCoors, startDir, endDir, Time, TraverselTimeInMillis, resultCoor, resultSpeed);

@@ -8,7 +8,7 @@
     #error "You need to update your MOD folder to 1.2.1!"
 #endif
 
-MYMODCFG(net.rusjj.jpatch, JPatch, 1.7.3, RusJJ)
+MYMODCFG(net.rusjj.jpatch, JPatch, 1.8, RusJJ)
 BEGIN_DEPLIST()
     ADD_DEPENDENCY_VER(net.rusjj.aml, 1.2.1)
 END_DEPLIST()

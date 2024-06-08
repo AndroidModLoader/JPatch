@@ -37,12 +37,6 @@
         }
     }
 
-    // Do not set primary color to the white on vehicles paintjob
-    if(cfg->GetBool("PaintJobDontSetPrimaryToWhite", true, "Visual"))
-    {
-        aml->PlaceNOP(pGTASA + 0x582328, 2);
-    }
-
     // Fix walking while rifle-aiming
     if(cfg->GetBool("FixAimingWalkRifle", true, "Gameplay"))
     {
@@ -1258,6 +1252,20 @@
     if(cfg->GetBool("BiggerLightsCountOutside", true, "Visual"))
     {
         aml->Write8(pGTASA + 0x5D1AE4, 0x03);
+    }
+
+    // Missing effects that are on PC but not on Mobile (from SkyGFX)
+    if(cfg->GetBool("CutEffects", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x5B678A + 0x1, 1);
+        HOOKBLX(PostProcess_CCTV, pGTASA + 0x5B678C + 0x1);
+        HOOKBLX(RenderEffects_WaterCannons, pGTASA + 0x3F63A2 + 0x1);
+    }
+
+    // Cant skip drive
+    if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
+    {
+        HOOKBLX(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3092AE + 0x1);
     }
 
     // This fixes black bushes and more things

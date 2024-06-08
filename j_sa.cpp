@@ -31,7 +31,7 @@ extern int androidSdkVer;
 extern uintptr_t pGTASA;
 extern void *hGTASA;
 
-#define BUNCHTAILS_EX 2560
+#define BUNCHTAILS_EX 6144 // More bunchtails because Project 2DFX may use it.
 
 namespace GTA_SA
 {
@@ -75,17 +75,16 @@ struct VehiclePartsPair
     RwTexture* texture;
 }; // 
 VehiclePartsPair* gStoredMats;
-bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene, *ms_bTakePhoto;
+bool *ms_bIsPlayerOnAMission, *m_UserPause, *m_CodePause, *m_aCheatsActive, *bDidWeProcessAnyCinemaCam, *bRunningCutscene, *bProcessingCutscene, *ms_bTakePhoto, *bGameStarted, *m_bCCTV, *m_bFog, *m_bDisableAllPostEffect;
 uint8_t *ms_currentCol, *ms_nGameClockDays, *ms_nGameClockMonths, *_bf_12c;
 int32_t *DETAILEDWATERDIST, *ms_nNumGang, *StatTypesInt, *lastDevice, *NumberOfSearchLights, *ms_numAnimBlocks, *RasterExtOffset, *textureDetail, *ms_iActiveSequence;
-uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds;
+uint32_t *gbCineyCamProcessedOnFrame, *CloudsIndividualRotation, *m_ZoneFadeTimer, *ms_memoryUsed, *ms_memoryAvailable, *m_FrameCounter, *m_snTimeInMilliseconds, *SkipTimer;
 float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSpriteBrightness, *m_fLightsOnGroundBrightness, *m_f3rdPersonCHairMultX, *m_f3rdPersonCHairMultY, *ms_fAspectRatio, *ms_fTimeScale, *mod_HandlingManager_off4;
 CVector *m_vecDirnLightToSun;
 CVector *m_VectorToSun;
-int *m_CurrentStoredValue, *currArea;
+int *m_CurrentStoredValue, *currArea, *SkipState;
 float *fPlayerAimRotRate;
 CVector2D *m_vecCachedPos;
-bool *bGameStarted;
 
 CPlayerInfo                 *WorldPlayers;
 CIntVector2D                *windowSize;
@@ -109,6 +108,9 @@ RwTexture                   **ms_pRemapTexture;
 CIdleCam                    *gIdleCam;
 CLinkList<CCollisionData*>  *ms_colModelCache;
 TDBArray<RwTexture*>        *detailTextures;
+RwRaster                    **pRasterFrontBuffer;
+GlobalScene                 *Scene;
+void                        *TheText;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -202,6 +204,26 @@ bool (*RwGrabScreen)(RwCamera*, const char*);
 void (*ApplyTurnForce)(CPhysical*, CVector, CVector);
 void (*StoreShadowForVehicle)(CVehicle*, int);
 void (*RsEventHandler)(int, int);
+void (*PostEffectsFog)();
+void (*RenderWaterFog)();
+void (*RenderMovingFog)();
+void (*RenderVolumetricClouds)();
+void (*SpeedFX)(float);
+void (*RwCameraEndUpdate)(RwCamera*);
+void (*RwRasterPushContext)(RwRaster*);
+void (*RwRasterRenderFast)(RwRaster*, int, int);
+void (*RwRasterPopContext)();
+void (*RsCameraBeginUpdate)(RwCamera*);
+void (*OpenGLLockAndCopyRasters)(RwRaster*, RwRaster*, bool, bool);
+RwRaster* (*RwRasterCreate)(int, int, int, int);
+void (*RsCameraShowRaster)(RwCamera*);
+CTask* (*FindActiveTaskByType)(CTaskManager*, int);
+CPad* (*GetPad)(int);
+bool (*TouchInterfaceIsReleased)(int, CVector2D*, int);
+void (*SetFadeColour)(CCamera*, uint8_t, uint8_t, uint8_t);
+void (*CameraFade)(CCamera*, float, uint16_t);
+uint16_t* (*TextGet)(void*, const char*);
+void (*AddBigMessage)(uint16_t*, uint32_t, uint16_t);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -366,6 +388,26 @@ void JPatch()
     SET_TO(ApplyTurnForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyTurnForceE7CVectorS0_"));
     SET_TO(StoreShadowForVehicle,   aml->GetSym(hGTASA, "_ZN8CShadows21StoreShadowForVehicleEP8CVehicle12VEH_SHD_TYPE"));
     SET_TO(RsEventHandler,          aml->GetSym(hGTASA, "_Z14RsEventHandler7RsEventPv"));
+    SET_TO(PostEffectsFog,          aml->GetSym(hGTASA, "_ZN12CPostEffects3FogEv"));
+    SET_TO(RenderWaterFog,          aml->GetSym(hGTASA, "_ZN11CWaterLevel14RenderWaterFogEv"));
+    SET_TO(RenderMovingFog,         aml->GetSym(hGTASA, "_ZN7CClouds15MovingFogRenderEv"));
+    SET_TO(RenderVolumetricClouds,  aml->GetSym(hGTASA, "_ZN7CClouds22VolumetricCloudsRenderEv"));
+    SET_TO(SpeedFX,                 aml->GetSym(hGTASA, "_ZN12CPostEffects7SpeedFXEf"));
+    SET_TO(RwCameraEndUpdate,       aml->GetSym(hGTASA, "_Z17RwCameraEndUpdateP8RwCamera"));
+    SET_TO(RwRasterPushContext,     aml->GetSym(hGTASA, "_Z19RwRasterPushContextP8RwRaster"));
+    SET_TO(RwRasterRenderFast,      aml->GetSym(hGTASA, "_Z18RwRasterRenderFastP8RwRasterii"));
+    SET_TO(RwRasterPopContext,      aml->GetSym(hGTASA, "_Z18RwRasterPopContextv"));
+    SET_TO(RsCameraBeginUpdate,     aml->GetSym(hGTASA, "_Z19RsCameraBeginUpdateP8RwCamera"));
+    SET_TO(OpenGLLockAndCopyRasters,BYVER(0x0, 0x242AA0));
+    SET_TO(RwRasterCreate,          aml->GetSym(hGTASA, "_Z14RwRasterCreateiiii"));
+    SET_TO(RsCameraShowRaster,      aml->GetSym(hGTASA, "_Z18RsCameraShowRasterP8RwCamera"));
+    SET_TO(FindActiveTaskByType,    aml->GetSym(hGTASA, "_ZNK12CTaskManager20FindActiveTaskByTypeEi"));
+    SET_TO(GetPad,                  aml->GetSym(hGTASA, "_ZN4CPad6GetPadEi"));
+    SET_TO(TouchInterfaceIsReleased,aml->GetSym(hGTASA, "_ZN15CTouchInterface10IsReleasedENS_9WidgetIDsEP9CVector2Di"));
+    SET_TO(SetFadeColour,           aml->GetSym(hGTASA, "_ZN7CCamera13SetFadeColourEhhh"));
+    SET_TO(CameraFade,              aml->GetSym(hGTASA, "_ZN7CCamera4FadeEfs"));
+    SET_TO(TextGet,                 aml->GetSym(hGTASA, "_ZN5CText3GetEPKc"));
+    SET_TO(AddBigMessage,           aml->GetSym(hGTASA, "_ZN9CMessages13AddBigMessageEPtjt"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -451,6 +493,14 @@ void JPatch()
     SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
     SET_TO(currArea,                aml->GetSym(hGTASA, "_ZN5CGame8currAreaE"));
     SET_TO(bGameStarted,            pGTASA + BYVER(0x9599B8, 0xBC2880));
+    SET_TO(m_bCCTV,                 aml->GetSym(hGTASA, "_ZN12CPostEffects7m_bCCTVE"));
+    SET_TO(m_bFog,                  aml->GetSym(hGTASA, "_ZN12CPostEffects6m_bFogE"));
+    SET_TO(m_bDisableAllPostEffect, aml->GetSym(hGTASA, "_ZN12CPostEffects23m_bDisableAllPostEffectE"));
+    SET_TO(pRasterFrontBuffer,      aml->GetSym(hGTASA, "_ZN12CPostEffects18pRasterFrontBufferE"));
+    SET_TO(Scene,                   aml->GetSym(hGTASA, "Scene"));
+    SET_TO(SkipState,               aml->GetSym(hGTASA, "_ZN10CGameLogic9SkipStateE"));
+    SET_TO(SkipTimer,               aml->GetSym(hGTASA, "_ZN10CGameLogic9SkipTimerE"));
+    SET_TO(TheText,                 aml->GetSym(hGTASA, "TheText"));
     // Variables End //
 
     // We need it for future fixes.
