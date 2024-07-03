@@ -831,9 +831,11 @@
     if(cfg->GetBool("CutEffects", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x6DA9E0, 1);
-        //HOOKPLT(RenderPostEffects, pGTASA + 0x842CF0);
+        HOOKPLT(RenderPostEffects, pGTASA + 0x842CF0);
         HOOKBL(PostProcess_CCTV, pGTASA + 0x6DA9E4);
         HOOKBL(RenderEffects_WaterCannons, pGTASA + 0x4D8924);
+        HOOKBL(SpeedFX_Raster, pGTASA + 0x6D8E08);
+        HOOKB(SpeedFX_RestoreStates, pGTASA + 0x6D8EC4);
     }
 
     // Cant skip drive

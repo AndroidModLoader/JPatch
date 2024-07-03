@@ -1,14 +1,14 @@
     // Boat and Skimmer on high FPS
     if(cfg->GetBool("HighFPSBoatSpeed", true, "Gameplay"))
     {
-        Boat_ApplyWaterResistance_BackTo = pGTAVC + 0x247650 + 0x1;
-        aml->Redirect(pGTAVC + 0x247648 + 0x1, (uintptr_t)Boat_ApplyWaterResistance_Inject);
+        Boat_ApplyWaterResistance_BackTo = pGTAVC + 0x3418F8;
+        aml->Redirect(pGTAVC + 0x3418E8, (uintptr_t)Boat_ApplyWaterResistance_Inject);
     }
     
     // Fix wheels rotation speed on high FPS
     if(cfg->GetBool("FixWheelsRotationSpeed", true, "Visual"))
     {
-        aml->Redirect(pGTAVC + 0x2584EC + 0x1, (uintptr_t)ProcessWheelRotation_Inject);
+        HOOK(ProcessWheelRotation, aml->GetSym(hGTAVC, "_ZN8CVehicle20ProcessWheelRotationE11tWheelStateRK7CVectorS3_f"));
     }
     
     // Car Slowdown Fix
@@ -21,20 +21,17 @@
     // Fix heli rotor rotation speed on high FPS
     if(cfg->GetBool("FixRotorRotationSpeed", true, "Visual"))
     {
-        HOOKBL(HeliRender_MatrixUpdate, pGTAVC + 0x254F76 + 0x1);
+        HOOKBL(HeliRender_MatrixUpdate, pGTAVC + 0x3489B0);
     }
     
     // Fixes a streaming distance that gets bugged because of dumb R* logic (aspect ratio moment)
     if(cfg->GetBool("FixStreamingDistance", true, "Visual"))
     {
-        CameraProcess_StreamDist_BackTo = pGTAVC + 0x13FB34 + 0x1;
-        aml->Redirect(pGTAVC + 0x13FB1A + 0x1, (uintptr_t)CameraProcess_StreamDist_Inject);
-        HOOK(SetFOV_StreamingDistFix, aml->GetSym(hGTAVC, "_ZN5CDraw6SetFOVEf"));
+        aml->Write(pGTAVC + 0x1D82FC, "\xA8\x16\x00\xD0", 4);
 
-        aml->PlaceNOP(pGTAVC + 0x13FB0C + 0x1, 1);
-        aml->Write(pGTAVC + 0x13FB0E, "\x9F\xED\xBB\x7A", 4);
-        aml->Write(pGTAVC + 0x13FB12, "\xD7\xED\x0E\x6A", 4);
-        aml->Write(pGTAVC + 0x13FB16, "\xF4\xEE\xC7\x6A", 4);
+        CameraProcess_StreamDist_BackTo = pGTAVC + 0x1D8310;
+        aml->Redirect(pGTAVC + 0x1D8300, (uintptr_t)CameraProcess_StreamDist_Inject);
+        HOOK(SetFOV_StreamingDistFix, aml->GetSym(hGTAVC, "_ZN5CDraw6SetFOVEf"));
     }
     
     // Fixing fat ass coronas
@@ -44,63 +41,61 @@
     }
 
     // Fix Vertex Weights
-    if(cfg->GetBool("FixVertexWeight", true, "Visual"))
+    /*if(cfg->GetBool("FixVertexWeight", true, "Visual"))
     {
         VertexWeightFix_BackTo1 = pGTAVC + 0x28EA7A + 0x1;
         VertexWeightFix_BackTo2 = pGTAVC + 0x28EAA4 + 0x1;
         aml->Redirect(pGTAVC + 0x28E970 + 0x1, (uintptr_t)VertexWeightFix_Inject);
-    }
+    }*/
 
     // RE3: Fix R* optimization that prevents peds to spawn
     if(cfg->GetBool("Re3_PedSpawnDeoptimize", true, "Gameplay"))
     {
-        aml->Write(pGTAVC + 0x14CA68, (uintptr_t)"\x02", 1);
+        aml->Write(pGTAVC + 0x1EE2A8, "\x7F\x0A\x00\x71", 4);
     }
 
     // RE3: Road reflections
     if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
     {
-        aml->Write(pGTAVC + 0x1D6552, "\x10\x9A", 2);
+        aml->Write(pGTAVC + 0x1D6552, "\xE2\x6B\x40\xBD", 4);
     }
 
     // Fix traffic lights
     if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
-        HOOKBL(TrFix_RenderEffects, pGTAVC + 0x202F98 + 0x1);
+        HOOKBL(TrFix_RenderEffects, pGTAVC + 0x2DF1FC);
 
         // Why does vehicle's lights are in that list?!
-        aml->PlaceNOP4(pGTAVC + 0x231138 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x231198 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x2334C4 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x233C16 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x233CDE + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x235574 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x23579E + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32DB34, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32E2CC, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32E330, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32E6F0, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32E74C, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32EB54, 1);
+        aml->PlaceNOP4(pGTAVC + 0x32EBB0, 1);
 
         // Why does bike's lights are in that list?!
-        aml->PlaceNOP4(pGTAVC + 0x240E98 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x240FD2 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x241052 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x2410C8 + 0x1, 1);
-        aml->PlaceNOP4(pGTAVC + 0x2414B8 + 0x1, 1);
+        aml->PlaceNOP4(pGTAVC + 0x339394, 1);
+        aml->PlaceNOP4(pGTAVC + 0x339770, 1);
+        aml->PlaceNOP4(pGTAVC + 0x3398E0, 1);
     }
 
     // Fixes framelimiter (doesnt limit the FPS, ayo lol)
     // P.S. IT WAS NEVER WORKING, OH MY GOD
     if(cfg->GetBool("FixGameTimer", true, "Gameplay"))
     {
-        aml->PlaceB(pGTAVC + 0x21E7C4 + 0x1, pGTAVC + 0x21E7CC + 0x1);
-        HOOKBL(GameTick_TouchscreenUpdate, pGTAVC + 0x21E7D6 + 0x1);
+        aml->PlaceNOP(pGTAVC + 0x30C930, 1);
+        HOOKBL(GameTick_TouchscreenUpdate, pGTAVC + 0x30C948);
         HOOK(OS_ScreenSetRefresh, aml->GetSym(hGTAVC, "_Z19OS_ScreenSetRefreshj"));
 
-        aml->Write8(pGTAVC + 0x21E994, 0x1E);
+        aml->Write(pGTAVC + 0x30C9A0, "\xE0\x0F\x1F\x32", 4);
     }
 
     // Fix water scroll speed on high FPS
     if(cfg->GetBool("FixWaterUVScrollSpeed", true, "Visual"))
     {
-        RenderWater_BackTo = pGTAVC + 0x2645D2 + 0x1;
-        aml->Redirect(pGTAVC + 0x2645C6 + 0x1, (uintptr_t)RenderWater_Inject);
+        RenderWater_BackTo = pGTAVC + 0x357920;
+        aml->Redirect(pGTAVC + 0x357910, (uintptr_t)RenderWater_Inject);
     }
 
     // Bringing back missing render states (WarDumb`s optimization)
@@ -127,34 +122,26 @@
         aml->PlaceNOP4(pGTAVC + 0x286E44, 1);
     }*/
 
-    // Fixes a mistake by Rockstar (not WarDrum), a wrong physical target
-    if(cfg->GetBool("FixPhysicsTargets", true, "Gameplay"))
-    {
-        aml->Write16(pGTAVC + 0x16777E, 0x4628);
-        aml->Write16(pGTAVC + 0x1677A2, 0x4628);
-        aml->Write8(pGTAVC + 0x16AC3C, 0x94);
-    }
-
     // Fix clouds rotating speed
     if(cfg->GetBool("FixCloudsRotateSpeed", true, "Visual"))
     {
-        HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x14CA8E + 0x1);
+        HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x1EE318);
     }
 
     // The explosion "shadow" is missing
     if(cfg->GetBool("FixExplosionCraterTexture", true, "Visual"))
     {
-        HOOKBL(AddExplosion_AddShadow, pGTAVC + 0x2656B4 + 0x1);
+        HOOKBL(AddExplosion_AddShadow, pGTAVC + 0x35E610);
     }
 
     // Allows the game to choose Extra6 component on a vehicle when created
     if(cfg->GetBool("AllowExtra6Part", true, "Visual"))
     {
-        aml->Write8(pGTAVC + 0x20E3A4 + 2, 0x08);
+        aml->Write(pGTAVC + 0x2F5FD0, "\x01\x10\x23\x1E", 4);
     }
 
     // Bigger distance for light coronas
-    if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
+    /*if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
     {
         aml->WriteFloat(pGTAVC + 0x1D7450, 400.0f); // CEntity::ProcessLightsForEntity, 120 -> 400
         aml->Write(pGTAVC + 0x127EA2, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
@@ -189,22 +176,16 @@
         aml->Redirect(pGTAVC + 0xFF04E + 0x1, (uintptr_t)DoCollectableEffects_Inject);
         DoPickUpEffects_BackTo = pGTAVC + 0xFFF8A + 0x1;
         aml->Redirect(pGTAVC + 0xFFF7E + 0x1, (uintptr_t)DoPickUpEffects_Inject);
-    }
+    }*/
     
     // Just a little fix for banner
     if(cfg->GetBool("CorrectBannerRenderFlag", true, "Visual"))
     {
-        aml->Write16(pGTAVC + 0x1DF904, 0x2319);
-    }
-
-    // Fixing a weird error with access error in Unprotected version of VC apk
-    if(cfg->GetBool("FixUnprotectedAccessCrash", true, "Gameplay"))
-    {
-        UNPROT(pGTAVC + 0x3D20B4, 1);
+        aml->Write(pGTAVC + 0x2B812C, "\x23\x03\x80\x52", 4);
     }
 
     // Allows the game to render even more light shadows on the ground
-    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
+    /*if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
         aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
         aml->Write(pGTAVC + 0x394750, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
@@ -224,32 +205,19 @@
         aml->Write(pGTAVC + 0x1F92D6, (uintptr_t)"\x04\xF5\x1B\x55", 4); // ADD.W R5, R4, #0x26C0
 
         HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
-    }
+    }*/
 
     // Bigger max count of peds
     if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))
     {
         *(int*)aml->GetSym(hGTAVC, "_ZN11CPopulation20MaxNumberOfPedsInUseE") = 0x23;
-        //aml->Write(pGTASA + 0x3F4DE0, (uintptr_t)"\x23", 1);
-        //aml->Write(pGTASA + 0x4CC284, (uintptr_t)"\x23", 1);
-        //aml->Write(pGTASA + 0x4CCBE0, (uintptr_t)"\x23", 1);
-        //aml->Write(pGTASA + 0x4CCBEA, (uintptr_t)"\x1C", 1);
-    }
-
-    // Bigger spawn distance for peds
-    if(cfg->GetBool("BuffPedsDistance", true, "Gameplay"))
-    {
-        aml->WriteFloat(pGTAVC + 0x1D413C, 50.0f);
-        aml->WriteFloat(pGTAVC + 0x1D4140, 90.0f);
-        HOOKBL(PedCreationDistMult_Offscreen, pGTAVC + 0x1D40EE + 0x1);
-        HOOKBL(PedCreationDistMult_Offscreen, pGTAVC + 0x1D40F6 + 0x1);
     }
 
     // An attempt to fix fighting... (incomplete, the radius is small tho)
     if(cfg->GetBool("FixFighting", true, "Gameplay"))
     {
-        aml->Write(pGTAVC + 0x1C2E3C, "\xB1\xEE\x00\x7A", 4); // CPed::Fight -> unlock move FIGHTMOVE_KNEE
-        aml->Write8(pGTAVC + 0x1C5520, 0x01); // CheckForPedsOnGroundToAttack -> 4 >> PED_IN_FRONT_OF_ATTACKER
+        aml->Write(pGTAVC + 0x291FC0, "\x01\x10\x22\x1E", 4); // CPed::Fight -> unlock move FIGHTMOVE_KNEE
+        aml->Write(pGTAVC + 0x293458, "\x1F\x05\x00\x71", 4); // CheckForPedsOnGroundToAttack -> 4 >> PED_IN_FRONT_OF_ATTACKER
     }
 
     // FX particles distance multiplier!
@@ -258,40 +226,5 @@
     {
         if(fxMultiplier < 0.1) fxMultiplier = 0.1f;
         else if(fxMultiplier > 20) fxMultiplier = 20.0f;
-        HOOKBLX(LoadFX_atof, pGTAVC + 0x1F6500);
+        HOOKBL(LoadFX_atof, pGTAVC + 0x2D4034);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-    // Do camera tweaks, get a better camera!
-    //if(cfg->GetBool("CameraTweaks", true, "Gameplay"))
-    //{
-    //    // Need to check WellBufferMe
-    //}
-
-    // Fix pushing force
-    //if(cfg->GetBool("FixPhysicalPushForce", true, "Gameplay"))
-    //{
-    //    HOOK(ApplyCollision_HighFPS, aml->GetSym(hGTAVC, "_ZN9CPhysical14ApplyCollisionEPS_R9CColPointRfS3_"));
-    //    //ApplyCollision_BackTo = pGTAVC + 0x167588 + 0x1;
-    //    //aml->Redirect(pGTAVC + 0x167580 + 0x1, (uintptr_t)ApplyCollision_Inject);
-    //    //HOOKBL(ApplyCollision_MoveForce, pGTAVC + 0x166C60 + 0x1);
-    //    //HOOKBL(ApplyCollision_TurnForce, pGTAVC + 0x166C84 + 0x1);
-    //}
-
-    // An improved ForceDXT (everything goes black, no textures! :( )
-    /*if(cfg->GetBool("ForceLoadDXT", false, "Gameplay"))
-    {
-        aml->Write8(pGTAVC + 0x2A8F70, 0x01);
-        aml->Write8(pGTAVC + 0x2A8EBE, 0x01);
-        HOOKBL(LoadEntries_DXT, pGTAVC + 0x2A8EC8 + 0x1);
-    }*/

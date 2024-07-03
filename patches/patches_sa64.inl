@@ -381,6 +381,7 @@ DECL_HOOKv(DistanceFogSetup_FogWall, float minDistance, float maxDistance, float
 // Wrong vehicle's parts colors!
 DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
+    gStoredMats->material = NULL;
     ObjectRender_VehicleParts(self);
     if(self->m_nParentModelIndex != -1 && self->objectFlags.bChangesVehColor && self->ObjectCreatedBy == eObjectType::OBJECT_TEMPORARY)
     {
@@ -392,7 +393,6 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
                 ptr->material->texture = ptr->texture;
                 ++ptr;
             }
-            gStoredMats->material = NULL;
         }
     }
 }
@@ -991,57 +991,30 @@ DECL_HOOK(float, SearchLight_sqrtf, float a)
 }
 
 // Missing effects that are on PC but not on Mobile (from SkyGFX)
-/*DECL_HOOKv(RenderPostEffects)
+RQRenderTarget* backupTarget = NULL;
+DECL_HOOKv(RenderPostEffects)
 {
     if(*m_bDisableAllPostEffect) return;
 
-    static RwRaster* effectsBuffer, *bak;
-    static bool done = false;
-    static uint32_t counter = 0;
-    if(!done)
-    {
-        done = true;
-        effectsBuffer = RwRasterCreate(Scene->camera->framebuf->width, Scene->camera->framebuf->height, Scene->camera->framebuf->depth, rwRASTERTYPECAMERATEXTURE);
-    }
-
-    if(++counter > 1200)
-    {
-        RsCameraShowRaster(Scene->camera);
-
-        RwRenderStateSet(rwRENDERSTATETEXTUREADDRESS, (void*)rwTEXTUREADDRESSCLAMP);
-        RwCameraEndUpdate(Scene->camera);
-        RwRasterPushContext(effectsBuffer);
-        RwRasterRenderFast(Scene->camera->framebuf, 0, 0);
-        RwRasterPopContext();
-        RsCameraBeginUpdate(Scene->camera);
-
-        counter = 0;
-    }
-
-    bak = *pRasterFrontBuffer;
-    *pRasterFrontBuffer = effectsBuffer;
     RenderPostEffects();
-    *pRasterFrontBuffer = bak;
-}*/
+}
 DECL_HOOKv(PostProcess_CCTV)
 {
-    /*float speed = FindPlayerPed(-1)->m_vecMoveSpeed.Magnitude();
-    if(speed < 1.0f)
-    {
-        CVehicle* vehicle = FindPlayerVehicle(-1, false);
-        if(vehicle) speed = vehicle->m_vecMoveSpeed.Magnitude();
-    }
-    SpeedFX(speed);*/
+    /*RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
 
-    if(*m_bFog)
-    {
-        PostEffectsFog();
-    }
+    RwCameraEndUpdate(Scene->camera);
+    RsCameraBeginUpdate(Scene->camera);
+    RsCameraShowRaster(Scene->camera);
+    backupTarget = *SelectedRQTarget;
+    SelectRQTarget(*backTarget, true);
 
-    if(*m_bCCTV)
-    {
-        PostProcess_CCTV();
-    }
+    CVehicle* vehicle = FindPlayerVehicle(-1, false);
+    SpeedFX( (vehicle) ? vehicle->m_vecMoveSpeed.Magnitude() : FindPlayerPed(-1)->m_vecMoveSpeed.Magnitude() );
+
+    SelectRQTarget(backupTarget, true);*/
+
+    if(*m_bFog) PostEffectsFog();
+    if(*m_bCCTV) PostProcess_CCTV();
 }
 DECL_HOOKv(RenderEffects_WaterCannons)
 {
@@ -1050,6 +1023,15 @@ DECL_HOOKv(RenderEffects_WaterCannons)
     RenderWaterFog();
     RenderMovingFog();
     RenderVolumetricClouds();
+}
+DECL_HOOKv(SpeedFX_Raster, int a1, RwRaster* raster)
+{
+    /* oopsie */
+}
+DECL_HOOKv(SpeedFX_RestoreStates)
+{
+    RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
+    SpeedFX_RestoreStates();
 }
 
 // Cant skip drive

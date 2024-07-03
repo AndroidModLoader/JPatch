@@ -5,11 +5,10 @@
 #ifdef AML32
     #include "AArch64_ModHelper/Thumbv7_ASMHelper.h"
     #include "GTAVC_STRUCTS.h"
-    #define BYVER(__for32, __for64) (__for32)
     using namespace ThumbV7;
 #else
     #include "AArch64_ModHelper/ARMv8_ASMHelper.h"
-    #define BYVER(__for32, __for64) (__for64)
+    #include "GTAVC_STRUCTS_112.h"
     using namespace ARMv8;
 #endif
 
@@ -42,9 +41,8 @@ union ScriptVariables
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Vars      ///////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-#if defined(AML32)
-    CStaticShadow* aStaticShadows_NEW;
-#endif
+CStaticShadow* aStaticShadows_NEW;
+CPolyBunch *aPolyBunches;
 
 float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio, *ms_fTimeScale;
 char *mod_HandlingManager;
@@ -53,9 +51,6 @@ void *GTouchscreen;
 bool *m_PrefsFrameLimiter;
 uint32_t *m_snTimeInMilliseconds, *m_FrameCounter;
 float *m_fCurrentFarClip, *m_fCurrentFogStart;
-#if defined(AML32)
-    CPolyBunch *aPolyBunches;
-#endif
 bool *m_UserPause, *m_CodePause;
 
 // CPhysical::ApplyCollision
@@ -117,12 +112,11 @@ DECL_HOOKv(Global_TimerUpdate)
 #ifdef AML32
     #include "patches_vc.inl"
 #else
-    //#include "patches_vc64.inl" // No VC 1.12
+    #include "patches_vc64.inl"
 #endif
 
 void JPatch()
 {
-    #if defined(AML32)
     cfg->Bind("IdeasFrom", "", "About")->SetString("MTA:SA Team, re3 contributors, ThirteenAG, Peepo"); cfg->ClearLast();
 
     // Functions Start //
@@ -140,11 +134,11 @@ void JPatch()
     
     // Variables Start //
     SET_TO(ms_fTimeStep, aml->GetSym(hGTAVC, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(mod_HandlingManager, *(char**)(pGTAVC + 0x3956B4));
-    SET_TO(fHeliRotorSpeed, pGTAVC + 0x255000); UNPROT(fHeliRotorSpeed, sizeof(float));
+    SET_TO(mod_HandlingManager, *(char**)(pGTAVC + BYBIT(0x3956B4, 0x578DE8)));
+    SET_TO(fHeliRotorSpeed, pGTAVC + BYBIT(0x255000, 0x4CAEE0)); UNPROT(fHeliRotorSpeed, sizeof(float));
     SET_TO(ms_fAspectRatio, aml->GetSym(hGTAVC, "_ZN5CDraw15ms_fAspectRatioE"));
     SET_TO(ms_fTimeScale, aml->GetSym(hGTAVC, "_ZN6CTimer13ms_fTimeScaleE"));
-    SET_TO(fpsLimit, pGTAVC + 0x714F1C);
+    SET_TO(fpsLimit, pGTAVC + BYBIT(0x714F1C, 0x991C38));
     SET_TO(GTouchscreen, aml->GetSym(hGTAVC, "GTouchscreen"));
     SET_TO(m_PrefsFrameLimiter, aml->GetSym(hGTAVC, "_ZN12CMenuManager19m_PrefsFrameLimiterE"));
     SET_TO(m_snTimeInMilliseconds, aml->GetSym(hGTAVC, "_ZN6CTimer22m_snTimeInMillisecondsE"));
@@ -154,20 +148,19 @@ void JPatch()
     SET_TO(aPolyBunches, aml->GetSym(hGTAVC, "_ZN8CShadows12aPolyBunchesE"));
     SET_TO(m_UserPause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_UserPauseE"));
     SET_TO(m_CodePause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_CodePauseE"));
-    SET_TO(fl1679D4, pGTAVC + 0x1679D4); UNPROT(fl1679D4, sizeof(float));
-    SET_TO(fl1D4CF0, pGTAVC + 0x1D4CF0); UNPROT(fl1D4CF0, sizeof(float));
-    SET_TO(fl1D4CF4, pGTAVC + 0x1D4CF4); UNPROT(fl1D4CF4, sizeof(float));
+    SET_TO(fl1679D4, pGTAVC + BYBIT(0x1679D4, 0x0)); UNPROT(fl1679D4, sizeof(float));
+    SET_TO(fl1D4CF0, pGTAVC + BYBIT(0x1D4CF0, 0x0)); UNPROT(fl1D4CF0, sizeof(float));
+    SET_TO(fl1D4CF4, pGTAVC + BYBIT(0x1D4CF4, 0x0)); UNPROT(fl1D4CF4, sizeof(float));
     // Variables End   //
-    #endif // AML32
 
     // We need it for future fixes.
     HOOK(Global_TimerUpdate, aml->GetSym(hGTAVC, "_ZN6CTimer6UpdateEv"));
 
-    #ifdef AML32
-        #include "preparations_vc.inl"
-    #else
-        //#include "preparations_vc64.inl" // No VC 1.12
-    #endif
+  #ifdef AML32
+    #include "preparations_vc.inl"
+  #else
+    #include "preparations_vc64.inl"
+  #endif
 }
 
 }; // namespace GTA_VC

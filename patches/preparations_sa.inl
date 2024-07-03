@@ -1258,6 +1258,7 @@
     if(cfg->GetBool("CutEffects", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x5B678A + 0x1, 1);
+        HOOKPLT(RenderPostEffects, pGTASA + 0x671980);
         HOOKBLX(PostProcess_CCTV, pGTASA + 0x5B678C + 0x1);
         HOOKBLX(RenderEffects_WaterCannons, pGTASA + 0x3F63A2 + 0x1);
     }

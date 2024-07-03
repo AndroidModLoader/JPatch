@@ -18,12 +18,10 @@
 #ifdef AML32
     #include "AArch64_ModHelper/Thumbv7_ASMHelper.h"
     #include "GTASA_STRUCTS.h"
-    #define BYVER(__for32, __for64) (__for32)
     using namespace ThumbV7;
 #else
     #include "AArch64_ModHelper/ARMv8_ASMHelper.h"
     #include "GTASA_STRUCTS_210.h"
-    #define BYVER(__for32, __for64) (__for64)
     using namespace ARMv8;
 #endif
 
@@ -68,6 +66,7 @@ float fAspectCorrection = 0.0f, fAspectCorrectionDiv = 0.0f;
 #define GetTimeStepMagic() (GetTimeStep() / fMagic)
 #define GetTimeStepInvMagic() (fMagic / GetTimeStep())
 
+struct RQRenderTarget;
 struct VehiclePartsPair
 {
     RpMaterial* material;
@@ -109,8 +108,9 @@ CIdleCam                    *gIdleCam;
 CLinkList<CCollisionData*>  *ms_colModelCache;
 TDBArray<RwTexture*>        *detailTextures;
 RwRaster                    **pRasterFrontBuffer;
-GlobalScene                 *Scene;
+GlobalSceneTag              *Scene;
 void                        *TheText;
+RQRenderTarget              **SelectedRQTarget, **backTarget, **oldTarget;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -224,6 +224,7 @@ void (*SetFadeColour)(CCamera*, uint8_t, uint8_t, uint8_t);
 void (*CameraFade)(CCamera*, float, uint16_t);
 uint16_t* (*TextGet)(void*, const char*);
 void (*AddBigMessage)(uint16_t*, uint32_t, uint16_t);
+void (*SelectRQTarget)(RQRenderTarget *toSelect, bool force);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -335,7 +336,7 @@ void JPatch()
     SET_TO(TimerUpdate,             aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
     SET_TO(RemoveLeastUsedModel,    aml->GetSym(hGTASA, "_ZN10CStreaming20RemoveLeastUsedModelEj"));
     SET_TO(GetTouchPosition,        aml->GetSym(hGTASA, "_ZN15CTouchInterface16GetTouchPositionEi"));
-    SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, BYVER("_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf", "_ZN8CShadows17StoreStaticShadowEyhP9RwTextureP7CVectorffffshhhfffbf")));
+    SET_TO(StoreStaticShadow,       aml->GetSym(hGTASA, BYBIT("_ZN8CShadows17StoreStaticShadowEjhP9RwTextureP7CVectorffffshhhfffbf", "_ZN8CShadows17StoreStaticShadowEyhP9RwTextureP7CVectorffffshhhfffbf")));
     SET_TO(TransformPoint,          aml->GetSym(hGTASA, "_Z14TransformPointR5RwV3dRK16CSimpleTransformRKS_"));
     SET_TO(IsOnAMission,            aml->GetSym(hGTASA, "_ZN11CTheScripts18IsPlayerOnAMissionEv"));
     SET_TO(BrightLightsInit,        aml->GetSym(hGTASA, "_ZN13CBrightLights4InitEv"));
@@ -351,14 +352,14 @@ void JPatch()
     SET_TO(ApplyMoveForce,          aml->GetSym(hGTASA, "_ZN9CPhysical14ApplyMoveForceE7CVector"));
     SET_TO(GetWaterLevel,           aml->GetSym(hGTASA, "_ZN11CWaterLevel13GetWaterLevelEfffPfbP7CVector"));
     SET_TO(GetTaskSwim,             aml->GetSym(hGTASA, "_ZNK16CPedIntelligence11GetTaskSwimEv"));
-    SET_TO(TaskConstructor,         aml->GetSym(hGTASA, BYVER("_ZN5CTasknwEj", "_ZN5CTasknwEm")));
+    SET_TO(TaskConstructor,         aml->GetSym(hGTASA, BYBIT("_ZN5CTasknwEj", "_ZN5CTasknwEm")));
     SET_TO(TaskStartNamedAnim,      aml->GetSym(hGTASA, "_ZN23CTaskSimpleRunNamedAnimC2EPKcS1_ifibbbb"));
     SET_TO(SetTask,                 aml->GetSym(hGTASA, "_ZN12CTaskManager7SetTaskEP5CTaskib"));
     SET_TO(TaskComplexSequenceAddTask, aml->GetSym(hGTASA, "_ZN20CTaskComplexSequence7AddTaskEP5CTask"));
     SET_TO(BlendAnimation,          aml->GetSym(hGTASA, "_ZN12CAnimManager14BlendAnimationEP7RpClump12AssocGroupId11AnimationIdf"));
     SET_TO(RpAnimBlendGetNextAssociation, aml->GetSym(hGTASA, "_Z29RpAnimBlendGetNextAssociationP21CAnimBlendAssociation"));
     SET_TO(SetEditableMaterialsCB,  aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo22SetEditableMaterialsCBEP8RpAtomicPv"));
-    SET_TO(RenderEntity,            *(uintptr_t*)(pGTASA + BYVER(0x66F764, 0x83F610)));
+    SET_TO(RenderEntity,            *(uintptr_t*)(pGTASA + BYBIT(0x66F764, 0x83F610)));
     SET_TO(GeneratePlateText,       aml->GetSym(hGTASA, "_ZN18CCustomCarPlateMgr17GeneratePlateTextEPci"));
     SET_TO(GetCustomCarPlateText,   aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo21GetCustomCarPlateTextEv"));
     SET_TO(GetVehicleRef,           aml->GetSym(hGTASA, "_ZN6CPools13GetVehicleRefEP8CVehicle"));
@@ -398,7 +399,7 @@ void JPatch()
     SET_TO(RwRasterRenderFast,      aml->GetSym(hGTASA, "_Z18RwRasterRenderFastP8RwRasterii"));
     SET_TO(RwRasterPopContext,      aml->GetSym(hGTASA, "_Z18RwRasterPopContextv"));
     SET_TO(RsCameraBeginUpdate,     aml->GetSym(hGTASA, "_Z19RsCameraBeginUpdateP8RwCamera"));
-    SET_TO(OpenGLLockAndCopyRasters,BYVER(0x0, 0x242AA0));
+    SET_TO(OpenGLLockAndCopyRasters,BYBIT(0x0, 0x242AA0));
     SET_TO(RwRasterCreate,          aml->GetSym(hGTASA, "_Z14RwRasterCreateiiii"));
     SET_TO(RsCameraShowRaster,      aml->GetSym(hGTASA, "_Z18RsCameraShowRasterP8RwCamera"));
     SET_TO(FindActiveTaskByType,    aml->GetSym(hGTASA, "_ZNK12CTaskManager20FindActiveTaskByTypeEi"));
@@ -408,6 +409,7 @@ void JPatch()
     SET_TO(CameraFade,              aml->GetSym(hGTASA, "_ZN7CCamera4FadeEfs"));
     SET_TO(TextGet,                 aml->GetSym(hGTASA, "_ZN5CText3GetEPKc"));
     SET_TO(AddBigMessage,           aml->GetSym(hGTASA, "_ZN9CMessages13AddBigMessageEPtjt"));
+    SET_TO(SelectRQTarget,          aml->GetSym(hGTASA, "_ZN14RQRenderTarget6SelectEPS_b"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -425,7 +427,7 @@ void JPatch()
     SET_TO(ms_taskSequence,         aml->GetSym(hGTASA, "_ZN14CTaskSequences15ms_taskSequenceE"));
     SET_TO(pActiveScripts,          aml->GetSym(hGTASA, "_ZN11CTheScripts14pActiveScriptsE"));
     SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(WorldPlayers,            *(void**)(pGTASA + BYVER(0x6783C8, 0x84E7A8))); // Patched CWorld::Players will work now!
+    SET_TO(WorldPlayers,            *(void**)(pGTASA + BYBIT(0x6783C8, 0x84E7A8))); // Patched CWorld::Players will work now!
     SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
     SET_TO(game_FPS,                aml->GetSym(hGTASA, "_ZN6CTimer8game_FPSE"));
     SET_TO(TheCamera,               aml->GetSym(hGTASA, "TheCamera"));
@@ -435,23 +437,23 @@ void JPatch()
     SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
     SET_TO(NumberOfSearchLights,    aml->GetSym(hGTASA, "_ZN5CHeli20NumberOfSearchLightsE"));
     SET_TO(lastDevice,              aml->GetSym(hGTASA, "lastDevice"));
-    SET_TO(m_pWidgets,              *(void**)(pGTASA + BYVER(0x67947C, 0x850910))); // Patched CTouchInterface::m_pWidgets will work now!
+    SET_TO(m_pWidgets,              *(void**)(pGTASA + BYBIT(0x67947C, 0x850910))); // Patched CTouchInterface::m_pWidgets will work now!
     SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
     SET_TO(bRunningCutscene,        aml->GetSym(hGTASA, "_ZN12CCutsceneMgr10ms_runningE"));
     SET_TO(bProcessingCutscene,     aml->GetSym(hGTASA, "_ZN12CCutsceneMgr21ms_cutsceneProcessingE"));
-    SET_TO(ScriptParams,            *(void**)(pGTASA + BYVER(0x676F7C, 0x84BF38))); // Patched ScriptParams will work now!
+    SET_TO(ScriptParams,            *(void**)(pGTASA + BYBIT(0x676F7C, 0x84BF38))); // Patched ScriptParams will work now!
     SET_TO(m_alphaList,             aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins11m_alphaListE"));
     SET_TO(CloudsRotation,          aml->GetSym(hGTASA, "_ZN7CClouds13CloudRotationE"));
     SET_TO(CloudsIndividualRotation, aml->GetSym(hGTASA, "_ZN7CClouds18IndividualRotationE"));
     SET_TO(WeatherWind,             aml->GetSym(hGTASA, "_ZN8CWeather4WindE"));
-    SET_TO(pObjectPool,             *(void**)(pGTASA + BYVER(0x676BBC, 0x84B7C0)));
+    SET_TO(pObjectPool,             *(void**)(pGTASA + BYBIT(0x676BBC, 0x84B7C0)));
     SET_TO(m_pCurrZoneInfo,         aml->GetSym(hGTASA, "_ZN9CPopCycle15m_pCurrZoneInfoE"));
     SET_TO(m_ZoneFadeTimer,         aml->GetSym(hGTASA, "_ZN4CHud15m_ZoneFadeTimerE"));
     SET_TO(ms_numAnimBlocks,        aml->GetSym(hGTASA, "_ZN12CAnimManager16ms_numAnimBlocksE"));
     SET_TO(ms_memoryUsed,           aml->GetSym(hGTASA, "_ZN10CStreaming13ms_memoryUsedE"));
     SET_TO(ms_memoryAvailable,      aml->GetSym(hGTASA, "_ZN10CStreaming18ms_memoryAvailableE"));
-    SET_TO(fSpriteBrightness,       pGTASA + BYVER(0x966590, 0xBD760C));
-    SET_TO(m_fLightsOnGroundBrightness, pGTASA + BYVER(0x9665A4, 0xBD7620));
+    SET_TO(fSpriteBrightness,       pGTASA + BYBIT(0x966590, 0xBD760C));
+    SET_TO(m_fLightsOnGroundBrightness, pGTASA + BYBIT(0x9665A4, 0xBD7620));
     SET_TO(detailTextures,          aml->GetSym(hGTASA, "_ZN22TextureDatabaseRuntime14detailTexturesE"));
     SET_TO(textureDetail,           aml->GetSym(hGTASA, "textureDetail"));
     SET_TO(ms_iActiveSequence,      aml->GetSym(hGTASA, "_ZN14CTaskSequences18ms_iActiveSequenceE"));
@@ -481,18 +483,18 @@ void JPatch()
     SET_TO(m_FrameCounter,          aml->GetSym(hGTASA, "_ZN6CTimer14m_FrameCounterE"));
     SET_TO(gbCineyCamProcessedOnFrame, aml->GetSym(hGTASA, "gbCineyCamProcessedOnFrame"));
     SET_TO(ms_colModelCache,        aml->GetSym(hGTASA, "_ZN10CCollision16ms_colModelCacheE"));
-    SET_TO(_bf_12c,                 pGTASA + BYVER(0x9EF9D8 + 0x12C, 0xC8C180 + 0x14C));
+    SET_TO(_bf_12c,                 pGTASA + BYBIT(0x9EF9D8 + 0x12C, 0xC8C180 + 0x14C));
     SET_TO(SetVehicleColour,        aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo16SetVehicleColourEhhhh"));
-    SET_TO(gStoredMats,             pGTASA + BYVER(0x99E53C, 0xB8DB50));
+    SET_TO(gStoredMats,             pGTASA + BYBIT(0x99E53C, 0xB8DB50));
     SET_TO(m_vecDirnLightToSun,     aml->GetSym(hGTASA, "_ZN10CTimeCycle19m_vecDirnLightToSunE"));
     SET_TO(m_VectorToSun,           aml->GetSym(hGTASA, "_ZN10CTimeCycle13m_VectorToSunE"));
     SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
     SET_TO(fPlayerAimRotRate,       aml->GetSym(hGTASA, "fPlayerAimRotRate"));
     SET_TO(m_vecCachedPos,          aml->GetSym(hGTASA, "_ZN15CTouchInterface14m_vecCachedPosE"));
-    SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYVER(0x6777C8, 0x84CFB8))) + 4); // FLA
+    SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYBIT(0x6777C8, 0x84CFB8))) + 4); // FLA
     SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
     SET_TO(currArea,                aml->GetSym(hGTASA, "_ZN5CGame8currAreaE"));
-    SET_TO(bGameStarted,            pGTASA + BYVER(0x9599B8, 0xBC2880));
+    SET_TO(bGameStarted,            pGTASA + BYBIT(0x9599B8, 0xBC2880));
     SET_TO(m_bCCTV,                 aml->GetSym(hGTASA, "_ZN12CPostEffects7m_bCCTVE"));
     SET_TO(m_bFog,                  aml->GetSym(hGTASA, "_ZN12CPostEffects6m_bFogE"));
     SET_TO(m_bDisableAllPostEffect, aml->GetSym(hGTASA, "_ZN12CPostEffects23m_bDisableAllPostEffectE"));
@@ -501,6 +503,9 @@ void JPatch()
     SET_TO(SkipState,               aml->GetSym(hGTASA, "_ZN10CGameLogic9SkipStateE"));
     SET_TO(SkipTimer,               aml->GetSym(hGTASA, "_ZN10CGameLogic9SkipTimerE"));
     SET_TO(TheText,                 aml->GetSym(hGTASA, "TheText"));
+    SET_TO(SelectedRQTarget,        aml->GetSym(hGTASA, "_ZN14RQRenderTarget8selectedE"));
+    SET_TO(backTarget,              aml->GetSym(hGTASA, "backTarget"));
+    SET_TO(oldTarget,               aml->GetSym(hGTASA, "oldTarget"));
     // Variables End //
 
     // We need it for future fixes.

@@ -1897,6 +1897,7 @@ std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;*/
 
 DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
+    gStoredMats->material = NULL;
     ObjectRender_VehicleParts(self);
     if(self->m_nCarPartModelIndex != -1 && self->objectFlags.bChangesVehColor && self->m_nObjectType == eObjectType::OBJECT_TEMPORARY)
     {
@@ -1908,7 +1909,6 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
                 ptr->material->texture = ptr->texture;
                 ++ptr;
             }
-            gStoredMats->material = NULL;
         }
     }
 
@@ -2067,17 +2067,19 @@ DECL_HOOKv(BoatPreRender, CVehicle* self)
 }
 
 // Missing effects that are on PC but not on Mobile (from SkyGFX)
+DECL_HOOKv(RenderPostEffects)
+{
+    if(*m_bDisableAllPostEffect) return;
+
+    RenderPostEffects();
+}
 DECL_HOOKv(PostProcess_CCTV)
 {
-    if(*m_bFog)
-    {
-        PostEffectsFog();
-    }
+    CVehicle* vehicle = FindPlayerVehicle(-1, false);
+    SpeedFX( (vehicle) ? vehicle->m_vecMoveSpeed.Magnitude() : FindPlayerPed(-1)->m_vecMoveSpeed.Magnitude() );
 
-    if(*m_bCCTV)
-    {
-        PostProcess_CCTV();
-    }
+    if(*m_bFog) PostEffectsFog();
+    if(*m_bCCTV) PostProcess_CCTV();
 }
 DECL_HOOKv(RenderEffects_WaterCannons)
 {
