@@ -32,6 +32,9 @@
         CameraProcess_StreamDist_BackTo = pGTAVC + 0x1D8310;
         aml->Redirect(pGTAVC + 0x1D8300, (uintptr_t)CameraProcess_StreamDist_Inject);
         HOOK(SetFOV_StreamingDistFix, aml->GetSym(hGTAVC, "_ZN5CDraw6SetFOVEf"));
+        
+        aml->Write32(pGTAVC + 0x1D83BC, 0xF0001649);
+        aml->Write32(pGTAVC + 0x1D83C0, 0xBD43A122);
     }
     
     // Fixing fat ass coronas
@@ -41,12 +44,11 @@
     }
 
     // Fix Vertex Weights
-    /*if(cfg->GetBool("FixVertexWeight", true, "Visual"))
+    if(cfg->GetBool("FixVertexWeight", true, "Visual"))
     {
-        VertexWeightFix_BackTo1 = pGTAVC + 0x28EA7A + 0x1;
-        VertexWeightFix_BackTo2 = pGTAVC + 0x28EAA4 + 0x1;
-        aml->Redirect(pGTAVC + 0x28E970 + 0x1, (uintptr_t)VertexWeightFix_Inject);
-    }*/
+        aml->Write32(pGTAVC + 0x39058C, 0x540005A0);
+        aml->Write32(pGTAVC + 0x390640, MOVBits::Create(1, 27, false));
+    }
 
     // RE3: Fix R* optimization that prevents peds to spawn
     if(cfg->GetBool("Re3_PedSpawnDeoptimize", true, "Gameplay"))
@@ -125,6 +127,12 @@
     // Fix clouds rotating speed
     if(cfg->GetBool("FixCloudsRotateSpeed", true, "Visual"))
     {
+        aml->Write32(pGTAVC + 0x2AA5A0, 0xF0003928);
+        aml->Write32(pGTAVC + 0x2AA5A4, 0xBD4DCD01);
+        
+        aml->Write32(pGTAVC + 0x2AA5C8, 0xB0003949);
+        aml->Write32(pGTAVC + 0x2AA5CC, 0xBD401D24);
+        
         HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x1EE318);
     }
 
@@ -141,20 +149,25 @@
     }
 
     // Bigger distance for light coronas
-    /*if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
+    if(cfg->GetBool("BuffDistForLightCoronas", true, "Visual"))
     {
-        aml->WriteFloat(pGTAVC + 0x1D7450, 400.0f); // CEntity::ProcessLightsForEntity, 120 -> 400
-        aml->Write(pGTAVC + 0x127EA2, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
-        aml->Write(pGTAVC + 0x127A0A, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
-        aml->Write(pGTAVC + 0x127BE8, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
-        aml->Write(pGTAVC + 0x1280B4, "\xC4\xF2\xC8\x33", 4); // CTrafficLights::DisplayActualLight, 50 -> 400
 
-        aml->Write(pGTAVC + 0x1D7842, "\x4F\xF0\x00\x0E", 4); // CEntity::ProcessLightsForEntity, Force off useNearDist
-        aml->Write(pGTAVC + 0x1D74A6, "\x4F\xF0\x00\x0E", 4); // CEntity::ProcessLightsForEntity, Force off useNearDist
+        aml->Write32(pGTAVC + 0x2AD0A8, 0xBD487520); // CEntity::ProcessLightsForEntity, 120 -> 400
+        aml->Write32(pGTAVC + 0x1C2B80, 0xB0001709); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2BAC, 0xBD487521); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2B14, 0xB0001709); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2B40, 0xBD487521); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2F54, 0xB0001709); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2F58, 0xBD487521); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2F7C, 0xB0001709); // CTrafficLights::DisplayActualLight, 50 -> 400
+        aml->Write32(pGTAVC + 0x1C2F80, 0xBD487521); // CTrafficLights::DisplayActualLight, 50 -> 400
+
+        aml->Write32(pGTAVC + 0x2AD3BC, MOVBits::Create(0, 8, false)); // CEntity::ProcessLightsForEntity, Force off useNearDist
+        aml->Write32(pGTAVC + 0x2AD67C, MOVBits::Create(0, 8, false)); // CEntity::ProcessLightsForEntity, Force off useNearDist
     }
 
     // Bigger distance for light shadows
-    if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
+    /*if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
     {
         aml->WriteFloat(pGTAVC + 0x1D744C, 120.0f); // CEntity::ProcessLightsForEntity, 40 -> 120
         aml->Write(pGTAVC + 0x14BAD4, "\xC4\xF2\xF0\x2E", 4); // CFire::ProcessFire, 40 -> 120
@@ -185,27 +198,27 @@
     }
 
     // Allows the game to render even more light shadows on the ground
-    /*if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
+    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
-        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
-        aml->Write(pGTAVC + 0x394750, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        aStaticShadows_NEW = new CStaticShadow[MAX_STATIC_SHADOWS + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (MAX_STATIC_SHADOWS + 1));
+        aml->Write(pGTAVC + 0x576FF0, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
 
         // Static Shadows:
         // CShadows::StoreStaticShadow
-        aml->Write(pGTAVC + 0x1FBBDE, (uintptr_t)"\xFE", 1);
-        aml->Write(pGTAVC + 0x1FBC8C, (uintptr_t)"\xFF", 1);
-        aml->Write(pGTAVC + 0x1FBCA0, (uintptr_t)"\xFF", 1);
-        aml->Write(pGTAVC + 0x1FBBB8, (uintptr_t)"\x09\xF5\x1B\x5E", 4); // ADD.W LR, R9, #0x26C0
+        aml->Write32(pGTAVC + 0x2D7530, CMPBits::Create(MAX_STATIC_SHADOWS-1, 8, true)); // CMP X8, #0x2F
         // CShadows::RenderStaticShadows
-        aml->Write(pGTAVC + 0x1FCB00, (uintptr_t)"\xFF", 1);
-        aml->Write(pGTAVC + 0x1FCB2C, (uintptr_t)"\xFE", 1);
-        aml->Write(pGTAVC + 0x1FCB54, (uintptr_t)"\xFF", 1);
-        aml->Write(pGTAVC + 0x1FCEBA, (uintptr_t)"\xFF", 1);
+        aml->Write32(pGTAVC + 0x2DA10C, CMPBits::Create(MAX_STATIC_SHADOWS, 28, true)); // CMP X28, #0x30
+        aml->Write32(pGTAVC + 0x2DA120, CMPBits::Create(MAX_STATIC_SHADOWS, 28, true)); // CMP X28, #0x30
         // CShadows::UpdateStaticShadows
-        aml->Write(pGTAVC + 0x1F92D6, (uintptr_t)"\x04\xF5\x1B\x55", 4); // ADD.W R5, R4, #0x26C0
+        aml->Write32(pGTAVC + 0x2DB4D8, CMPBits::Create(MAX_STATIC_SHADOWS, 8, true)); // CMP X8, #0x30
 
-        HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
-    }*/
+        HOOKBL(InitShadows, pGTAVC + 0x1EDC64);
+
+        StoreStaticShadow_BackTo = pGTAVC + 0x2D76B8;
+        aml->Redirect(pGTAVC + 0x2D7538, (uintptr_t)StoreStaticShadow_Inject);
+        aml->Write32(pGTAVC + 0x2D76B8, 0x3100051F);
+        aml->Write32(pGTAVC + 0x2D76BC, 0x54001780);
+    }
 
     // Bigger max count of peds
     if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))

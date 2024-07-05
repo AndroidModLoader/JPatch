@@ -260,6 +260,7 @@ DECL_HOOKv(InitShadows)
     aPolyBunches[380-1].m_pNext = &bunchezTail[0]; // GTA:VC has 380 instead of 360 in SA?! LOL, DOWNGRADE
 }
 
+// Bigger distance for light shadows
 uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
 __attribute__((optnone)) __attribute__((naked)) void DoCollectableEffects_Inject(void)
 {

@@ -16,7 +16,10 @@ extern int androidSdkVer;
 extern uintptr_t pGTAVC;
 extern void *hGTAVC;
 
-#define BUNCHTAILS_EX 1024
+#define BUNCHTAILS_EX 6144 // More bunchtails because who knows about Project2DFX?
+
+// Usage of aligned memory chunks:
+// 9D1DCC, 9D301C : Clouds rotation patch
 
 namespace GTA_VC
 {
@@ -149,8 +152,8 @@ void JPatch()
     SET_TO(m_UserPause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_UserPauseE"));
     SET_TO(m_CodePause, aml->GetSym(hGTAVC, "_ZN6CTimer11m_CodePauseE"));
     SET_TO(fl1679D4, pGTAVC + BYBIT(0x1679D4, 0x0)); UNPROT(fl1679D4, sizeof(float));
-    SET_TO(fl1D4CF0, pGTAVC + BYBIT(0x1D4CF0, 0x0)); UNPROT(fl1D4CF0, sizeof(float));
-    SET_TO(fl1D4CF4, pGTAVC + BYBIT(0x1D4CF4, 0x0)); UNPROT(fl1D4CF4, sizeof(float));
+    SET_TO(fl1D4CF0, pGTAVC + BYBIT(0x1D4CF0, 0x9D1DCC)); UNPROT(fl1D4CF0, sizeof(float));
+    SET_TO(fl1D4CF4, pGTAVC + BYBIT(0x1D4CF4, 0x9D301C)); UNPROT(fl1D4CF4, sizeof(float));
     // Variables End   //
 
     // We need it for future fixes.

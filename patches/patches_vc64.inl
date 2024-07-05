@@ -102,22 +102,6 @@ DECL_HOOKb(CoronaSprite_CalcScreenCoors, CVector *worldPos, CVector *screenPos, 
     return ret;
 }
 
-// Vertex weight fix
-/*uintptr_t VertexWeightFix_BackTo1, VertexWeightFix_BackTo2;
-extern "C" uintptr_t VertexWeightFix_Patch(RpSkin *skin)
-{
-    return (skin->vertexMaps.maxWeights == 4) ? VertexWeightFix_BackTo2 : VertexWeightFix_BackTo1;
-}
-__attribute__((optnone)) __attribute__((naked)) void VertexWeightFix_Inject(void)
-{
-    asm volatile(
-        "LDR R3, [R0, #0x18]\n"
-        "PUSH {R1-R5}\n"
-        "BL VertexWeightFix_Patch\n"
-        "POP {R1-R5}\n"
-        "MOV PC, R0");
-}*/
-
 // Fix traffic lights
 DECL_HOOKv(TrFix_RenderEffects)
 {
@@ -240,7 +224,7 @@ DECL_HOOKv(StoreShadowForVehicle, uint32_t nId, uint8_t ShadowType, void *pTextu
 }
 
 // Static shadows
-/*DECL_HOOKv(InitShadows)
+DECL_HOOKv(InitShadows)
 {
     static CPolyBunch bunchezTail[BUNCHTAILS_EX];
     
@@ -253,7 +237,36 @@ DECL_HOOKv(StoreShadowForVehicle, uint32_t nId, uint8_t ShadowType, void *pTextu
     aPolyBunches[380-1].m_pNext = &bunchezTail[0]; // GTA:VC has 380 instead of 360 in SA?! LOL, DOWNGRADE
 }
 
-uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
+#define MAX_STATIC_SHADOWS (0xFF)
+uintptr_t StoreStaticShadow_BackTo;
+extern "C" uint32_t StoreStaticShadow_Patch()
+{
+    for(uint32_t i = 0; i < MAX_STATIC_SHADOWS; ++i)
+    {
+        if(aStaticShadows_NEW[i].m_pPolyBunch == NULL) return i;
+    }
+    return 0xFFFFFFFF;
+}
+__attribute__((optnone)) __attribute__((naked)) void StoreStaticShadow_Inject(void)
+{
+    asm volatile(
+        "STR X0, [SP, #-16]!\n"
+        //"STR X8, [SP, #-16]!\n"
+        "BL StoreStaticShadow_Patch\n"
+        "MOV W8, W0\n");
+
+    asm volatile(
+        "MOV X11, %0"
+    :: "r" (StoreStaticShadow_BackTo));
+
+    asm volatile(
+        //"LDR X8, [SP], #16\n"
+        "LDR X0, [SP], #16\n"
+        "BR X11\n");
+}
+
+// Bigger distance for light shadows
+/*uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
 __attribute__((optnone)) __attribute__((naked)) void DoCollectableEffects_Inject(void)
 {
     asm volatile(
