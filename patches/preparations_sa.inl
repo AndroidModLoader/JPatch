@@ -1269,6 +1269,12 @@
         HOOKBLX(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3092AE + 0x1);
     }
 
+    // Skip that dumb EULA. We accepted it years ago, shut up
+    if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    {
+        aml->Write8(aml->GetSym(hSC, "LegalScreenShown"), 0x01);
+    }
+
     // This fixes black bushes and more things
     //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
     {

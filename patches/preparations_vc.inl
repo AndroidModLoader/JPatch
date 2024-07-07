@@ -261,6 +261,12 @@
         HOOKBLX(LoadFX_atof, pGTAVC + 0x1F6500);
     }
 
+    // Skip that dumb EULA. We accepted it years ago, shut up
+    if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    {
+        aml->Write8(aml->GetSym(hGTAVC, "shownLegalScreen"), 0x01);
+    }
+
 
 
 

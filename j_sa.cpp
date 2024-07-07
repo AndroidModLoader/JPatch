@@ -26,8 +26,8 @@
 #endif
 
 extern int androidSdkVer;
-extern uintptr_t pGTASA;
-extern void *hGTASA;
+extern uintptr_t pGTASA, pSC;
+extern void *hGTASA, *hSC;
 
 #define BUNCHTAILS_EX 6144 // More bunchtails because Project 2DFX may use it.
 

@@ -241,3 +241,9 @@
         else if(fxMultiplier > 20) fxMultiplier = 20.0f;
         HOOKBL(LoadFX_atof, pGTAVC + 0x2D4034);
     }
+
+    // Skip that dumb EULA. We accepted it years ago, shut up
+    if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    {
+        aml->Write8(aml->GetSym(hGTAVC, "shownLegalScreen"), 0x01);
+    }
