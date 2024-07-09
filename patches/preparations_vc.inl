@@ -267,6 +267,12 @@
         aml->Write8(aml->GetSym(hGTAVC, "shownLegalScreen"), 0x01);
     }
 
+    // A style of a SA mobile
+    if(cfg->GetBool("MoneysWithoutZeros", false, "Visual"))
+    {
+        aml->Write(pGTAVC + 0x34D178, "$%d", 4);
+    }
+
 
 
 

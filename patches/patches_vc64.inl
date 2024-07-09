@@ -218,9 +218,13 @@ DECL_HOOKv(AddExplosion_AddShadow, uint8_t ShadowType, RwTexture *pTexture, CVec
 }
 
 // Light shadow tweaked distance
-DECL_HOOKv(StoreShadowForVehicle, uint32_t nId, uint8_t ShadowType, void *pTexture, CVector *pPosn, float fFrontX, float fFrontY, float fSideX, float fSideY, int16_t nIntensity, uint8_t nRed, uint8_t nGreen, uint8_t nBlue, float fZDistance, float fScale, float fDrawDistance, bool bTempShadow, float fUpDistance)
+DECL_HOOKv(StoreShadowForVehicle, uint64_t nId, uint8_t ShadowType, void *pTexture, CVector *pPosn, float fFrontX, float fFrontY, float fSideX, float fSideY, int16_t nIntensity, uint8_t nRed, uint8_t nGreen, uint8_t nBlue, float fZDistance, float fScale, float fDrawDistance, bool bTempShadow, float fUpDistance)
 {
     StoreShadowForVehicle(nId, ShadowType, pTexture, pPosn, fFrontX, fFrontY, fSideX, fSideY, nIntensity, nRed, nGreen, nBlue, 15.0f, fScale, 120.0f, bTempShadow, 0.0f);
+}
+DECL_HOOKv(StoreStaticShadow_LS, uint64_t nId, uint8 ShadowType, RwTexture *pTexture, CVector *pPosn, float fFrontX, float fFrontY, float fSideX, float fSideY, int16_t nIntensity, uint8_t nRed, uint8_t nGreen, uint8_t nBlue, float fZDistance, float fScale, float fDrawDistance, bool bTempShadow, float fUpDistance)
+{
+    StoreStaticShadow_LS(nId, ShadowType, pTexture, pPosn, fFrontX, fFrontY, fSideX, fSideY, nIntensity, nRed, nGreen, nBlue, 15.0f, fScale, 120.0f, bTempShadow, 0.0f);
 }
 
 // Static shadows
@@ -266,43 +270,43 @@ __attribute__((optnone)) __attribute__((naked)) void StoreStaticShadow_Inject(vo
 }
 
 // Bigger distance for light shadows
-/*uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
+uintptr_t DoCollectableEffects_BackTo, DoPickUpEffects_BackTo;
+extern "C" float GetNewShadowsDist()
+{
+    return 120.0f;
+}
 __attribute__((optnone)) __attribute__((naked)) void DoCollectableEffects_Inject(void)
 {
     asm volatile(
-        "LDM.W R3, {R0-R2}\n"
-        "MOVS R10, #0x0\n"
-        "MOVT R10, #0x4220\n"
-        "VMOV.F32 S17, R10\n"
-        "SUB SP, SP, #0x54\n"
-        "PUSH {R0}\n"
+        "STR X8, [SP, #0x20]\n"
+        "LDR X9, [X9, #0x650]\n" // TheCamera_ptr@PAGEOFF
+        "BL GetNewShadowsDist\n"
+        "FMOV S8, S0\n"
     );
     asm volatile(
-        "MOV R10, %0"
+        "MOV X16, %0"
     :: "r" (DoCollectableEffects_BackTo));
     asm volatile(
-        "POP {R0}\n"
-        "MOV PC, R10\n"
+        "LDR W8, [X19, #0x40]\n"
+        "BR X16\n"
     );
 }
 __attribute__((optnone)) __attribute__((naked)) void DoPickUpEffects_Inject(void)
 {
     asm volatile(
-        "VLDR S13, [R4, #0x38]\n"
-        "STM.W R7, {R0-R2}\n"
-        "MOVS R11, #0x0\n"
-        "MOVT R11, #0x41F0\n"
-        "VMOV.F32 S17, R11\n"
-        "PUSH {R0}\n"
+        "FSQRT S2, S1\n"
+        "BL GetNewShadowsDist\n"
+        "FCMP S2, S0\n"
+        "FMOV S0, WZR\n"
+        "FMOV S1, WZR\n"
     );
     asm volatile(
-        "MOV R11, %0"
+        "MOV X16, %0"
     :: "r" (DoPickUpEffects_BackTo));
     asm volatile(
-        "POP {R0}\n"
-        "MOV PC, R11\n"
+        "BR X16\n"
     );
-}*/
+}
 
 // Bigger spawn distance for peds
 DECL_HOOK(float, PedCreationDistMult_Offscreen)

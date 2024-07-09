@@ -167,29 +167,36 @@
     }
 
     // Bigger distance for light shadows
-    /*if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
+    if(cfg->GetBool("BuffDistForLightShadows", true, "Visual"))
     {
-        aml->WriteFloat(pGTAVC + 0x1D744C, 120.0f); // CEntity::ProcessLightsForEntity, 40 -> 120
-        aml->Write(pGTAVC + 0x14BAD4, "\xC4\xF2\xF0\x2E", 4); // CFire::ProcessFire, 40 -> 120
-        aml->Write(pGTAVC + 0x128440, "\xC4\xF2\xF0\x2E", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
-        aml->Write(pGTAVC + 0x127FB0, "\xC4\xF2\xF0\x2A", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
-        aml->Write(pGTAVC + 0x128150, "\xC4\xF2\xF0\x25", 4); // CTrafficLights::DisplayActualLight, 40 -> 120
-        aml->WriteFloat(pGTAVC + 0x1FC780, 120.0f); // CShadows::StoreShadowForPole, 40 -> 120
+        aml->Write32(pGTAVC + 0x2AD0A0, 0xD0000FAB); // \/
+        aml->Write32(pGTAVC + 0x2AD0B0, 0xBD47796C); // CEntity::ProcessLightsForEntity, 40 -> 120
+        aml->Write32(pGTAVC + 0x1EC830, 0xF00015A8); // \/
+        aml->Write32(pGTAVC + 0x1EC834, 0xBD477906); // CFire::ProcessFire, 40 -> 120
+        aml->Write32(pGTAVC + 0x1C27C4, 0xB0001708); // \/
+        aml->Write32(pGTAVC + 0x1C27D0, 0xBD477906); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write32(pGTAVC + 0x1C2A58, 0xB0001708); // \/
+        aml->Write32(pGTAVC + 0x1C2A64, 0xBD477906); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write32(pGTAVC + 0x1C2E68, 0xF00015A8); // \/
+        aml->Write32(pGTAVC + 0x1C2E74, 0xBD477906); // CTrafficLights::DisplayActualLight, 40 -> 120
+        aml->Write32(pGTAVC + 0x2D8F7C, 0xF0000E48); // \/
+        aml->Write32(pGTAVC + 0x2D8F90, 0xBD477906); // CShadows::StoreShadowForPole, 40 -> 120
 
         // We do count vehicle shadows as light shadows?
         // Yeah, why not!
-        HOOKBL(StoreShadowForVehicle, pGTAVC + 0x1FC2F4 + 0x1);
-        // still need patch at 1FC420 and 1FC424
-        aml->WriteFloat(pGTAVC + 0x1FC5EC, 120.0f * 120.0f); // CShadows::StoreCarLightShadow, 27 -> 120
-        aml->WriteFloat(pGTAVC + 0x1FC5E4, 120.0f * 0.75f); // CShadows::StoreCarLightShadow, 27 -> 120
-        aml->Write(pGTAVC + 0x1FC5AA, "\xC4\xF2\xF0\x24", 4); // CShadows::StoreCarLightShadow, 27 -> 120
-        aml->PlaceB(pGTAVC + 0x1FBEE8 + 0x1, pGTAVC + 0x1FC09A + 0x1);
+        HOOKBL(StoreShadowForVehicle, pGTAVC + 0x2D82C4);
+        HOOKBL(StoreStaticShadow_LS, pGTAVC + 0x2D84A8);
+        // still need patch at 1FC420 and 1FC424 (VC1.09)
+        aml->Write32(pGTAVC + 0x2D83F4, 0xF0000E4A); // \/
+        aml->Write32(pGTAVC + 0x2D83F8, 0xBD477542); // CShadows::StoreCarLightShadow, 27*27 -> 120*120
+        aml->WriteFloat(pGTAVC + 0x4C61B4, 120.0f * 0.75f); // CShadows::StoreCarLightShadow, 27 -> 120
+        aml->PlaceNOP(pGTAVC + 0x2D7F4C, 1);
         
-        DoCollectableEffects_BackTo = pGTAVC + 0xFF058 + 0x1;
-        aml->Redirect(pGTAVC + 0xFF04E + 0x1, (uintptr_t)DoCollectableEffects_Inject);
-        DoPickUpEffects_BackTo = pGTAVC + 0xFFF8A + 0x1;
-        aml->Redirect(pGTAVC + 0xFFF7E + 0x1, (uintptr_t)DoPickUpEffects_Inject);
-    }*/
+        DoCollectableEffects_BackTo = pGTAVC + 0x18F7B0;
+        aml->Redirect(pGTAVC + 0x18F7A0, (uintptr_t)DoCollectableEffects_Inject);
+        DoPickUpEffects_BackTo = pGTAVC + 0x18EDD0;
+        aml->Redirect(pGTAVC + 0x18EDC0, (uintptr_t)DoPickUpEffects_Inject);
+    }
     
     // Just a little fix for banner
     if(cfg->GetBool("CorrectBannerRenderFlag", true, "Visual"))
@@ -246,4 +253,10 @@
     if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
         aml->Write8(aml->GetSym(hGTAVC, "shownLegalScreen"), 0x01);
+    }
+
+    // A style of a SA mobile
+    if(cfg->GetBool("MoneysWithoutZeros", false, "Visual"))
+    {
+        aml->Write(pGTAVC + 0x4C599E, "$%d", 4);
     }
