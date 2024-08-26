@@ -47,7 +47,8 @@
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.8**
  - Some cut effects from the game are back
- - Able to skip "drive"
+ - Able to skip "drive" (tripskip)
+ - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
@@ -186,7 +187,8 @@
 
 **Since v1.8**
  - Some cut effects from the game are back
- - Able to skip "drive"
+ - Able to skip "drive" (tripskip)
+ - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows

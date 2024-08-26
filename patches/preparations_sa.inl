@@ -437,11 +437,11 @@
     }
 
     // Tells "FindGroundZ" functions that we need "can teleport on objects" too
-    if(cfg->GetBool("IncludeObjectsForFindZ", true, "Gameplay"))
+    /*if(cfg->GetBool("IncludeObjectsForFindZ", true, "Gameplay"))
     {
         HOOKPLT(FindGroundZ2D, pGTASA + 0x66EDB8);
         HOOKPLT(FindGroundZ3D, pGTASA + 0x67022C);
-    }
+    }*/
 
     // RE3: Road reflections
     if(cfg->GetBool("Re3_WetRoadsReflections", true, "Visual"))
@@ -1267,13 +1267,28 @@
     if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
     {
         HOOKBLX(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3092AE + 0x1);
+        SET_TO(bDisplayedSkipTripMessage, pGTASA + 0x99205C);
+        HOOKBLX(DrawHud_SkipTrip, pGTASA + 0x43A564 + 0x1);
+    }
+
+    // Some PS2 objects mods are bringing back incomplete models that are crashing...
+    if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
+    {
+        HOOKBLX(ColTrianglePlanes_Delete, pGTASA + 0x2E16DA + 0x1);
+    }
+
+    // A particles with "check ground" flag are falling through the world
+    if(cfg->GetBool("ParticlesJumpOffGround", true, "Visual"))
+    {
+        HOOKPLT(FXInfoGroundCollide_GetVal, pGTASA + 0x665B10);
+        bCheckMoreObjects = cfg->GetBool("ParticlesJumpOffGround_CheckObjects", true);
     }
 
     // Skip that dumb EULA. We accepted it years ago, shut up
-    if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
         aml->Write8(aml->GetSym(hSC, "LegalScreenShown"), 0x01);
-    }
+    }*/
 
     // This fixes black bushes and more things
     //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))

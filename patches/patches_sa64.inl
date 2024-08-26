@@ -1035,6 +1035,7 @@ DECL_HOOKv(SpeedFX_RestoreStates)
 }
 
 // Cant skip drive
+bool *bDisplayedSkipTripMessage;
 inline bool SkipButtonActivated()
 {
     //CPad* pad = GetPad(0);
@@ -1044,6 +1045,20 @@ inline bool SkipButtonActivated()
         return TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
     }
     return false;
+}
+inline void DrawTripSkipIcon()
+{
+    if(!HudSprites[5].m_pTexture) return;
+
+    CRect drawRect;
+
+    drawRect.left = RsGlobal->maximumHeight * 0.02f;
+    drawRect.top = RsGlobal->maximumHeight * 0.95f;
+
+    drawRect.right = drawRect.left + RsGlobal->maximumHeight * 0.12f;
+    drawRect.bottom = drawRect.top - RsGlobal->maximumHeight * 0.12f;
+
+    DrawSprite2D_Simple(&HudSprites[5], &drawRect, &rgbaWhite);
 }
 DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
 {
@@ -1066,6 +1081,62 @@ DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
         return true;
     }
     return false;
+}
+DECL_HOOKb(DrawHud_SkipTrip)
+{
+    if(!DrawHud_SkipTrip()) return false;
+
+    DrawTripSkipIcon();
+    if(!*bDisplayedSkipTripMessage)
+    {
+        uint16_t* skipTripTxt = TextGet(TheText, "SKIP_1");
+        if(skipTripTxt)
+        {
+            SetHelpMessage("SKIP_1", skipTripTxt, true, false, false, 0);
+        }
+    }
+    return true;
+}
+
+// A particles with "check ground" flag are falling through the world (JuniorDjjr's reversed FxsFuncs)
+bool bCheckMoreObjects = true;
+DECL_HOOKv(FXInfoGroundCollide_GetVal, FxInfoGroundCollide_c *self, float st, float pt, float dt, float len, uint8_t useConst, float *settings)
+{
+    static CColPoint colpoint;
+    static CEntity* centity;
+
+    MovementInfo_t* info = (MovementInfo_t*)settings;
+
+    CVector testCoord = info->pos;
+    int timeModeParticle = self->m_timeModeParticle;
+    float interpValues[16];
+
+    float zEnd = fMagic * GetTimeStep() * settings[5] * 0.02f + testCoord.z;
+    if(ProcessVerticalLine(testCoord, zEnd, colpoint, centity, true, bCheckMoreObjects, bCheckMoreObjects, bCheckMoreObjects, false, false, NULL) && testCoord.z >= colpoint.m_vecPoint.z)
+    {
+        memset(interpValues, 0, sizeof(interpValues));
+        FxInterpInfo32GetVal(&self->m_interpInfo, interpValues, timeModeParticle ? pt : (st / len));
+        CVector vel = info->vel; vel.z *= 0.9f;
+        CVector normal = colpoint.m_vecNormal;
+
+        float len2Sqr = 2.0f * ( (normal.x * vel.x) + (normal.y * vel.y) + (normal.z * vel.z) );
+        CVector out = vel - len2Sqr * normal;
+
+        CVector in((float)(rand() % 10000) / 10000.0f - 0.5f, (float)(rand() % 10000) / 10000.0f - 0.5f, (float)(rand() % 10000) / 10000.0f);
+        VectorNormalise(&in);
+        in *= interpValues[2] * dt * 5.0f;
+
+        int outLen = RwV3dLength(&out);
+        out += in;
+        VectorNormalise(&out);
+        
+        info->vel = outLen * interpValues[1] * out;
+        info->pos.z = colpoint.m_vecPoint.z;
+
+        float maxVelOffset = fMagic * GetTimeStep() * 0.3f;
+        if(info->vel.x < maxVelOffset && info->vel.x > -maxVelOffset) info->vel.x = 0.0f;
+        if(info->vel.y < maxVelOffset && info->vel.y > -maxVelOffset) info->vel.y = 0.0f;
+    }
 }
 
 // Cruising speed (experimental...)

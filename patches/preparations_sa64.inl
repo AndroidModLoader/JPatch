@@ -841,7 +841,16 @@
     // Cant skip drive
     if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
     {
+        SET_TO(bDisplayedSkipTripMessage, pGTASA + 0xC20E90);
         HOOKB(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3CEA24);
+        HOOKBL(DrawHud_SkipTrip, pGTASA + 0x51F8E4);
+    }
+
+    // A particles with "check ground" flag are falling through the world
+    if(cfg->GetBool("ParticlesJumpOffGround", true, "Visual"))
+    {
+        HOOKPLT(FXInfoGroundCollide_GetVal, pGTASA + 0x82C6C0);
+        bCheckMoreObjects = cfg->GetBool("ParticlesJumpOffGround_CheckObjects", true);
     }
 
     // Fix
@@ -852,10 +861,10 @@
     }
 
     // Skip that dumb EULA. We accepted it years ago, shut up
-    if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
         aml->Write8(aml->GetSym(hSC, "LegalScreenShown"), 0x01);
-    }
+    }*/
 
     // This fixes black bushes and more things
     //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))

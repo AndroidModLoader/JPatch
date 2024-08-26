@@ -111,6 +111,7 @@ RwRaster                    **pRasterFrontBuffer;
 GlobalSceneTag              *Scene;
 void                        *TheText;
 RQRenderTarget              **SelectedRQTarget, **backTarget, **oldTarget;
+CSprite2d                   *HudSprites;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -225,6 +226,10 @@ void (*CameraFade)(CCamera*, float, uint16_t);
 uint16_t* (*TextGet)(void*, const char*);
 void (*AddBigMessage)(uint16_t*, uint32_t, uint16_t);
 void (*SelectRQTarget)(RQRenderTarget *toSelect, bool force);
+void (*SetHelpMessage)(char const*,uint16_t *,bool,bool,bool,uint);
+void (*DrawSprite2D_Simple)(CSprite2d*, const CRect*, const CRGBA*);
+void (*FxInterpInfo32GetVal)(FxInterpInfo32_c *, float *values, float t);
+float (*RwV3dLength)(CVector*);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -410,6 +415,10 @@ void JPatch()
     SET_TO(TextGet,                 aml->GetSym(hGTASA, "_ZN5CText3GetEPKc"));
     SET_TO(AddBigMessage,           aml->GetSym(hGTASA, "_ZN9CMessages13AddBigMessageEPtjt"));
     SET_TO(SelectRQTarget,          aml->GetSym(hGTASA, "_ZN14RQRenderTarget6SelectEPS_b"));
+    SET_TO(SetHelpMessage,          aml->GetSym(hGTASA, "_ZN4CHud14SetHelpMessageEPKcPtbbbj"));
+    SET_TO(DrawSprite2D_Simple,     aml->GetSym(hGTASA, "_ZN9CSprite2d4DrawERK5CRectRK5CRGBA"));
+    SET_TO(FxInterpInfo32GetVal,    aml->GetSym(hGTASA, "_ZN16FxInterpInfo32_c6GetValEPff"));
+    SET_TO(RwV3dLength,             aml->GetSym(hGTASA, "_Z11RwV3dLengthPK5RwV3d"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -506,6 +515,7 @@ void JPatch()
     SET_TO(SelectedRQTarget,        aml->GetSym(hGTASA, "_ZN14RQRenderTarget8selectedE"));
     SET_TO(backTarget,              aml->GetSym(hGTASA, "backTarget"));
     SET_TO(oldTarget,               aml->GetSym(hGTASA, "oldTarget"));
+    SET_TO(HudSprites,              aml->GetSym(hGTASA, "_ZN4CHud7SpritesE"));
     // Variables End //
 
     // We need it for future fixes.
