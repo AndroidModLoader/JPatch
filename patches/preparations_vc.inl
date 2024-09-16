@@ -273,6 +273,18 @@
         aml->Write(pGTAVC + 0x34D178, "$%d", 4);
     }
 
+    // OpenGL-related crash in huawei (poop ass phone moment)
+    if(cfg->GetBool("FixHuaweiCrash", true, "Gameplay"))
+    {
+        void* sym;
+        if((sym = TryLoadAlphaFunc("libGLESv2.so"))       || (sym = TryLoadAlphaFunc("libGLESv3.so"))    ||
+           (sym = TryLoadAlphaFunc("libGLESv2_mtk.so"))   || (sym = TryLoadAlphaFunc("libGLES_mali.so")) ||
+           (sym = TryLoadAlphaFunc("libGLES_android.so")) || (sym = TryLoadAlphaFunc("libGLES.so")))
+        {
+            *(void**)(pGTAVC + 0x7300E0) = sym;
+        }
+    }
+
 
 
 

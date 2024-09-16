@@ -16,6 +16,9 @@
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
 
+**Since v1.8**
+ - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+
 **Since v1.7**
  - FX particles draw distance scaler (default is x2.5)
 
@@ -49,6 +52,7 @@
  - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
+ - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
@@ -189,6 +193,7 @@
  - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
+ - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows

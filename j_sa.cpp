@@ -119,6 +119,15 @@ CSprite2d                   *HudSprites;
 int ret0(int a, ...) { return 0; } // Generic
 int ret1(int a, ...) { return 1; } // Generic
 void crash_this() { __builtin_trap(); } // Used for redirected funcs, to get the function it's called from (virtual funcs are hard!)
+inline void* TryLoadAlphaFunc(const char* szlib)
+{
+    void* lib = dlopen(szlib, RTLD_LAZY);
+    if(!lib) return NULL;
+
+    void* sym = dlsym(lib, "glAlphaFuncQCOM");
+    if(!sym) sym = dlsym(lib, "glAlphaFunc");
+    return sym;
+}
 
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();

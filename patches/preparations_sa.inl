@@ -1285,6 +1285,18 @@
         bCheckMoreObjects = cfg->GetBool("ParticlesJumpOffGround_CheckObjects", true);
     }
 
+    // OpenGL-related crash in huawei (poop ass phone moment)
+    if(cfg->GetBool("FixHuaweiCrash", true, "Gameplay"))
+    {
+        void* sym;
+        if((sym = TryLoadAlphaFunc("libGLESv2.so"))       || (sym = TryLoadAlphaFunc("libGLESv3.so"))    ||
+           (sym = TryLoadAlphaFunc("libGLESv2_mtk.so"))   || (sym = TryLoadAlphaFunc("libGLES_mali.so")) ||
+           (sym = TryLoadAlphaFunc("libGLES_android.so")) || (sym = TryLoadAlphaFunc("libGLES.so")))
+        {
+            *(void**)(pGTASA + 0x6BCBF8) = sym;
+        }
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
