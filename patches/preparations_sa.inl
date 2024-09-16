@@ -1264,15 +1264,16 @@
     }
 
     // Cant skip drive
-    if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
+    if(cfg->GetBool("BringBackTripSkip", true, "Gameplay"))
     {
+        skiptripChangeTex = cfg->GetBool("BringBackSkipButton_Texture", skiptripChangeTex, "Gameplay");
         HOOKBLX(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3092AE + 0x1);
         SET_TO(bDisplayedSkipTripMessage, pGTASA + 0x99205C);
         HOOKBLX(DrawHud_SkipTrip, pGTASA + 0x43A564 + 0x1);
     }
 
     // Some PS2 objects mods are bringing back incomplete models that are crashing...
-    if(cfg->GetBool("BringBackSkipButton", true, "Gameplay"))
+    if(cfg->GetBool("FixCollisionCrash", true, "Gameplay"))
     {
         HOOKBLX(ColTrianglePlanes_Delete, pGTASA + 0x2E16DA + 0x1);
     }

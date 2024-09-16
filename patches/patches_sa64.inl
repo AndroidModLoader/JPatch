@@ -1036,13 +1036,26 @@ DECL_HOOKv(SpeedFX_RestoreStates)
 
 // Cant skip drive
 bool *bDisplayedSkipTripMessage;
+bool skiptripChangeTex = true;
+RwTexture* origWidgetBak = NULL;
 inline bool SkipButtonActivated()
 {
     //CPad* pad = GetPad(0);
     CWidget* widget = m_pWidgets[WIDGET_SKIP_CUTSCENE];
     if(widget)
     {
-        return TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
+        if(!origWidgetBak && skiptripChangeTex)
+        {
+            origWidgetBak = widget->widgetSprite.m_pTexture;
+            widget->widgetSprite.m_pTexture = HudSprites[5].m_pTexture;
+        }
+        bool ret = TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
+        if(ret && origWidgetBak)
+        {
+            widget->widgetSprite.m_pTexture = origWidgetBak;
+            origWidgetBak = NULL;
+        }
+        return ret;
     }
     return false;
 }
@@ -1053,10 +1066,10 @@ inline void DrawTripSkipIcon()
     CRect drawRect;
 
     drawRect.left = RsGlobal->maximumHeight * 0.02f;
-    drawRect.top = RsGlobal->maximumHeight * 0.95f;
+    drawRect.bottom = RsGlobal->maximumHeight * 0.95f;
 
     drawRect.right = drawRect.left + RsGlobal->maximumHeight * 0.12f;
-    drawRect.bottom = drawRect.top - RsGlobal->maximumHeight * 0.12f;
+    drawRect.top = drawRect.top - RsGlobal->maximumHeight * 0.12f;
 
     DrawSprite2D_Simple(&HudSprites[5], &drawRect, &rgbaWhite);
 }
@@ -1084,9 +1097,18 @@ DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
 }
 DECL_HOOKb(DrawHud_SkipTrip)
 {
+    if(*SkipState == 0 && origWidgetBak)
+    {
+        CWidget* widget = m_pWidgets[WIDGET_SKIP_CUTSCENE];
+        if(widget)
+        {
+            widget->widgetSprite.m_pTexture = origWidgetBak;
+            origWidgetBak = NULL;
+        }
+    }
     if(!DrawHud_SkipTrip()) return false;
 
-    DrawTripSkipIcon();
+    //DrawTripSkipIcon();
     if(!*bDisplayedSkipTripMessage)
     {
         uint16_t* skipTripTxt = TextGet(TheText, "SKIP_1");
