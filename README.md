@@ -7,6 +7,30 @@
  Need a preview version of upcoming changes? Get it there: https://github.com/AndroidModLoader/JPatch/actions
 
  Currently i can fix those things:
+
+### ***GTA:VC v1.12***
+**Since v1.8**
+ - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - Fixed boat speed on high FPS
+ - Fix wheels rotation speed on high FPS
+ - Fix car slowdown on high FPS
+ - Fix heli rotor rotation speed on high FPS
+ - Streaming distance fix
+ - Wide coronas/sprites fix (this fix is disabled if you have ViceSkies v1.0)
+ - RE3: Fix R* optimization that prevents peds to spawn
+ - RE3: Road reflections
+ - Fix traffic lights
+ - Bringing back a framelimiter (may be inaccurate)
+ - Water texture scrolling speed fix on high FPS
+ - Clouds rotating speed on high FPS (it is few times faster than it should be)
+ - Bringing back the fake crater from explosion
+ - Allows the game to choose Extra6 component on a vehicle when created
+ - Corona sprites draw distance is 3 times bigger (partially, traffic lights do work)
+ - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
+ - Correct render flag for Dodo Banner (does it work?)
+ - Bumped a limit of static shadows!
+ - FX particles draw distance scaler (default is x2.5)
+ - Now it's possible to remove ZERO's from money text
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
@@ -18,6 +42,7 @@
 
 **Since v1.8**
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - Now it's possible to remove ZERO's from money text
 
 **Since v1.7**
  - FX particles draw distance scaler (default is x2.5)
