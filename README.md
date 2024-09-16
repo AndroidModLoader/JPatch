@@ -15,8 +15,8 @@
  - Fix wheels rotation speed on high FPS
  - Fix car slowdown on high FPS
  - Fix heli rotor rotation speed on high FPS
- - Streaming distance fix
- - Wide coronas/sprites fix (this fix is disabled if you have ViceSkies v1.0)
+ - Streaming distance fix (it's incomplete!)
+ - Wide coronas/sprites fix
  - RE3: Fix R* optimization that prevents peds to spawn
  - RE3: Road reflections
  - Fix traffic lights
@@ -31,6 +31,7 @@
  - Bumped a limit of static shadows!
  - FX particles draw distance scaler (default is x2.5)
  - Now it's possible to remove ZERO's from money text
+ - 44100Hz audio support without a mod "OpenAL Update"
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
@@ -43,6 +44,7 @@
 **Since v1.8**
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
  - Now it's possible to remove ZERO's from money text
+ - 44100Hz audio support without a mod "OpenAL Update"
 
 **Since v1.7**
  - FX particles draw distance scaler (default is x2.5)

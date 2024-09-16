@@ -235,8 +235,8 @@
     // 44100 Hz Audio support (without a mod OpenAL Update but works with it anyway)
     if(cfg->GetBool("Allow44100HzAudio", true, "Gameplay"))
     {
-        aml->Unprot(pGTASA + 0x613E0A, sizeof(int));
-        *(int*)(pGTASA + 0x613E0A) = 44100;
+        aml->Unprot(pGTASA + 0x613E0C, sizeof(int));
+        *(int*)(pGTASA + 0x613E0C) = 44100;
     }
 
     // Disable GTA vehicle detachment at rotation awkwardness

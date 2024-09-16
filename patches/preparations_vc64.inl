@@ -272,3 +272,10 @@
             *(void**)(pGTAVC + 0x9AEA70) = sym;
         }
     }
+
+    // 44100 Hz Audio support (without a mod OpenAL Update but works with it anyway)
+    if(cfg->GetBool("Allow44100HzAudio", true, "Gameplay"))
+    {
+        aml->Unprot(pGTAVC + 0x4AED68, sizeof(int));
+        *(int*)(pGTAVC + 0x4AED68) = 44100;
+    }
