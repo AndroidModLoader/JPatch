@@ -279,3 +279,10 @@
         aml->Unprot(pGTAVC + 0x4AED68, sizeof(int));
         *(int*)(pGTAVC + 0x4AED68) = 44100;
     }
+
+    // Fix threads performance
+    if(cfg->GetBool("FixFPS", true, "Gameplay"))
+    {
+        aml->Write32(pGTAVC + 0x460330, 0x52801E40);
+        aml->Write32(pGTAVC + 0x460384, 0x52801E20);
+    }
