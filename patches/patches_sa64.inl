@@ -1161,6 +1161,28 @@ DECL_HOOKv(FXInfoGroundCollide_GetVal, FxInfoGroundCollide_c *self, float st, fl
     }
 }
 
+// Fixes that some data in CollisionData is not being set to zero
+DECL_HOOKv(ColModel_AllocData, CColModel* self, int32 numSpheres, int32 numBoxes, int32 numLines, int32 numVertices, int32 numTriangles, bool bUseDisksNotLines)
+{
+    ColModel_AllocData(self, numSpheres, numBoxes, numLines, numVertices, numTriangles, bUseDisksNotLines);
+    CCollisionData* data = self->m_pColData;
+    if(data)
+    {
+        data->m_nNoOfShadTriangles = 0;
+        data->m_nNoOfShadTriangleVerts = 0;
+        data->m_pTriCompressedShadVectorArray = NULL;
+        data->m_pShadTriangleArray = NULL;
+        data->m_modelSec = NULL; // new on mobile???
+    }
+}
+
+// Fixes a little Rockstar mistake with coronas rendering
+DECL_HOOKv(CoronasRender_Headlight, void* a, void* b)
+{
+    FlushSpriteBuffer();
+    CoronasRender_Headlight(a, b);
+}
+
 // Cruising speed (experimental...)
 DECL_HOOKv(CurvePoint_SpeedFPS, const CVector *startCoors, const CVector *endCoors, const CVector *startDir, const CVector *endDir, float Time, Int32 TraverselTimeInMillis, CVector *resultCoor, CVector *resultSpeed)
 {

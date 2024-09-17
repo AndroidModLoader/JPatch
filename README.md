@@ -80,6 +80,10 @@
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - RLEDecompress crash is fixed! (allocates more memory)
+ - Fixes some stupid nearclipping issues that are caused my WarDrum's dirty hands
+ - Fixes that some data in CollisionData is not being set to zero
+ - Fixes a little Rockstar mistake with coronas rendering
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
@@ -221,6 +225,9 @@
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - Fixes some stupid nearclipping issues that are caused my WarDrum's dirty hands
+ - Fixes that some data in CollisionData is not being set to zero
+ - Fixes a little Rockstar mistake with coronas rendering
 
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
@@ -275,7 +282,7 @@
  - Fix for the wrong position (from the beta) of Bravura in a mission "You've Had Your Chips"
  - Michelle dating fix
  - Stealth kill with a knife does NOT require to be crouched anymore (as on PC)
- - RLEDecompress crash is fixed! (allocates more memory, for some reason Android is failing in allocating small memory chunks?)
+ - RLEDecompress crash is fixed! (allocates more memory)
 
 **Since v1.4.3**
  - Fixed coronas stretching while the weather is foggy

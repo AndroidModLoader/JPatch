@@ -1297,6 +1297,25 @@
         }
     }
 
+    // Fixes some stupid issues that are caused my WarDrum's dirty hands
+    if(cfg->GetBool("FixNearClippingIssues", true, "Visual"))
+    {
+        aml->Write(pGTASA + 0x3F60EA, "\xB0\xEE\x49\x0A", 4);
+    }
+
+    // Fixes that some data in CollisionData is not being set to zero
+    if(cfg->GetBool("FixCollisionAllocatingData", true, "Gameplay"))
+    {
+        HOOK(ColModel_AllocData, aml->GetSym(hGTASA, "_ZN9CColModel12AllocateDataEiiiiib"));
+        // Maybe also in CColModel::MakeMultipleAlloc?
+    }
+
+    // Fixes a little Rockstar mistake with coronas rendering
+    if(cfg->GetBool("FixSomeCoronasRendering", true, "Gameplay"))
+    {
+        HOOKBLX(CoronasRender_Headlight, pGTASA + 0x5A2994 + 0x1);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

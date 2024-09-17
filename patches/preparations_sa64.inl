@@ -872,6 +872,31 @@
         HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3AD0A4);
         HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3B0F60);
     }
+    
+    // Fix a dumb Android 10+ RLEDecompress fix crash (that's an issue of TXD tools)
+    if(cfg->GetBool("RLEDecompressCrashFix", androidSdkVer < 33, "Gameplay"))
+    {
+        aml->Write(pGTASA + 0x2858CC, "\x14\x81\x00\x11", 4);
+    }
+
+    // Fixes some stupid issues that are caused my WarDrum's dirty hands
+    if(cfg->GetBool("FixNearClippingIssues", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x4D8664, 0x1E204120);
+    }
+
+    // Fixes that some data in CollisionData is not being set to zero
+    if(cfg->GetBool("FixCollisionAllocatingData", true, "Gameplay"))
+    {
+        HOOK(ColModel_AllocData, aml->GetSym(hGTASA, "_ZN9CColModel12AllocateDataEiiiiib"));
+        // Maybe also in CColModel::MakeMultipleAlloc?
+    }
+
+    // Fixes a little Rockstar mistake with coronas rendering
+    if(cfg->GetBool("FixSomeCoronasRendering", true, "Gameplay"))
+    {
+        HOOKBL(CoronasRender_Headlight, pGTASA + 0x6C6300);
+    }
 
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))

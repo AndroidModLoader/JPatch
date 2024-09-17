@@ -1759,7 +1759,8 @@ __attribute__((optnone)) __attribute__((naked)) void RLE_Inject(void)
 {
     asm volatile(
         "LDR R4, [SP, #0x24]\n" // org
-        "ADDS R0, R4, R4\n" //
+        "ADDS R0, R4, #32\n" //
+        "MOV R4, R0\n"
         //"LSLS R0, R4, #2\n" //
         //"MOV R0, #4096\n" // my attempt...
         "BLX malloc\n"
@@ -2229,7 +2230,27 @@ DECL_HOOKv(FXInfoGroundCollide_GetVal, FxInfoGroundCollide_c *self, float st, fl
     }
 }
 
+// Fixes that some data in CollisionData is not being set to zero
+DECL_HOOKv(ColModel_AllocData, CColModel* self, int32 numSpheres, int32 numBoxes, int32 numLines, int32 numVertices, int32 numTriangles, bool bUseDisksNotLines)
+{
+    ColModel_AllocData(self, numSpheres, numBoxes, numLines, numVertices, numTriangles, bUseDisksNotLines);
+    CCollisionData* data = self->m_pColData;
+    if(data)
+    {
+        data->m_nNoOfShadTriangles = 0;
+        data->m_nNoOfShadTriangleVerts = 0;
+        data->m_pTriCompressedShadVectorArray = NULL;
+        data->m_pShadTriangleArray = NULL;
+        data->m_modelSec = NULL; // new on mobile???
+    }
+}
 
+// Fixes a little Rockstar mistake with coronas rendering
+DECL_HOOKv(CoronasRender_Headlight, void* a, void* b)
+{
+    FlushSpriteBuffer();
+    CoronasRender_Headlight(a, b);
+}
 
 
 

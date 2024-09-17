@@ -239,6 +239,7 @@ void (*SetHelpMessage)(char const*,uint16_t *,bool,bool,bool,uint);
 void (*DrawSprite2D_Simple)(CSprite2d*, const CRect*, const CRGBA*);
 void (*FxInterpInfo32GetVal)(FxInterpInfo32_c *, float *values, float t);
 float (*RwV3dLength)(CVector*);
+void (*FlushSpriteBuffer)();
 
 inline int GetSectorForCoord(int coord)
 {
@@ -428,6 +429,7 @@ void JPatch()
     SET_TO(DrawSprite2D_Simple,     aml->GetSym(hGTASA, "_ZN9CSprite2d4DrawERK5CRectRK5CRGBA"));
     SET_TO(FxInterpInfo32GetVal,    aml->GetSym(hGTASA, "_ZN16FxInterpInfo32_c6GetValEPff"));
     SET_TO(RwV3dLength,             aml->GetSym(hGTASA, "_Z11RwV3dLengthPK5RwV3d"));
+    SET_TO(FlushSpriteBuffer,       aml->GetSym(hGTASA, "_ZN7CSprite17FlushSpriteBufferEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
