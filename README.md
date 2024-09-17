@@ -81,7 +81,7 @@
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
  - RLEDecompress crash is fixed! (allocates more memory)
- - Fixes some stupid nearclipping issues that are caused my WarDrum's dirty hands
+ - Fixes some stupid nearclipping issues that are caused by WarDrum's dirty hands
  - Fixes that some data in CollisionData is not being set to zero
  - Fixes a little Rockstar mistake with coronas rendering
 
@@ -225,7 +225,7 @@
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
- - Fixes some stupid nearclipping issues that are caused my WarDrum's dirty hands
+ - Fixes some stupid nearclipping issues that are caused by WarDrum's dirty hands
  - Fixes that some data in CollisionData is not being set to zero
  - Fixes a little Rockstar mistake with coronas rendering
 
