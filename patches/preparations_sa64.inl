@@ -907,6 +907,16 @@
         aml->PlaceNOP(pGTASA + 0x3CE088, 1);
     }
 
+    // SilentPatchSA: Bigger mirrors quality
+    if(cfg->GetBool("BiggerMirrorsQuality", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x6E8EB4, 0x52810000);
+        aml->Write32(pGTASA + 0x6E8EB8, 0x52808001);
+
+        aml->Write32(pGTASA + 0x6E8ED0, 0x52810000);
+        aml->Write32(pGTASA + 0x6E8ED4, 0x52808001);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

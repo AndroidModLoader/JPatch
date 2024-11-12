@@ -77,6 +77,7 @@
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.8.1**
  - SilentPatch: Impound garages
+ - SilentPatch: Bigger mirror quality on medium-high settings
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -225,6 +226,7 @@
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
+ - SilentPatch: Bigger mirror quality on medium-high settings
 
 **Since v1.8**
  - Some cut effects from the game are back
