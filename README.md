@@ -75,6 +75,9 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.8.1**
+ - SilentPatch: Impound garages
+
 **Since v1.8**
  - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
@@ -219,6 +222,9 @@
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
+
+**Since v1.8.1**
+ - SilentPatch: Impound garages
 
 **Since v1.8**
  - Some cut effects from the game are back

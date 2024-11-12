@@ -898,6 +898,15 @@
         HOOKBL(CoronasRender_Headlight, pGTASA + 0x6C6300);
     }
 
+    // SilentPatchSA: ImpoundGarages
+    if(cfg->GetBool("FixImpoundGarages", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x3B05BC, 0x97F9C489);
+        aml->Write32(pGTASA + 0x3B0674, 0x97F9C45B);
+        aml->Write32(pGTASA + 0x3B07BC, 0x97F9C409);
+        aml->PlaceNOP(pGTASA + 0x3CE088, 1);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
