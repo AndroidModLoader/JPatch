@@ -1335,6 +1335,12 @@
         aml->Write32(pGTASA + 0x5C496E, 0x6180F44F);
     }
 
+    // Fixes a weird ass glitches with the timer value clamping
+    if(cfg->GetBool("FixHighFPSTimer", true, "Gameplay"))
+    {
+        aml->WriteFloat(pGTASA + 0x420DF0, 0.001f);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
