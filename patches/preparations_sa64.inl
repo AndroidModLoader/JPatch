@@ -918,7 +918,7 @@
     }
 
     // Faml->Write32weird ass glitches with the timer value clamping
-    if(caml->Write32Bool("FixHighFPSTimer", true, "Gameplay"))
+    if(cfg->GetBool("FixHighFPSTimer", true, "Gameplay"))
     {
         aml->Write32(pGTASA + 0x5045F4, 0xD00010AB);
         aml->Write32(pGTASA + 0x504600, 0xBD41E161);
