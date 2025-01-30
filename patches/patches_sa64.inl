@@ -381,7 +381,6 @@ DECL_HOOKv(DistanceFogSetup_FogWall, float minDistance, float maxDistance, float
 // Wrong vehicle's parts colors!
 DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
-    gStoredMats->material = NULL;
     ObjectRender_VehicleParts(self);
     if(self->m_nParentModelIndex != -1 && self->objectFlags.bChangesVehColor && self->ObjectCreatedBy == eObjectType::OBJECT_TEMPORARY)
     {
@@ -393,6 +392,7 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
                 ptr->material->texture = ptr->texture;
                 ++ptr;
             }
+            gStoredMats->material = NULL;
         }
     }
 }

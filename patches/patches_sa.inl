@@ -1898,7 +1898,6 @@ std::array<std::pair<RpMaterial**, RpMaterial*>, 64> gNewStoredMaterials;*/
 
 DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 {
-    gStoredMats->material = NULL;
     ObjectRender_VehicleParts(self);
     if(self->m_nCarPartModelIndex != -1 && self->objectFlags.bChangesVehColor && self->m_nObjectType == eObjectType::OBJECT_TEMPORARY)
     {
@@ -1910,6 +1909,7 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
                 ptr->material->texture = ptr->texture;
                 ++ptr;
             }
+            gStoredMats->material = NULL;
         }
     }
 

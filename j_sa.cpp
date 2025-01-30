@@ -414,7 +414,7 @@ void JPatch()
     SET_TO(RwRasterRenderFast,      aml->GetSym(hGTASA, "_Z18RwRasterRenderFastP8RwRasterii"));
     SET_TO(RwRasterPopContext,      aml->GetSym(hGTASA, "_Z18RwRasterPopContextv"));
     SET_TO(RsCameraBeginUpdate,     aml->GetSym(hGTASA, "_Z19RsCameraBeginUpdateP8RwCamera"));
-    SET_TO(OpenGLLockAndCopyRasters,BYBIT(0x0, 0x242AA0));
+    SET_TO(OpenGLLockAndCopyRasters,pGTASA + BYBIT(0x1B05BC, 0x242AA0));
     SET_TO(RwRasterCreate,          aml->GetSym(hGTASA, "_Z14RwRasterCreateiiii"));
     SET_TO(RsCameraShowRaster,      aml->GetSym(hGTASA, "_Z18RsCameraShowRasterP8RwCamera"));
     SET_TO(FindActiveTaskByType,    aml->GetSym(hGTASA, "_ZNK12CTaskManager20FindActiveTaskByTypeEi"));
