@@ -249,7 +249,7 @@ extern "C" uint32_t StoreStaticShadow_Patch()
     {
         if(aStaticShadows_NEW[i].m_pPolyBunch == NULL) return i;
     }
-    return 0xFFFFFFFF;
+    return 1;
 }
 __attribute__((optnone)) __attribute__((naked)) void StoreStaticShadow_Inject(void)
 {
