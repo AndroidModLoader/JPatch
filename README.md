@@ -79,6 +79,7 @@
  - SilentPatch: Impound garages
  - SilentPatch: Bigger mirror quality on medium-high settings
  - Fixed a glitch with the timer on high FPS
+ - Allowes gang wars to have a wanted level (like on PC)
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -229,6 +230,7 @@
  - SilentPatch: Impound garages
  - SilentPatch: Bigger mirror quality on medium-high settings
  - Fixed a glitch with the timer on high FPS
+ - Allowes gang wars to have a wanted level (like on PC)
 
 **Since v1.8**
  - Some cut effects from the game are back

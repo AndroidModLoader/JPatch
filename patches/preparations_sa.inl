@@ -1341,6 +1341,15 @@
         aml->WriteFloat(pGTASA + 0x420DF0, 0.001f);
     }
 
+    // Allowes gang wars to have a wanted level (like on PC)
+    if(cfg->GetBool("AllowGangWarsWantedLvl", true, "Gameplay"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x3F921E, 1);
+        aml->PlaceNOP4(pGTASA + 0x3F922C, 1);
+        aml->PlaceNOP4(pGTASA + 0x3F92F2, 1);
+        aml->PlaceNOP4(pGTASA + 0x3F9302, 1);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
