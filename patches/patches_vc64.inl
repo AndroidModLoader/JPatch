@@ -77,16 +77,15 @@ DECL_HOOKv(SetFOV_StreamingDistFix, float factor)
 
     SetFOV_StreamingDistFix(factor);
 }
-extern "C" void CameraProcess_StreamDist_Patch(uintptr_t camera)
+extern "C" float CameraProcess_StreamDist_Patch()
 {
-    *(float*)(camera + 0xF4) = fStreamingDistFix;
+    return fStreamingDistFix;
 }
 __attribute__((optnone)) __attribute__((naked)) void CameraProcess_StreamDist_Inject(void)
 {
     asm volatile(
-        "STR S0, [X20, #0xF4]!\n" // im not sure what "!" does in ARMv8 assembly...
-        "MOV X0, X20\n"
-        "BL CameraProcess_StreamDist_Patch\n");
+        "BL CameraProcess_StreamDist_Patch\n"
+        "STR S0, [X20, #0xF4]!\n"); // "!" in ARMv8 assembly pushes an address of [..] to X20..?);
     asm volatile(
         "MOV X0, %0"
     :: "r" (CameraProcess_StreamDist_BackTo));

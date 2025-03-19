@@ -27,8 +27,6 @@
     // Fixes a streaming distance that gets bugged because of dumb R* logic (aspect ratio moment)
     if(cfg->GetBool("FixStreamingDistance", true, "Visual"))
     {
-        aml->Write(pGTAVC + 0x1D82FC, "\xA8\x16\x00\xD0", 4);
-
         CameraProcess_StreamDist_BackTo = pGTAVC + 0x1D8310;
         aml->Redirect(pGTAVC + 0x1D8300, (uintptr_t)CameraProcess_StreamDist_Inject);
         HOOK(SetFOV_StreamingDistFix, aml->GetSym(hGTAVC, "_ZN5CDraw6SetFOVEf"));
