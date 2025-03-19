@@ -2252,6 +2252,17 @@ DECL_HOOKv(CoronasRender_Headlight, void* a, void* b)
     CoronasRender_Headlight(a, b);
 }
 
+// Fixing drunk camera on high FPS
+DECL_HOOKv(CameraProcess_HighFPS, void* self)
+{
+    float DrunkRotationBak = *DrunkRotation;
+    CameraProcess_HighFPS(self);
+    if(DrunkRotationBak != *DrunkRotation)
+    {
+        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
+    }
+}
+
 
 
 

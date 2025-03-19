@@ -1190,6 +1190,17 @@ DECL_HOOKv(CurvePoint_SpeedFPS, const CVector *startCoors, const CVector *endCoo
     *resultSpeed *= GetTimeStepMagic();
 }
 
+// Fixing drunk camera on high FPS
+DECL_HOOKv(CameraProcess_HighFPS, void* self)
+{
+    float DrunkRotationBak = *DrunkRotation;
+    CameraProcess_HighFPS(self);
+    if(DrunkRotationBak != *DrunkRotation)
+    {
+        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
+    }
+}
+
 
 
 

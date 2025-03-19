@@ -82,7 +82,7 @@ float *ms_fTimeStep, *ms_fFOV, *game_FPS, *CloudsRotation, *WeatherWind, *fSprit
 CVector *m_vecDirnLightToSun;
 CVector *m_VectorToSun;
 int *m_CurrentStoredValue, *currArea, *SkipState;
-float *fPlayerAimRotRate;
+float *fPlayerAimRotRate, *DrunkRotation;
 CVector2D *m_vecCachedPos;
 
 CPlayerInfo                 *WorldPlayers;
@@ -527,6 +527,7 @@ void JPatch()
     SET_TO(backTarget,              aml->GetSym(hGTASA, "backTarget"));
     SET_TO(oldTarget,               aml->GetSym(hGTASA, "oldTarget"));
     SET_TO(HudSprites,              aml->GetSym(hGTASA, "_ZN4CHud7SpritesE"));
+    SET_TO(DrunkRotation,           pGTASA + BYBIT(0x952EF0, 0xBBB950));
     // Variables End //
 
     // We need it for future fixes.

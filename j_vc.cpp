@@ -47,7 +47,7 @@ union ScriptVariables
 CStaticShadow* aStaticShadows_NEW;
 CPolyBunch *aPolyBunches;
 
-float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio, *ms_fTimeScale;
+float *ms_fTimeStep, *fHeliRotorSpeed, *ms_fAspectRatio, *ms_fTimeScale, *DrunkRotation;
 char *mod_HandlingManager;
 int *fpsLimit; // a part of RsGlobal
 void *GTouchscreen;
@@ -163,6 +163,7 @@ void JPatch()
     SET_TO(fl1679D4, pGTAVC + BYBIT(0x1679D4, 0x0)); UNPROT(fl1679D4, sizeof(float));
     SET_TO(fl1D4CF0, pGTAVC + BYBIT(0x1D4CF0, 0x9D1DCC)); UNPROT(fl1D4CF0, sizeof(float));
     SET_TO(fl1D4CF4, pGTAVC + BYBIT(0x1D4CF4, 0x9D301C)); UNPROT(fl1D4CF4, sizeof(float));
+    SET_TO(DrunkRotation, pGTAVC + BYBIT(0x595378, 0x7873D8));
     // Variables End   //
 
     // We need it for future fixes.

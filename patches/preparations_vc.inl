@@ -291,6 +291,12 @@
         aml->Write(pGTAVC + 0x613E0A, "\x4A\xF6\x44\x47", 4);
     }
 
+    // Fixing drunk camera on high FPS
+    if(cfg->GetBool("FixDrunkCameraHighFPS", true, "Visual"))
+    {
+        HOOK(CameraProcess_HighFPS, pGTAVC + 0x13F26C + 0x1);
+    }
+
 
 
 

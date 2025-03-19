@@ -1350,6 +1350,12 @@
         aml->PlaceNOP4(pGTASA + 0x3F9302, 1);
     }
 
+    // Fixing drunk camera on high FPS
+    if(cfg->GetBool("FixDrunkCameraHighFPS", true, "Visual"))
+    {
+        HOOKPLT(CameraProcess_HighFPS, pGTASA + 0x6717BC);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

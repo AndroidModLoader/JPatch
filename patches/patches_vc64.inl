@@ -320,3 +320,14 @@ DECL_HOOK(float, LoadFX_atof, char* str)
 {
     return fxMultiplier * LoadFX_atof(str);
 }
+
+// Fixing drunk camera on high FPS
+DECL_HOOKv(CameraProcess_HighFPS, void* self)
+{
+    float DrunkRotationBak = *DrunkRotation;
+    CameraProcess_HighFPS(self);
+    if(DrunkRotationBak != *DrunkRotation)
+    {
+        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
+    }
+}

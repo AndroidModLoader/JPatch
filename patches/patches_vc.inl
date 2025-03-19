@@ -360,3 +360,14 @@ DECL_HOOKp(LoadEntries_DXT, TextureDatabaseRuntime *self, bool a1, bool a2)
     self->loadedFormat = DF_DXT;
     return LoadEntries_DXT(self, a1, a2);
 }
+
+// Fixing drunk camera on high FPS
+DECL_HOOKv(CameraProcess_HighFPS, void* self)
+{
+    float DrunkRotationBak = *DrunkRotation;
+    CameraProcess_HighFPS(self);
+    if(DrunkRotationBak != *DrunkRotation)
+    {
+        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
+    }
+}

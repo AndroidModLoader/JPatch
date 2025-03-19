@@ -9,6 +9,9 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
+**Since v1.8.1**
+ - Fixing drunk camera on high FPS
+ 
 **Since v1.8**
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
  - Fixed boat speed on high FPS
@@ -40,6 +43,9 @@
  - Fix fighting range
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
+
+ **Since v1.8.1**
+ - Fixing drunk camera on high FPS
 
 **Since v1.8**
  - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
@@ -80,6 +86,7 @@
  - SilentPatch: Bigger mirror quality on medium-high settings
  - Fixed a glitch with the timer on high FPS
  - Allowes gang wars to have a wanted level (like on PC)
+ - Fixing drunk camera on high FPS
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -231,6 +238,7 @@
  - SilentPatch: Bigger mirror quality on medium-high settings
  - Fixed a glitch with the timer on high FPS
  - Allowes gang wars to have a wanted level (like on PC)
+ - Fixing drunk camera on high FPS
 
 **Since v1.8**
  - Some cut effects from the game are back
