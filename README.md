@@ -13,7 +13,7 @@
  - Fixing drunk camera on high FPS
  
 **Since v1.8**
- - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
  - Fixed boat speed on high FPS
  - Fix wheels rotation speed on high FPS
  - Fix car slowdown on high FPS
@@ -48,7 +48,7 @@
  - Fixing drunk camera on high FPS
 
 **Since v1.8**
- - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
  - Now it's possible to remove ZERO's from money text
  - 44100Hz audio support without a mod "OpenAL Update"
 
@@ -92,7 +92,7 @@
  - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
- - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
  - RLEDecompress crash is fixed! (allocates more memory)
  - Fixes some stupid nearclipping issues that are caused by WarDrum's dirty hands
  - Fixes that some data in CollisionData is not being set to zero
@@ -101,7 +101,6 @@
 **Since v1.7.3**
  - Not only airplanes but also trains and boats have shadows
  - If car is far enough, shadow will be classic (instead of NO SHADOWS)
- - Probably fixed searchlights speed at high FPS
  - An experimental fix for crazy cruising speed for vehicles
  - Some other issues are fixed now... duh
 
@@ -244,7 +243,7 @@
  - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
- - GLAlphaFunc mod is now inside (fixing a crash on Huawei phones)
+ - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
  - Fixes some stupid nearclipping issues that are caused by WarDrum's dirty hands
  - Fixes that some data in CollisionData is not being set to zero
  - Fixes a little Rockstar mistake with coronas rendering
