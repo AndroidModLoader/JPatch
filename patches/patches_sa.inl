@@ -1759,8 +1759,7 @@ __attribute__((optnone)) __attribute__((naked)) void RLE_Inject(void)
 {
     asm volatile(
         "LDR R4, [SP, #0x24]\n" // org
-        "ADDS R0, R4, #32\n" //
-        "MOV R4, R0\n"
+        "ADDS R0, R4, R4\n" //
         //"LSLS R0, R4, #2\n" //
         //"MOV R0, #4096\n" // my attempt...
         "BLX malloc\n"
