@@ -909,7 +909,7 @@
     if(cfg->GetBool("FixFogWall", true, "Visual"))
     {
         aml->Write(pGTASA + 0x5EB9D9, "\x31\x2E\x30\x30", 4);
-        HOOKBLX(DistanceFogSetup_FogWall, pGTASA + 0x1AF4AE);
+        HOOKPLT(DistanceFogSetup_FogWall, pGTASA + 0x673C20);
     }
 
     // Fixes Corona sprites stretching at foggy weather
@@ -1107,7 +1107,7 @@
     // Fix FX memory leak
     if(cfg->GetBool("FixFXLeak", true, "Gameplay"))
     {
-        HOOKBLX(FxInfoMan_FXLeak, pGTASA + 0x36DB7C + 0x1);
+        HOOKPLT(FxInfoMan_FXLeak, pGTASA + 0x670FA8);
     }
     
     // BengbuGuards: Jetpack Hover Button
@@ -1128,7 +1128,7 @@
         aml->Redirect(pGTASA + 0x3C4BB2 + 0x1, (uintptr_t)ProcessCamFollowPed_IdleCam2);
 
         aml->PlaceNOP4(pGTASA + 0x3BF2DC, 1);
-        HOOKBLX(CamProcess_IdleCam, pGTASA + 0x3DCA2C + 0x1);
+        HOOKPLT(CamProcess_IdleCam, pGTASA + 0x6703F0);
         HOOKPLT(DrawAllWidgets, pGTASA + 0x66E5E4);
 
         // Speed 3.0f is like on PC: 1,5 minutes
@@ -1144,7 +1144,7 @@
     if(newColCacheSize > 50) // default is 50, we dont allow to set it to lower value
     {
         aml->PlaceB(pGTASA + 0x2D96B4 + 0x1, pGTASA + 0x2D9730 + 0x1); // disable default limit
-        HOOKBLX(InitCollisions_BumpCache, pGTASA + 0x471DB8 + 0x1);
+        HOOKPLT(InitCollisions_BumpCache, pGTASA + 0x671DB0);
     }
 
     // Falling star.
@@ -1259,8 +1259,8 @@
     {
         aml->PlaceNOP(pGTASA + 0x5B678A + 0x1, 1);
         HOOKPLT(RenderPostEffects, pGTASA + 0x671980);
-        HOOKBLX(PostProcess_CCTV, pGTASA + 0x5B678C + 0x1);
-        HOOKBLX(RenderEffects_WaterCannons, pGTASA + 0x3F63A2 + 0x1);
+        HOOKPLT(PostProcess_CCTV, pGTASA + 0x6706F4);
+        HOOKPLT(RenderEffects_WaterCannons, pGTASA + 0x6715F0);
     }
 
     // Cant skip drive

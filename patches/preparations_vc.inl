@@ -66,7 +66,7 @@
     // Fix traffic lights
     if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
-        HOOKBL(TrFix_RenderEffects, pGTAVC + 0x202F98 + 0x1);
+        HOOK(TrFix_RenderEffects, pGTAVC + 0x201FC4 + 0x1);
 
         // Why does vehicle's lights are in that list?!
         aml->PlaceNOP4(pGTAVC + 0x231138 + 0x1, 1);
@@ -138,7 +138,7 @@
     // Fix clouds rotating speed
     if(cfg->GetBool("FixCloudsRotateSpeed", true, "Visual"))
     {
-        HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x14CA8E + 0x1);
+        HOOK(CloudsUpdate_Speedo, pGTAVC + 0x1D4C74 + 0x1);
     }
 
     // The explosion "shadow" is missing
@@ -223,7 +223,7 @@
         // CShadows::UpdateStaticShadows
         aml->Write(pGTAVC + 0x1F92D6, (uintptr_t)"\x04\xF5\x1B\x55", 4); // ADD.W R5, R4, #0x26C0
 
-        HOOKBL(InitShadows, pGTAVC + 0x14C56A + 0x1);
+        HOOK(InitShadows, pGTAVC + 0x1F8C5C + 0x1);
     }
 
     // Bigger max count of peds

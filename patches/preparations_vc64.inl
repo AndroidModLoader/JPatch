@@ -63,7 +63,7 @@
     // Fix traffic lights
     if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
-        HOOKBL(TrFix_RenderEffects, pGTAVC + 0x2DF1FC);
+        HOOK(TrFix_RenderEffects, pGTAVC + 0x2DFB64);
 
         // Why does vehicle's lights are in that list?!
         aml->PlaceNOP4(pGTAVC + 0x32DB34, 1);
@@ -131,7 +131,7 @@
         aml->Write32(pGTAVC + 0x2AA5C8, 0xB0003949);
         aml->Write32(pGTAVC + 0x2AA5CC, 0xBD401D24);
         
-        HOOKBL(CloudsUpdate_Speedo, pGTAVC + 0x1EE318);
+        HOOKPLT(CloudsUpdate_Speedo, pGTAVC + 0x56F1A8);
     }
 
     // The explosion "shadow" is missing
@@ -217,7 +217,7 @@
         // CShadows::UpdateStaticShadows
         aml->Write32(pGTAVC + 0x2DB4D8, CMPBits::Create(MAX_STATIC_SHADOWS, 8, true)); // CMP X8, #0x30
 
-        HOOKBL(InitShadows, pGTAVC + 0x1EDC64);
+        HOOKPLT(InitShadows, pGTAVC + 0x574740);
 
         StoreStaticShadow_BackTo = pGTAVC + 0x2D76B8;
         aml->Redirect(pGTAVC + 0x2D7538, (uintptr_t)StoreStaticShadow_Inject);

@@ -41,7 +41,7 @@
     // Limit sand/dust particles on bullet impact (they are EXTREMELY dropping FPS)
     if(cfg->GetBool("LimitSandDustBulletParticles", true, "Visual"))
     {
-        HOOKBL(GetBulletFx_Limited, pGTASA + 0x434A38);
+        HOOKPLT(GetBulletFx_Limited, pGTASA + 0x846068);
         if(cfg->GetBool("LimitSandDustBulletParticlesWithSparkles", false, "Visual"))
         {
             nLimitWithSparkles = BULLETFX_SPARK;
@@ -57,7 +57,7 @@
     // Fix water physics
     if(cfg->GetBool("FixWaterPhysics", true, "Gameplay"))
     {
-        HOOKBL(ProcessSwimmingResistance, pGTASA + 0x6565F0);
+        HOOK(ProcessSwimmingResistance, pGTASA + 0x657B88);
         HOOKBL(ProcessPedBuoyancy, pGTASA + 0x5980F0);
         SET_TO(buoyancyTimescaleReplacement, pGTASA + 0x692B14); UNPROT(buoyancyTimescaleReplacement, sizeof(float));
         aml->Write32(pGTASA + 0x691E80, 0xB0000009);
@@ -111,7 +111,7 @@
     // Fixing a crosshair position by very stupid math
     if(cfg->GetBool("FixCrosshair", true, "Visual"))
     {
-        HOOKBL(DrawCrosshair, pGTASA + 0x51F7E4);
+        HOOK(DrawCrosshair, pGTASA + 0x51C694);
     }
     
     // Country. Rifle. Is. 3rd. Person.
@@ -150,7 +150,7 @@
     if(cfg->GetBool("FixFogWall", true, "Visual"))
     {
         aml->Write(pGTASA + 0x712095, "\x31\x2E\x30\x30", 4);
-        HOOKBL(DistanceFogSetup_FogWall, pGTASA + 0x240B3C);
+        HOOKPLT(DistanceFogSetup_FogWall, pGTASA + 0x8465E0);
     }
 
     // Frick your "improved characters models", War Dumb
@@ -220,7 +220,7 @@
     // Fix planes generation coordinates
     if(cfg->GetBool("FixPlanesGenerationCoords", true, "Gameplay"))
     {
-        HOOKBL(FindPlaneCoors_CheckCol, pGTASA + 0x69C660);
+        HOOKPLT(FindPlaneCoors_CheckCol, pGTASA + 0x844158);
     }
 
     // Now CJ is able to exit a vehicle and start moving immediately, without being forced to close the door
@@ -430,7 +430,7 @@
     // Minimap in interiors? Hell nah!
     if(cfg->GetBool("NoInteriorRadar", true, "Visual"))
     {
-        HOOKBL(DrawRadar, pGTASA + 0x51F8E0);
+        HOOK(DrawRadar, pGTASA + 0x51CFF0);
     }
 
     // Fix greenish detail tex
@@ -482,7 +482,7 @@
     // Inverse swimming controls to dive/go up (to match PC version)
     if(cfg->GetBool("InverseSwimmingDivingControl", true, "Gameplay"))
     {
-        HOOKBL(TaskSwim_ProcessInput, pGTASA + 0x6562C8);
+        HOOK(TaskSwim_ProcessInput, pGTASA + 0x6569C4);
         HOOKBL(GetPedWalkUpDown_Swimming, pGTASA + 0x656A1C);
         aml->Write32(pGTASA + 0x6571F4, 0xD000072A);
         aml->Write32(pGTASA + 0x6571F8, 0xBD4E9D44);
@@ -532,7 +532,7 @@
     {
         //SkimmerWaterResistance_BackTo = pGTASA + 0x6AD4D8;
         //aml->Redirect(pGTASA + 0x6AD4C8, (uintptr_t)SkimmerWaterResistance_Inject);
-        HOOKBL(ApplyBoatWaterResistance, pGTASA + 0x6AD124);
+        HOOK(ApplyBoatWaterResistance, pGTASA + 0x6AD450);
     }
 
     // Cinematic vehicle camera on double tap
@@ -605,7 +605,7 @@
     // Fix FX memory leak
     if(cfg->GetBool("FixFXLeak", true, "Gameplay"))
     {
-        HOOKBL(FxInfoMan_FXLeak, pGTASA + 0x43EA5C);
+        HOOKPLT(FxInfoMan_FXLeak, pGTASA + 0x841D00);
     }
 
     // Bigger distance for light coronas
@@ -758,7 +758,7 @@
         aml->Write32(pGTASA + 0x368D20, 0xF0001E49);
         aml->Write32(pGTASA + 0x368D24, 0xBD48C920);
         aml->Write32(pGTASA + 0x368D54, 0x1E2D1863);
-        HOOKBL(PlaceRedMarker_MarkerFix, pGTASA + 0x369814);
+        HOOK(PlaceRedMarker_MarkerFix, pGTASA + 0x3688A0);
     }
 
     // Can now rotate the camera inside the heli/plane?
@@ -818,22 +818,13 @@
         aml->PlaceNOP(pGTASA + 0x6F6220, 1);
     }
 
-    // Searchlights are too fast...
-    if(cfg->GetBool("FixSearchlightHighFPS", true, "Gameplay"))
-    {
-        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425C2C);
-        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425D5C);
-        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CA0);
-        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CF8);
-    }
-
     // Missing effects that are on PC but not on Mobile (from SkyGFX)
     if(cfg->GetBool("CutEffects", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x6DA9E0, 1);
         HOOKPLT(RenderPostEffects, pGTASA + 0x842CF0);
-        HOOKBL(PostProcess_CCTV, pGTASA + 0x6DA9E4);
-        HOOKBL(RenderEffects_WaterCannons, pGTASA + 0x4D8924);
+        HOOK(PostProcess_CCTV, pGTASA + 0x6DA0B4);
+        HOOKPLT(RenderEffects_WaterCannons, pGTASA + 0x8426F0);
         HOOKBL(SpeedFX_Raster, pGTASA + 0x6D8E08);
         HOOKB(SpeedFX_RestoreStates, pGTASA + 0x6D8EC4);
     }
@@ -844,7 +835,7 @@
         skiptripChangeTex = cfg->GetBool("BringBackSkipButton_Texture", skiptripChangeTex, "Gameplay");
         SET_TO(bDisplayedSkipTripMessage, pGTASA + 0xC20E90);
         HOOKB(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3CEA24);
-        HOOKBL(DrawHud_SkipTrip, pGTASA + 0x51F8E4);
+        HOOKPLT(DrawHud_SkipTrip, pGTASA + 0x848C48);
     }
 
     // A particles with "check ground" flag are falling through the world
@@ -869,8 +860,9 @@
     // Fix
     if(cfg->GetBool("FixCruisingVehiclesSpeed", true, "Gameplay"))
     {
-        HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3AD0A4);
-        HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3B0F60);
+        //HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3AD0A4);
+        //HOOKBL(CurvePoint_SpeedFPS, pGTASA + 0x3B0F60);
+        HOOKPLT(CurvePoint_SpeedFPS, pGTASA + 0x844DA8);
     }
     
     // Fix a dumb Android 10+ RLEDecompress fix crash (that's an issue of TXD tools)
@@ -960,6 +952,15 @@
 
 
 
+
+    // Searchlights are too fast... (TODO: untested lol, there's no sqrtf at these addresses)
+    /*if(cfg->GetBool("FixSearchlightHighFPS", true, "Gameplay"))
+    {
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425C2C);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425D5C);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CA0);
+        HOOKBL(SearchLight_sqrtf, pGTASA + 0x425CF8);
+    }*/
     
     // Fixes a weird glitch from there: https://github.com/multitheftauto/mtasa-blue/issues/1123
     //if(cfg->GetBool("MTA_FixProjectiles", true, "Gameplay"))
