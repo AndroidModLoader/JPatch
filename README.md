@@ -87,6 +87,7 @@
  - Fixed a glitch with the timer on high FPS
  - Allowes gang wars to have a wanted level (like on PC)
  - Fixing drunk camera on high FPS
+ - When headlights are active, the windows are no longer transparent from one side
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -238,6 +239,7 @@
  - Fixed a glitch with the timer on high FPS
  - Allowes gang wars to have a wanted level (like on PC)
  - Fixing drunk camera on high FPS
+ - When headlights are active, the windows are no longer transparent from one side
 
 **Since v1.8**
  - Some cut effects from the game are back

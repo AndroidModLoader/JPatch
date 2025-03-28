@@ -1356,6 +1356,12 @@
         HOOKPLT(CameraProcess_HighFPS, pGTASA + 0x6717BC);
     }
 
+    // When headlights are active, the windows are no longer transparent from one side.
+    if(cfg->GetBool("FixWindowsCullingWithHeadlights", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x590AA2, 0x01);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
