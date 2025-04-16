@@ -156,7 +156,7 @@
     // Frick your "improved characters models", War Dumb
     if(cfg->GetBool("FixPedSpecInShaders", true, "Visual"))
     {
-        aml->Write32(pGTASA + 0x263810, ARMv8::MOVRegBits::CreateMOV(23, 8, false));
+        aml->Write32(pGTASA + 0x263810, ARMv8::MOVRegBits::Create(23, 8, false));
         aml->PlaceB(pGTASA + 0x264A94, pGTASA + 0x264B34);
     }
 
