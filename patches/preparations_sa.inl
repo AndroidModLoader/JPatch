@@ -747,11 +747,11 @@
     }
     
     // Water Quadrant
-    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 3, "Visual");
+    int dist = cfg->GetInt("DetailedWaterDrawDistance", 48 * 2, "Visual");
     if(dist > 0)
     {
         if(dist < 24) dist = 24;
-        else if(dist <= 48 * 3) dist = 48 * 3;
+        else if(dist >= 48 * 4) dist = 48 * 4;
         *DETAILEDWATERDIST = dist;
     }
     
