@@ -1362,6 +1362,13 @@
         aml->Write8(pGTASA + 0x590AA2, 0x01);
     }
 
+    // SilentPatch: Skimmer 20th Anniversary glitch (doesnt happen for us but set it to PC values)
+    if(cfg->GetBool("Skimmer20HandlingLittleFix", true, "Gameplay"))
+    {
+        aml->Write8(pGTASA + 0x469A10 + 1, 0x01);
+        aml->Write32(pGTASA + 0x469A12, 0x527DF04F); // 0.75 (instead of 0.7, otherwise a patch is gonna be huge...)
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
