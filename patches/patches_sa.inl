@@ -560,7 +560,7 @@ DECL_HOOKv(Heli_ProcessFlyingStuff, CHeli* self)
 
 DECL_HOOKv(PossiblyRemoveVehicle_Re3, CVehicle* veh)
 {
-    if(veh->vehicleFlags.bIsLocked) return;
+    if(veh->vehicleFlags.bIsLocked && veh->m_fHealth > 0.0f && veh->m_nStatus != STATUS_WRECKED) return;
     PossiblyRemoveVehicle_Re3(veh);
 }
 

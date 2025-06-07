@@ -12,7 +12,7 @@ jobs:
     steps:
 
     - name: Checkout repository...
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         
@@ -38,7 +38,7 @@ jobs:
         mv ./structs/* ./
 
     - name: Install Android NDK (r25c)...
-      uses: nttld/setup-ndk@v1.2.0
+      uses: nttld/setup-ndk@v1
       with:
         ndk-version: r25c
         local-cache: true
