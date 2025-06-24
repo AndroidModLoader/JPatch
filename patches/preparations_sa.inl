@@ -1255,13 +1255,13 @@
     }
 
     // Missing effects that are on PC but not on Mobile (from SkyGFX)
-    if(cfg->GetBool("CutEffects", true, "Visual"))
+    /*if(cfg->GetBool("CutEffects", true, "Visual"))
     {
         aml->PlaceNOP(pGTASA + 0x5B678A + 0x1, 1);
         HOOKPLT(RenderPostEffects, pGTASA + 0x671980);
         HOOKPLT(PostProcess_CCTV, pGTASA + 0x6706F4);
         HOOKPLT(RenderEffects_WaterCannons, pGTASA + 0x6715F0);
-    }
+    }*/
 
     // Cant skip drive
     if(cfg->GetBool("BringBackTripSkip", true, "Gameplay"))
