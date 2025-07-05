@@ -88,6 +88,8 @@
  - Allowes gang wars to have a wanted level (like on PC)
  - Fixing drunk camera on high FPS
  - When headlights are active, the windows are no longer transparent from one side
+ - Returned back the game logic related to player aiming at peds
+ - Now the game shuts opened doors at high speeds with high FPS
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -226,7 +228,6 @@
 **Planned/TODO (not ready or broken now)**
  - Fix camera zoom is not that big (aspect ratio?)
  - FoodEatingFix by JuniorDjjr
- - Moon phases (probably far away...)
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
@@ -240,6 +241,8 @@
  - Allowes gang wars to have a wanted level (like on PC)
  - Fixing drunk camera on high FPS
  - When headlights are active, the windows are no longer transparent from one side
+ - Returned back the game logic related to player aiming at peds
+ - Now the game shuts opened doors at high speeds with high FPS
 
 **Since v1.8**
  - Some cut effects from the game are back

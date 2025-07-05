@@ -1369,6 +1369,23 @@
         aml->Write32(pGTASA + 0x469A12, 0x527DF04F); // 0.75 (instead of 0.7, otherwise a patch is gonna be huge...)
     }
 
+    // Fixes everything related to the player aiming at peds
+    if(cfg->GetBool("FixPlayerAimingTasks", true, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x4C8FC0, 1);
+        aml->PlaceNOP(pGTASA + 0x5378AE, 1); // ?
+        aml->PlaceNOP(pGTASA + 0x537AE0, 1);
+        aml->PlaceNOP4(pGTASA + 0x538900, 1);
+    }
+
+    // Now the game shuts opened doors at high speeds with high FPS
+    if(cfg->GetBool("FixShutDoorAtHighSpeed", true, "Gameplay"))
+    {
+        //aml->WriteFloat(pGTASA + 0x56F068, 0.02f);
+        ShutDoorAtHighSpeed_BackTo = pGTASA + 0x56EFD2 + 0x1;
+        aml->Redirect(pGTASA + 0x56EFC6 + 0x1, (uintptr_t)ShutDoorAtHighSpeed_Inject);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

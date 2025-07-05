@@ -1201,6 +1201,28 @@ DECL_HOOKv(CameraProcess_HighFPS, void* self)
     }
 }
 
+// Fix widget's holding radius
+uintptr_t ShutDoorAtHighSpeed_BackTo;
+extern "C" float ShutDoorAtHighSpeed_Patch()
+{
+    return 0.1f * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void ShutDoorAtHighSpeed_Inject(void)
+{
+    asm volatile(
+        "STR S0, [SP, #-16]!\n"
+        "FABS S2, S0\n"
+        "BL ShutDoorAtHighSpeed_Patch\n"
+        "FMOV S1, S0\n"
+        "LDR S0, [SP], #16\n"
+        "FCMP S2, S1\n");
+    asm volatile(
+        "MOV X8, %0"
+    :: "r" (ShutDoorAtHighSpeed_BackTo));
+    asm volatile(
+        "BR X8\n");
+}
+
 
 
 
