@@ -2058,12 +2058,12 @@ DECL_HOOK(float, ProcessWheelRotation_FPS, CVehicle *self, tWheelState WheelStat
 DECL_HOOKv(TrainPreRender, CVehicle* self)
 {
     TrainPreRender(self);
-    StoreShadowForVehicle(self, 6); // 6 = VEHICLE_TYPE_TRAIN
+    StoreShadowForVehicle(self, 1);
 }
 DECL_HOOKv(BoatPreRender, CVehicle* self)
 {
     BoatPreRender(self);
-    StoreShadowForVehicle(self, 5); // 5 = VEHICLE_TYPE_BOAT
+    StoreShadowForVehicle(self, 1);
 }
 
 // Missing effects that are on PC but not on Mobile (from SkyGFX)
