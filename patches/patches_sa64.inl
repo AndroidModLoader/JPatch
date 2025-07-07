@@ -970,12 +970,12 @@ DECL_HOOKv(PlaceRedMarker_MarkerFix, bool canPlace)
 DECL_HOOKv(TrainPreRender, CVehicle* self)
 {
     TrainPreRender(self);
-    StoreShadowForVehicle(self, 1);
+    StoreShadowForVehicle(self, 0);
 }
 DECL_HOOKv(BoatPreRender, CVehicle* self)
 {
     BoatPreRender(self);
-    StoreShadowForVehicle(self, 1);
+    StoreShadowForVehicle(self, 0);
 }
 
 // This fixes black bushes and more things
