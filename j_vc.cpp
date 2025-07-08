@@ -120,6 +120,12 @@ DECL_HOOKv(Global_TimerUpdate)
         frameTimeFractionScaled -= (uint32_t)frameTimeFractionScaled;
     }
 }
+void JPatch_GameStart();
+DECL_HOOKv(GameStartedInited)
+{
+    GameStartedInited();
+    JPatch_GameStart();
+}
 
 #ifdef AML32
     #include "patches_vc.inl"
@@ -146,7 +152,6 @@ void JPatch()
     
     // Variables Start //
     SET_TO(ms_fTimeStep, aml->GetSym(hGTAVC, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(mod_HandlingManager, *(char**)(pGTAVC + BYBIT(0x3956B4, 0x578DE8)));
     SET_TO(fHeliRotorSpeed, pGTAVC + BYBIT(0x255000, 0x4CAEE0)); UNPROT(fHeliRotorSpeed, sizeof(float));
     SET_TO(ms_fAspectRatio, aml->GetSym(hGTAVC, "_ZN5CDraw15ms_fAspectRatioE"));
     SET_TO(ms_fTimeScale, aml->GetSym(hGTAVC, "_ZN6CTimer13ms_fTimeScaleE"));
@@ -168,12 +173,18 @@ void JPatch()
 
     // We need it for future fixes.
     HOOK(Global_TimerUpdate, aml->GetSym(hGTAVC, "_ZN6CTimer6UpdateEv"));
+    HOOK(GameStartedInited, aml->GetSym(hGTAVC, "_ZN5CGame22InitialiseOnceBeforeRWEv"));
 
   #ifdef AML32
     #include "preparations_vc.inl"
   #else
     #include "preparations_vc64.inl"
   #endif
+}
+
+void JPatch_GameStart()
+{
+    SET_TO(mod_HandlingManager, *(char**)(pGTAVC + BYBIT(0x3956B4, 0x578DE8)));
 }
 
 }; // namespace GTA_VC

@@ -962,6 +962,18 @@
         aml->Redirect(pGTASA + 0x6914F8, (uintptr_t)ShutDoorAtHighSpeed_Inject);
     }
 
+    // HudColors
+    if(cfg->GetBool("PCHudColors", true, "Visual"))
+    {
+        aml->PlaceRET(pGTASA + 0x252CE4);
+    }
+
+    // SkyGFX: Water color fix. You now have a choice to use JPatch if you dont need SkyGFX
+    if(cfg->GetBool("WaterColorFix", true, "Visual"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x6BD1C4, 1);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

@@ -1072,7 +1072,7 @@
         // Temporary fix. I found an interesting connection between real colors and those:
 
         // Color rendering is broken, wadahel !!!
-        aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
+        /*aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
         aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
         aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
         aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
@@ -1081,7 +1081,10 @@
         aml->Write8(pGTASA + 0x2BD9C4, (uint8_t)(magicColorVal * 172)); // Oxygen bar (red channel)
         aml->Write8(pGTASA + 0x2BD9CA, (uint8_t)(magicColorVal * 203)); // Oxygen bar (green channel)
         aml->Write8(pGTASA + 0x2BD9D0, (uint8_t)(magicColorVal * 241)); // Oxygen bar (blue channel)
-        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1); // check this fn for bit more info
+        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1); // check this fn for bit more info*/
+
+        // An actual fix. Bruh.
+        aml->PlaceRET(pGTASA + 0x1C07D0 + 0x1);
     }
 
     // Fix the issue that player cannot kill with a knife if not crouching
@@ -1384,6 +1387,13 @@
         //aml->WriteFloat(pGTASA + 0x56F068, 0.02f);
         ShutDoorAtHighSpeed_BackTo = pGTASA + 0x56EFD2 + 0x1;
         aml->Redirect(pGTASA + 0x56EFC6 + 0x1, (uintptr_t)ShutDoorAtHighSpeed_Inject);
+    }
+
+    // SkyGFX: Water color fix. You now have a choice to use JPatch if you dont need SkyGFX
+    if(cfg->GetBool("WaterColorFix", true, "Visual"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x5989A8, 1);
+        aml->PlaceNOP4(pGTASA + 0x5989B0, 1);
     }
 
     // Skip that dumb EULA. We accepted it years ago, shut up

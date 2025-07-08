@@ -312,6 +312,12 @@ DECL_HOOKv(Global_TimerUpdate)
         frameTimeFractionScaled -= (uint32_t)frameTimeFractionScaled;
     }
 }
+void JPatch_GameStart();
+DECL_HOOKv(GameStartedInited)
+{
+    GameStartedInited();
+    JPatch_GameStart();
+}
     
 #ifdef AML32
     #include "patches_sa.inl"
@@ -447,7 +453,6 @@ void JPatch()
     SET_TO(ms_taskSequence,         aml->GetSym(hGTASA, "_ZN14CTaskSequences15ms_taskSequenceE"));
     SET_TO(pActiveScripts,          aml->GetSym(hGTASA, "_ZN11CTheScripts14pActiveScriptsE"));
     SET_TO(ms_fTimeStep,            aml->GetSym(hGTASA, "_ZN6CTimer12ms_fTimeStepE"));
-    SET_TO(WorldPlayers,            *(void**)(pGTASA + BYBIT(0x6783C8, 0x84E7A8))); // Patched CWorld::Players will work now!
     SET_TO(ms_fFOV,                 aml->GetSym(hGTASA, "_ZN5CDraw7ms_fFOVE"));
     SET_TO(game_FPS,                aml->GetSym(hGTASA, "_ZN6CTimer8game_FPSE"));
     SET_TO(TheCamera,               aml->GetSym(hGTASA, "TheCamera"));
@@ -457,16 +462,13 @@ void JPatch()
     SET_TO(gMobileMenu,             aml->GetSym(hGTASA, "gMobileMenu"));
     SET_TO(NumberOfSearchLights,    aml->GetSym(hGTASA, "_ZN5CHeli20NumberOfSearchLightsE"));
     SET_TO(lastDevice,              aml->GetSym(hGTASA, "lastDevice"));
-    SET_TO(m_pWidgets,              *(void**)(pGTASA + BYBIT(0x67947C, 0x850910))); // Patched CTouchInterface::m_pWidgets will work now!
     SET_TO(bDidWeProcessAnyCinemaCam, aml->GetSym(hGTASA, "bDidWeProcessAnyCinemaCam"));
     SET_TO(bRunningCutscene,        aml->GetSym(hGTASA, "_ZN12CCutsceneMgr10ms_runningE"));
     SET_TO(bProcessingCutscene,     aml->GetSym(hGTASA, "_ZN12CCutsceneMgr21ms_cutsceneProcessingE"));
-    SET_TO(ScriptParams,            *(void**)(pGTASA + BYBIT(0x676F7C, 0x84BF38))); // Patched ScriptParams will work now!
     SET_TO(m_alphaList,             aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins11m_alphaListE"));
     SET_TO(CloudsRotation,          aml->GetSym(hGTASA, "_ZN7CClouds13CloudRotationE"));
     SET_TO(CloudsIndividualRotation, aml->GetSym(hGTASA, "_ZN7CClouds18IndividualRotationE"));
     SET_TO(WeatherWind,             aml->GetSym(hGTASA, "_ZN8CWeather4WindE"));
-    SET_TO(pObjectPool,             *(void**)(pGTASA + BYBIT(0x676BBC, 0x84B7C0)));
     SET_TO(m_pCurrZoneInfo,         aml->GetSym(hGTASA, "_ZN9CPopCycle15m_pCurrZoneInfoE"));
     SET_TO(m_ZoneFadeTimer,         aml->GetSym(hGTASA, "_ZN4CHud15m_ZoneFadeTimerE"));
     SET_TO(ms_numAnimBlocks,        aml->GetSym(hGTASA, "_ZN12CAnimManager16ms_numAnimBlocksE"));
@@ -488,7 +490,6 @@ void JPatch()
     SET_TO(DETAILEDWATERDIST,       aml->GetSym(hGTASA, "DETAILEDWATERDIST"));
     SET_TO(ms_nNumGang,             aml->GetSym(hGTASA, "_ZN11CPopulation11ms_nNumGangE"));
     SET_TO(aPolyBunches,            aml->GetSym(hGTASA, "_ZN8CShadows12aPolyBunchesE"));
-    SET_TO(ms_modelInfoPtrs,        aml->GetSym(hGTASA, "_ZN10CModelInfo16ms_modelInfoPtrsE"));
     SET_TO(ms_currentCol,           aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo13ms_currentColE"));
     SET_TO(ms_vehicleColourTable,   aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo21ms_vehicleColourTableE"));
     SET_TO(ms_pRemapTexture,        aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo16ms_pRemapTextureE"));
@@ -511,7 +512,6 @@ void JPatch()
     SET_TO(m_CurrentStoredValue,    aml->GetSym(hGTASA, "_ZN10CTimeCycle20m_CurrentStoredValueE"));
     SET_TO(fPlayerAimRotRate,       aml->GetSym(hGTASA, "fPlayerAimRotRate"));
     SET_TO(m_vecCachedPos,          aml->GetSym(hGTASA, "_ZN15CTouchInterface14m_vecCachedPosE"));
-    SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYBIT(0x6777C8, 0x84CFB8))) + 4); // FLA
     SET_TO(ms_bTakePhoto,           aml->GetSym(hGTASA, "_ZN7CWeapon13ms_bTakePhotoE"));
     SET_TO(currArea,                aml->GetSym(hGTASA, "_ZN5CGame8currAreaE"));
     SET_TO(bGameStarted,            pGTASA + BYBIT(0x9599B8, 0xBC2880));
@@ -532,12 +532,23 @@ void JPatch()
 
     // We need it for future fixes.
     HOOK(Global_TimerUpdate, aml->GetSym(hGTASA, "_ZN6CTimer6UpdateEv"));
+    HOOK(GameStartedInited, aml->GetSym(hGTASA, "_ZN5CGame22InitialiseOnceBeforeRWEv"));
 
     #ifdef AML32
         #include "preparations_sa.inl"
     #else
         #include "preparations_sa64.inl"
     #endif
+}
+
+void JPatch_GameStart()
+{
+    SET_TO(mod_HandlingManager_off4, (*(uintptr_t*)(pGTASA + BYBIT(0x6777C8, 0x84CFB8))) + 4); // FLA
+    SET_TO(WorldPlayers,             *(void**)(pGTASA + BYBIT(0x6783C8, 0x84E7A8))); // Patched CWorld::Players will work now!
+    SET_TO(m_pWidgets,               *(void**)(pGTASA + BYBIT(0x67947C, 0x850910))); // Patched CTouchInterface::m_pWidgets will work now!
+    SET_TO(ScriptParams,             *(void**)(pGTASA + BYBIT(0x676F7C, 0x84BF38))); // Patched ScriptParams will work now!
+    SET_TO(pObjectPool,              *(void**)(pGTASA + BYBIT(0x676BBC, 0x84B7C0))); // Patched pObjectPool will work now!
+    SET_TO(ms_modelInfoPtrs,         *(void**)(pGTASA + BYBIT(0x6796D4, 0x850DB8))); // Patched ms_modelInfoPtrs will work now!
 }
 
 }; // namespace GTA_SA

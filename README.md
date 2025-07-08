@@ -90,6 +90,8 @@
  - When headlights are active, the windows are no longer transparent from one side
  - Returned back the game logic related to player aiming at peds
  - Now the game shuts opened doors at high speeds with high FPS
+ - HUD colors are not brighter anymore
+ - Water color fix (from SkyGFX)
 
 **Since v1.8**
  - Some cut effects from the game are back
@@ -243,6 +245,8 @@
  - When headlights are active, the windows are no longer transparent from one side
  - Returned back the game logic related to player aiming at peds
  - Now the game shuts opened doors at high speeds with high FPS
+ - HUD colors are not brighter anymore
+ - Water color fix (from SkyGFX)
 
 **Since v1.8**
  - Some cut effects from the game are back
