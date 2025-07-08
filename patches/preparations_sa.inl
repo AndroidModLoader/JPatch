@@ -123,7 +123,10 @@
     // Dont set player on fire when he's on burning BMX (MTA:SA)
     if(cfg->GetBool("DontBurnPlayerOnBurningBMX", true, "Gameplay"))
     {
-        aml->PlaceB(pGTASA + 0x3F1ECC + 0x1, pGTASA + 0x3F1F24 + 0x1);
+        aml->Write32(pGTASA + 0x3F1ED4, 0x0464F8D5);
+        aml->Write32(pGTASA + 0x3F1EE0, 0x0464F8D5);
+        HOOK(Fire_DoStuffToGoOnFire, aml->GetSym(hGTASA, "_ZN10CPlayerPed17DoStuffToGoOnFireEv"));
+        HOOK(Fire_StartFire, aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
     }
 
     // Increase the number of vehicles types (not actual vehicles) that can be loaded at once (MTA:SA)
@@ -1394,6 +1397,23 @@
     {
         aml->PlaceNOP4(pGTASA + 0x5989A8, 1);
         aml->PlaceNOP4(pGTASA + 0x5989B0, 1);
+    }
+
+    // Open top cars are now extended
+    if(cfg->GetBool("ExtendOpenTopVehicles", true, "Gameplay"))
+    {
+        aml->PlaceNOP(pGTASA + 0x4A5DE4, 1);
+        HOOK(IsOpenTopAutomobile, aml->GetSym(hGTASA, "_ZNK11CAutomobile12IsOpenTopCarEv"));
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x66D8A0);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x66D9B8);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x66DAD0);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x66E1AC);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x66E2C0);
+
+        g_bOpenTopQuadBike = cfg->GetBool("ExtendOpenTopVehicles_QuadBike", true, "Gameplay");
+        g_bOpenTopBoats = cfg->GetBool("ExtendOpenTopVehicles_Boats", true, "Gameplay");
+        g_bOpenTopVortex = cfg->GetBool("ExtendOpenTopVehicles_Vortex", true, "Gameplay");
+        g_bOpenTopKart = cfg->GetBool("ExtendOpenTopVehicles_Kart", true, "Gameplay");
     }
 
     // Skip that dumb EULA. We accepted it years ago, shut up

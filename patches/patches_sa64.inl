@@ -1227,6 +1227,51 @@ __attribute__((optnone)) __attribute__((naked)) void ShutDoorAtHighSpeed_Inject(
         "BR X8\n");
 }
 
+// Open top cars are now extended
+bool g_bOpenTopQuadBike = false;
+bool g_bOpenTopBoats = false;
+bool g_bOpenTopVortex = false;
+bool g_bOpenTopKart = false;
+inline bool IsOpenTopBoat(uint16_t model)
+{
+    return (model == 472 || model == 472 || model == 493 || model == 484 || model == 452 || model == 446);
+}
+DECL_HOOKb(IsOpenTopAutomobile, CVehicle* self)
+{
+    if(g_bOpenTopQuadBike && self->m_nVehicleSubType == VEHICLE_TYPE_QUAD)
+    {
+        return true;
+    }
+    if(g_bOpenTopVortex && self->m_nModelIndex == 539)
+    {
+        return true;
+    }
+    if(g_bOpenTopKart && self->m_nModelIndex == 571)
+    {
+        return true;
+    }
+    return IsOpenTopAutomobile(self);
+}
+DECL_HOOKb(IsOpenTopVehicle, CVehicle* self)
+{
+    if(g_bOpenTopBoats && self->m_nVehicleSubType == VEHICLE_TYPE_BOAT && IsOpenTopBoat(self->m_nModelIndex))
+    {
+        return true;
+    }
+    return IsOpenTopVehicle(self);
+}
+
+// Dont set player on fire when he's on burning BMX (MTA:SA)
+DECL_HOOKv(Fire_DoStuffToGoOnFire, CPlayerPed* self)
+{
+    if(self == FindPlayerPed(-1)) Fire_DoStuffToGoOnFire(self);
+}
+DECL_HOOKv(Fire_StartFire, void *self, CPed *pBurningEntity, CPed *pStartedFireEntity, float fFireSize, bool8 bExtinguishEnabled, UInt32 ArgBurnTime, Int8 NumGenerationsAllowed)
+{
+    if(!pBurningEntity) return;
+    Fire_StartFire(self, pBurningEntity, pStartedFireEntity, fFireSize, bExtinguishEnabled, ArgBurnTime, NumGenerationsAllowed);
+}
+
 
 
 

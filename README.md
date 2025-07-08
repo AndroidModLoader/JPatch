@@ -92,9 +92,10 @@
  - Now the game shuts opened doors at high speeds with high FPS
  - HUD colors are not brighter anymore
  - Water color fix (from SkyGFX)
+ - Dont burn player that are driving burning BMX
+ - Enabled CJ's clothes response to the wind in some vehicles
 
 **Since v1.8**
- - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
@@ -247,9 +248,9 @@
  - Now the game shuts opened doors at high speeds with high FPS
  - HUD colors are not brighter anymore
  - Water color fix (from SkyGFX)
+ - Enabled CJ's clothes response to the wind in some vehicles
 
 **Since v1.8**
- - Some cut effects from the game are back
  - Able to skip "drive" (tripskip)
  - Fixed "collideable" particles such as gunshells (reversed from FxsFuncs)
  - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
@@ -443,7 +444,7 @@
  - MTA: Disable GTA vehicle detachment at rotation
  
  **Since v1.1.1**
- - Dont burn player that are driving burning bmx
+ - Dont burn player that are driving burning BMX
  - A fix for possible crash from GetCompositeMatrix (may be useless)
  - Cinematic camera when double tapping the camera mode switch button
  - MTA: Increase intensity of vehicle tail light corona

@@ -974,6 +974,34 @@
         aml->PlaceNOP4(pGTASA + 0x6BD1C4, 1);
     }
 
+    // Open top cars are now extended
+    if(cfg->GetBool("ExtendOpenTopVehicles", true, "Gameplay"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x59C7B0, 1);
+        HOOK(IsOpenTopAutomobile, aml->GetSym(hGTASA, "_ZNK11CAutomobile12IsOpenTopCarEv"));
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x83BF80);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x83C1B0);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x83C3E0);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x83D198);
+        HOOKPLT(IsOpenTopVehicle, pGTASA + 0x83D3C0);
+
+        g_bOpenTopQuadBike = cfg->GetBool("ExtendOpenTopVehicles_QuadBike", true, "Gameplay");
+        g_bOpenTopBoats = cfg->GetBool("ExtendOpenTopVehicles_Boats", true, "Gameplay");
+        g_bOpenTopVortex = cfg->GetBool("ExtendOpenTopVehicles_Vortex", true, "Gameplay");
+        g_bOpenTopKart = cfg->GetBool("ExtendOpenTopVehicles_Kart", true, "Gameplay");
+    }
+
+    // Dont set player on fire when he's on burning BMX (MTA:SA)
+    if(cfg->GetBool("DontBurnPlayerOnBurningBMX", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x4D3F04, 0x8B1B0388);
+        aml->Write32(pGTASA + 0x4D3F08, 0xF942D100);
+        aml->Write32(pGTASA + 0x4D3F10, 0x8B1B0388);
+        aml->Write32(pGTASA + 0x4D3F14, 0xF942D100);
+        HOOK(Fire_DoStuffToGoOnFire, aml->GetSym(hGTASA, "_ZN10CPlayerPed17DoStuffToGoOnFireEv"));
+        HOOK(Fire_StartFire, aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
