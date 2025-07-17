@@ -1002,6 +1002,21 @@
         HOOK(Fire_StartFire, aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
     }
 
+    // Optimise textures searching
+    if(cfg->GetBool("OptimiseTextureSearching", true, "Gameplay"))
+    {
+        HOOKPLT(HashStringOpt, pGTASA + 0x83F930);
+        // TextureDatabase::LoadEntry
+        aml->Write32(pGTASA + 0x283D1C, 0x14000009);
+        aml->Write32(pGTASA + 0x283D40, 0x97FE64F0);
+        aml->Write32(pGTASA + 0x283D44, 0x2A0003FC);
+        // TextureDatabase::LoadEntries
+        aml->Write32(pGTASA + 0x284478, 0x97FE6322);
+        aml->Write32(pGTASA + 0x28447C, 0x2A0003FB);
+        aml->Write32(pGTASA + 0x284480, 0x14000008);
+        aml->Write32(pGTASA + 0x2844AC, 0xD503201F);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

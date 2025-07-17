@@ -2336,6 +2336,19 @@ DECL_HOOKb(IsOpenTopVehicle, CVehicle* self)
     return IsOpenTopVehicle(self);
 }
 
+// Optimise textures searching
+DECL_HOOK(uint32_t, HashStringOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    while(*p != 0)
+    {
+        hashPart = 33 * hashPart + *p;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
+}
+
 
 
 

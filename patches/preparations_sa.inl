@@ -1416,6 +1416,12 @@
         g_bOpenTopKart = cfg->GetBool("ExtendOpenTopVehicles_Kart", true, "Gameplay");
     }
 
+    // Optimise textures searching
+    if(cfg->GetBool("OptimiseTextureSearching", true, "Gameplay"))
+    {
+        HOOKPLT(HashStringOpt, pGTASA + 0x66F974);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

@@ -1272,6 +1272,19 @@ DECL_HOOKv(Fire_StartFire, void *self, CPed *pBurningEntity, CPed *pStartedFireE
     Fire_StartFire(self, pBurningEntity, pStartedFireEntity, fFireSize, bExtinguishEnabled, ArgBurnTime, NumGenerationsAllowed);
 }
 
+// Optimise textures searching
+DECL_HOOK(uint32_t, HashStringOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    while(*p != 0)
+    {
+        hashPart = 33 * hashPart + *p;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
+}
+
 
 
 
