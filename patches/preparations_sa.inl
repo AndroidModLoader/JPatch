@@ -1422,6 +1422,13 @@
         HOOKPLT(HashStringOpt, pGTASA + 0x66F974);
     }
 
+    // The vehicle doesnt shake like a crazy on high FPS
+    if(cfg->GetBool("FixChassisSwingingHighFPS", true, "Gameplay"))
+    {
+        ChassisSwingAngle_BackTo = pGTASA + 0x55AEEC + 0x1;
+        aml->Redirect(pGTASA + 0x55AEDA + 0x1, (uintptr_t)ChassisSwingAngle_Inject);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

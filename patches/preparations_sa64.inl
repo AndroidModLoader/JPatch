@@ -1017,6 +1017,13 @@
         aml->Write32(pGTASA + 0x2844AC, 0xD503201F);
     }
 
+    // The vehicle doesnt shake like a crazy on high FPS
+    if(cfg->GetBool("FixChassisSwingingHighFPS", true, "Gameplay"))
+    {
+        ChassisSwingAngle_BackTo = pGTASA + 0x67B744;
+        aml->Redirect(pGTASA + 0x67B730, (uintptr_t)ChassisSwingAngle_Inject);
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

@@ -1205,7 +1205,7 @@ DECL_HOOKv(CameraProcess_HighFPS, void* self)
     }
 }
 
-// Fix widget's holding radius
+// Now the game shuts opened doors at high speeds with high FPS
 uintptr_t ShutDoorAtHighSpeed_BackTo;
 extern "C" float ShutDoorAtHighSpeed_Patch()
 {
@@ -1283,6 +1283,34 @@ DECL_HOOK(uint32_t, HashStringOpt, const char* s) // optimised // DJB2 hash
         ++p;
     }
     return (hashPart + (hashPart >> 5));
+}
+
+// The vehicle doesnt shake like a crazy on high FPS
+uintptr_t ChassisSwingAngle_BackTo;
+extern "C" float ChassisSwingAngle_Patch(float angle)
+{
+    return angle * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void ChassisSwingAngle_Inject(void)
+{
+    asm volatile(
+        "LDR W8, [X19, #0x934]\n" // org
+        "STP X9, X19, [SP, #-16]!\n"
+        "FMOV S0, W8\n"
+        "BL ChassisSwingAngle_Patch\n"
+        "FMOV W8, S0\n"
+        "LDP X9, X19, [SP], #16\n"
+
+        // org code
+        "LDRB W9, [X19, #0x932]\n"
+        "ADD X10, SP, #0x70\n"
+        "ADD X0, SP, #0xE0\n"
+        "STR W8, [X10, X9, LSL#2]\n");
+    asm volatile(
+        "MOV X8, %0"
+    :: "r" (ChassisSwingAngle_BackTo));
+    asm volatile(
+        "BR X8\n");
 }
 
 
