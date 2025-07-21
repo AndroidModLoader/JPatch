@@ -1064,6 +1064,13 @@
         HOOK(FixWheelVisibility_SpawnFlyingComponent, aml->GetSym(hGTASA, "_ZN11CAutomobile20SpawnFlyingComponentEij"));
     }
 
+    // Allow more wheels to be exploded instead of only ONE RANDOM
+    if(cfg->GetBool("AllowMultipleWheelsBeExploded", true, "Visual"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x690EF0, 1);
+        HOOK(FlickCarCompletely, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
+    }
+
     
 
 

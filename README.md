@@ -95,6 +95,7 @@
  - SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
  - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
  - SilentPatch: Fix the logic behind exploding cars losing wheels
+ - Allow more wheels to be exploded instead of only ONE RANDOM
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -260,6 +261,7 @@
  - SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
  - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
  - SilentPatch: Fix the logic behind exploding cars losing wheels
+ - Allow more wheels to be exploded instead of only ONE RANDOM
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

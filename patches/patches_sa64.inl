@@ -1401,6 +1401,19 @@ DECL_HOOKv(FixWheelVisibility_SpawnFlyingComponent, CAutomobile* self, int idx, 
     }
 }
 
+// Allow more wheels to be exploded instead of only ONE RANDOM
+DECL_HOOKv(FlickCarCompletely, CDamageManager* self, bool keepWheels)
+{
+    if(!keepWheels)
+    {
+        self->m_Wheel[rand() % 4] = 2;
+        self->m_Wheel[rand() % 4] = 2;
+        self->m_Wheel[rand() % 4] = 2;
+        self->m_Wheel[rand() % 4] = 2;
+    }
+    FlickCarCompletely(self, keepWheels);
+}
+
 
 
 

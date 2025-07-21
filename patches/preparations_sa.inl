@@ -1469,6 +1469,20 @@
         HOOK(FixWheelVisibility_SpawnFlyingComponent, aml->GetSym(hGTASA, "_ZN11CAutomobile20SpawnFlyingComponentEij"));
     }
 
+    // Allow more wheels to be exploded instead of only ONE RANDOM
+    if(cfg->GetBool("AllowMultipleWheelsBeExploded", true, "Visual"))
+    {
+        aml->PlaceNOP(pGTASA + 0x56EA90, 1);
+        HOOK(FlickCarCompletely, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
+    }
+
+
+
+
+    
+
+
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {
@@ -1481,13 +1495,6 @@
        // HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x1CF44C);
     }
     
-
-
-
-
-    
-
-
     // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
     // UPD: shaders are limited to 1 (or 2?) only...
     /*if(cfg->GetBool("PCDirLightsCount", true, "Visual"))
