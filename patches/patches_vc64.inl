@@ -84,12 +84,14 @@ extern "C" float CameraProcess_StreamDist_Patch()
 __attribute__((optnone)) __attribute__((naked)) void CameraProcess_StreamDist_Inject(void)
 {
     asm volatile(
+        "STR X8, [SP, #-16]!\n"
         "BL CameraProcess_StreamDist_Patch\n"
-        "STR S0, [X20, #0xF4]!\n"); // "!" in ARMv8 assembly pushes an address of [..] to X20..?);
+        "STR S0, [X20, #0xF4]!\n"); // "!" in ARMv8 assembly pushes an address of [X20,#imm] to X20..?);
     asm volatile(
         "MOV X0, %0"
     :: "r" (CameraProcess_StreamDist_BackTo));
     asm volatile(
+        "LDR X8, [SP], #16\n"
         "BR X0\n");
 }
 
