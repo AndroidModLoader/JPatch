@@ -86,7 +86,7 @@ __attribute__((optnone)) __attribute__((naked)) void CameraProcess_StreamDist_In
     asm volatile(
         "STR X8, [SP, #-16]!\n"
         "BL CameraProcess_StreamDist_Patch\n"
-        "STR S0, [X20, #0xF4]!\n"); // "!" in ARMv8 assembly pushes an address of [X20,#imm] to X20..?);
+        "STR S0, [X20, #0xF4]!\n"); // "!" in ARMv8 assembly pushes an address of X20+#imm to X20..?
     asm volatile(
         "MOV X0, %0"
     :: "r" (CameraProcess_StreamDist_BackTo));
@@ -331,4 +331,30 @@ DECL_HOOKv(CameraProcess_HighFPS, void* self)
     {
         *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
     }
+}
+
+// Optimise textures searching
+DECL_HOOK(uint32_t, HashStringOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    while(*p != 0)
+    {
+        hashPart = 33 * hashPart + *p;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
+}
+DECL_HOOK(uint32_t, HashStringNoCaseOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    char pp;
+    while((pp = *p) != 0)
+    {
+        if(pp >= 'a') pp -= 32;
+        hashPart = 33 * hashPart + pp;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
 }

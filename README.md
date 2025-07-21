@@ -9,6 +9,9 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
+**Since v1.8.2**
+ - A small optimisation for hashing functions (slightly speed ups loading)
+
 **Since v1.8.1**
  - Fixing drunk camera on high FPS
  
@@ -43,6 +46,9 @@
  - Fix fighting range
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
+
+**Since v1.8.2**
+ - A small optimisation for hashing functions (slightly speed ups loading)
 
  **Since v1.8.1**
  - Fixing drunk camera on high FPS

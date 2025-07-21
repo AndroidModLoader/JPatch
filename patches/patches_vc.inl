@@ -312,6 +312,43 @@ DECL_HOOK(float, LoadFX_atof, char* str)
     return fxMultiplier * LoadFX_atof(str);
 }
 
+// Fixing drunk camera on high FPS
+DECL_HOOKv(CameraProcess_HighFPS, void* self)
+{
+    float DrunkRotationBak = *DrunkRotation;
+    CameraProcess_HighFPS(self);
+    if(DrunkRotationBak != *DrunkRotation)
+    {
+        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
+    }
+}
+
+// Optimise textures searching
+DECL_HOOK(uint32_t, HashStringOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    while(*p != 0)
+    {
+        hashPart = 33 * hashPart + *p;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
+}
+DECL_HOOK(uint32_t, HashStringNoCaseOpt, const char* s) // optimised // DJB2 hash
+{
+    const char* p = &s[0];
+    uint32_t hashPart = 0;
+    char pp;
+    while((pp = *p) != 0)
+    {
+        if(pp >= 'a') pp -= 32;
+        hashPart = 33 * hashPart + pp;
+        ++p;
+    }
+    return (hashPart + (hashPart >> 5));
+}
+
 
 
 
@@ -359,15 +396,4 @@ DECL_HOOKp(LoadEntries_DXT, TextureDatabaseRuntime *self, bool a1, bool a2)
 {
     self->loadedFormat = DF_DXT;
     return LoadEntries_DXT(self, a1, a2);
-}
-
-// Fixing drunk camera on high FPS
-DECL_HOOKv(CameraProcess_HighFPS, void* self)
-{
-    float DrunkRotationBak = *DrunkRotation;
-    CameraProcess_HighFPS(self);
-    if(DrunkRotationBak != *DrunkRotation)
-    {
-        *DrunkRotation = DrunkRotationBak + 5.0f * GetTimeStepMagic();
-    }
 }

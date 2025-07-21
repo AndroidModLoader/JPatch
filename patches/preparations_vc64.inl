@@ -290,3 +290,10 @@
     {
         HOOKPLT(CameraProcess_HighFPS, pGTAVC + 0x5705C0);
     }
+
+    // Optimise textures searching
+    if(cfg->GetBool("OptimiseHashing", true, "Gameplay"))
+    {
+        HOOKPLT(HashStringOpt, pGTAVC + 0x5756D8);
+        HOOKPLT(HashStringNoCaseOpt, pGTAVC + 0x572060);
+    }

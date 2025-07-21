@@ -297,6 +297,13 @@
         HOOK(CameraProcess_HighFPS, pGTAVC + 0x13F26C + 0x1);
     }
 
+    // Optimise textures searching
+    if(cfg->GetBool("OptimiseHashing", true, "Gameplay"))
+    {
+        HOOK(HashStringOpt, pGTAVC + 0x2A65AC + 0x1);
+        HOOK(HashStringNoCaseOpt, pGTAVC + 0x2A65DC + 0x1);
+    }
+
 
 
 
