@@ -91,6 +91,10 @@
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
  - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
+ - SilentPatch: Bilinear filtering for license plates
+ - SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
+ - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
+ - SilentPatch: Fix the logic behind exploding cars losing wheels
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -252,6 +256,10 @@
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
  - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
+ - SilentPatch: Bilinear filtering for license plates
+ - SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
+ - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
+ - SilentPatch: Fix the logic behind exploding cars losing wheels
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

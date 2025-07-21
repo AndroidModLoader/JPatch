@@ -1336,6 +1336,71 @@ __attribute__((optnone)) __attribute__((naked)) void AIAccuracyAfterVehicle_Inje
         "BR X17\n");
 }
 
+// SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
+DECL_HOOKv(GetCorrectPedModelIndexForEmergencyServiceType, void* script, int type, int* pedMI)
+{
+    if(type == 6 && *pedMI == 284)
+    {
+        *pedMI = 1;
+        return;
+    }
+    GetCorrectPedModelIndexForEmergencyServiceType(script, type, pedMI);
+}
+
+// SilentPatch: Fix the logic behind exploding cars losing wheels
+static bool bWheelAtomicVisible = false;
+extern DECL_HOOKv(FixWheelVisibility_SpawnFlyingComponent, CAutomobile* self, int idx, int type);
+RwObject* CheckWheelVisibility(RwObject* obj, void* data)
+{
+    if((obj->flags & 0x4) != 0)
+    {
+        bWheelAtomicVisible = true;
+        return NULL;
+    }
+    return obj;
+}
+RwObject* HideWheelFrame(RwObject* obj, void* data)
+{
+    obj->flags = 0;
+    return obj;
+}
+inline void TryToSpawnAndHideWheelFrame(CAutomobile* self, int nodeId)
+{
+    RwFrame* node = self->m_aCarNodes[nodeId];
+    if(!node) return;
+
+    bWheelAtomicVisible = false;
+    RwFrameForAllObjects(node, CheckWheelVisibility, NULL);
+    if(bWheelAtomicVisible)
+    {
+        FixWheelVisibility_SpawnFlyingComponent(self, nodeId, 1);
+        RwFrameForAllObjects(node, HideWheelFrame, NULL);
+    }
+}
+DECL_HOOKv(FixWheelVisibility_SpawnFlyingComponent, CAutomobile* self, int idx, int type)
+{
+    if(idx != 5 && type != 1) return FixWheelVisibility_SpawnFlyingComponent(self, idx, type);
+
+    if(self->Damage.m_Wheel[0] == 2)
+    { 
+        TryToSpawnAndHideWheelFrame(self, 5);
+    }
+    if(self->Damage.m_Wheel[2] == 2)
+    {
+        TryToSpawnAndHideWheelFrame(self, 2);
+    }
+    if(self->Damage.m_Wheel[1] == 2)
+    {
+        TryToSpawnAndHideWheelFrame(self, 6);
+        TryToSpawnAndHideWheelFrame(self, 7);
+    }
+    if(self->Damage.m_Wheel[3] == 2)
+    {
+        TryToSpawnAndHideWheelFrame(self, 3);
+        TryToSpawnAndHideWheelFrame(self, 4);
+    }
+}
+
 
 
 

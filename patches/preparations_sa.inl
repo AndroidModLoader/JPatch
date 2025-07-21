@@ -1440,6 +1440,35 @@
         aml->Redirect(pGTASA + 0x5DF776 + 0x1, (uintptr_t)AIAccuracyAfterVehicle_Inject);
     }
 
+    // SilentPatch: Bilinear filtering for license plates
+    if(cfg->GetBool("SP_BilinearFilterForPlate", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x5A54A8, 0x02);
+    }
+
+    // SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
+    if(cfg->GetBool("SP_DontEarlyCleanTheCar", true, "Gameplay"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x310F3E, 1);
+    }
+
+    // SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
+    if(cfg->GetBool("SP_AllowCopBikerPedFromScript", true, "Gameplay"))
+    {
+        HOOKPLT(GetCorrectPedModelIndexForEmergencyServiceType, pGTASA + 0x67458C);
+    }
+
+    // SilentPatch: Fix the logic behind exploding cars losing wheels
+    if(cfg->GetBool("SP_FixExplodedCarWheels", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x56EA76, 0x2A00EEB1);
+        aml->PlaceNOP4(pGTASA + 0x55CCC0, 1);
+        aml->PlaceNOP4(pGTASA + 0x55D048, 1);
+        aml->PlaceNOP4(pGTASA + 0x574330, 1);
+        aml->PlaceNOP4(pGTASA + 0x57A028, 1);
+        HOOK(FixWheelVisibility_SpawnFlyingComponent, aml->GetSym(hGTASA, "_ZN11CAutomobile20SpawnFlyingComponentEij"));
+    }
+
     // Skip that dumb EULA. We accepted it years ago, shut up
     /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
     {

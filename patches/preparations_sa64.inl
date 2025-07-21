@@ -1035,16 +1035,33 @@
         aml->Redirect(pGTASA + 0x704A74, (uintptr_t)AIAccuracyAfterVehicle_Inject);
     }
 
-    // Skip that dumb EULA. We accepted it years ago, shut up
-    /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    // SilentPatch: Bilinear filtering for license plates
+    if(cfg->GetBool("SP_BilinearFilterForPlate", true, "Visual"))
     {
-        aml->Write8(aml->GetSym(hSC, "LegalScreenShown"), 0x01);
-    }*/
+        aml->Write32(pGTASA + 0x6C8D2C, ARMv8::MOVBits::Create(2, 8, false));
+    }
 
-    // This fixes black bushes and more things
-    //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
+    // SilentPatch: Don't clean the car BEFORE Pay 'n Spray doors close
+    if(cfg->GetBool("SP_DontEarlyCleanTheCar", true, "Gameplay"))
     {
-        //HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
+        aml->PlaceNOP4(pGTASA + 0x3D6A24, 1);
+    }
+
+    // SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
+    if(cfg->GetBool("SP_AllowCopBikerPedFromScript", true, "Gameplay"))
+    {
+        HOOKPLT(GetCorrectPedModelIndexForEmergencyServiceType, pGTASA + 0x847528);
+    }
+
+    // SilentPatch: Fix the logic behind exploding cars losing wheels
+    if(cfg->GetBool("SP_FixExplodedCarWheels", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x690ED8, 0x1E221001);
+        aml->PlaceNOP4(pGTASA + 0x67D5A4, 1);
+        aml->PlaceNOP4(pGTASA + 0x67D988, 1);
+        aml->PlaceNOP4(pGTASA + 0x696BB0, 1);
+        aml->PlaceNOP4(pGTASA + 0x69D880, 1);
+        HOOK(FixWheelVisibility_SpawnFlyingComponent, aml->GetSym(hGTASA, "_ZN11CAutomobile20SpawnFlyingComponentEij"));
     }
 
     
@@ -1056,6 +1073,18 @@
 
 
 
+
+    // Skip that dumb EULA. We accepted it years ago, shut up
+    /*if(cfg->GetBool("SkipAnnoyingEULA", true, "Gameplay"))
+    {
+        aml->Write8(aml->GetSym(hSC, "LegalScreenShown"), 0x01);
+    }*/
+
+    // This fixes black bushes and more things
+    //if(cfg->GetBool("FixCamNormColorOverflow", true, "Visual"))
+    {
+        //HOOKBL(VTXShader_CamBasedNormal_snprintf, pGTASA + 0x264944);
+    }
 
     // Searchlights are too fast... (TODO: untested lol, there's no sqrtf at these addresses)
     /*if(cfg->GetBool("FixSearchlightHighFPS", true, "Gameplay"))
