@@ -2375,6 +2375,29 @@ __attribute__((optnone)) __attribute__((naked)) void ChassisSwingAngle_Inject(vo
         "MOV PC, R12\n");
 }
 
+// SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
+uintptr_t AIAccuracyAfterVehicle_BackTo_Next, AIAccuracyAfterVehicle_BackTo_Continue;
+extern "C" uintptr_t AIAccuracyAfterVehicle_Patch(CPed* pTarget)
+{
+    if(pTarget->IsInAnyVehicle() && pTarget->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_BIKE)
+    {
+        if(pTarget->m_pVehicle->m_nVehicleType != VEHICLE_TYPE_BMX) // FIX_BUGS, do not give peds a great accuracy when WE on a bicycle (wtf?!)
+        {
+            return AIAccuracyAfterVehicle_BackTo_Continue;
+        }
+    }
+    return AIAccuracyAfterVehicle_BackTo_Next;
+}
+__attribute__((optnone)) __attribute__((naked)) void AIAccuracyAfterVehicle_Inject(void)
+{
+    asm volatile(
+        "PUSH {R0-R1}\n"
+        "BL AIAccuracyAfterVehicle_Patch\n"
+        "MOV R12, R0\n"
+        "POP {R0-R1}\n"
+        "MOV PC, R12\n");
+}
+
 
 
 

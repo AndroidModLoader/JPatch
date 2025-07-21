@@ -951,6 +951,9 @@
         aml->PlaceNOP4(pGTASA + 0x653478, 1); // ?
         aml->PlaceNOP4(pGTASA + 0x653668, 1);
         aml->PlaceNOP4(pGTASA + 0x654790, 1);
+        aml->PlaceNOP4(pGTASA + 0x41C8D8, 1);
+        aml->PlaceNOP4(pGTASA + 0x5C83D4, 1);
+        aml->PlaceNOP4(pGTASA + 0x5C3CAC, 1);
     }
 
     // Now the game shuts opened doors at high speeds with high FPS
@@ -1022,6 +1025,14 @@
     {
         ChassisSwingAngle_BackTo = pGTASA + 0x67B744;
         aml->Redirect(pGTASA + 0x67B730, (uintptr_t)ChassisSwingAngle_Inject);
+    }
+
+    // SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
+    if(cfg->GetBool("SP_AIAccuracyAfterVehicle", true, "Gameplay"))
+    {
+        AIAccuracyAfterVehicle_BackTo_Next = pGTASA + 0x704A88;
+        AIAccuracyAfterVehicle_BackTo_Continue = pGTASA + 0x704B04;
+        aml->Redirect(pGTASA + 0x704A74, (uintptr_t)AIAccuracyAfterVehicle_Inject);
     }
 
     // Skip that dumb EULA. We accepted it years ago, shut up

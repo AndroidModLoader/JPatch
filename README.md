@@ -90,6 +90,7 @@
 **Since v1.8.2**
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
+ - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -250,6 +251,7 @@
 **Since v1.8.2**
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
+ - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
