@@ -1071,6 +1071,12 @@
         HOOK(FlickCarCompletely, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
     }
 
+    // SilentPatch: Disable building pipeline for skinned objects (like parachute)
+    if(cfg->GetBool("SP_FixSkinnedObjectsPipeline", true, "Visual"))
+    {
+        HOOKPLT(SetupDNPipeline, pGTASA + 0x83E968);
+    }
+
     
 
 

@@ -1414,6 +1414,14 @@ DECL_HOOKv(FlickCarCompletely, CDamageManager* self, bool keepWheels)
     FlickCarCompletely(self, keepWheels);
 }
 
+// SilentPatch: Disable building pipeline for skinned objects (like parachute)
+DECL_HOOK(RpAtomic*, SetupDNPipeline, RpAtomic* pAtomic)
+{
+    RxPipeline* pipeline = pAtomic->pipeline;
+    if(pipeline && pipeline->pluginId == 0x116) return pAtomic;
+    return SetupDNPipeline(pAtomic);
+}
+
 
 
 
