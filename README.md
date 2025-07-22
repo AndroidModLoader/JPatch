@@ -96,6 +96,7 @@
  - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
  - SilentPatch: Fix the logic behind exploding cars losing wheels
  - Allow more wheels to be exploded instead of only ONE RANDOM
+ - SilentPatch: Disable building pipeline for skinned objects (like parachute)
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -262,6 +263,7 @@
  - SilentPatch: Spawn lapdm1 (biker cop) correctly if the script requests one with PEDTYPE_COP
  - SilentPatch: Fix the logic behind exploding cars losing wheels
  - Allow more wheels to be exploded instead of only ONE RANDOM
+ - SilentPatch: Disable building pipeline for skinned objects (like parachute)
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
