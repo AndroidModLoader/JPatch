@@ -204,7 +204,7 @@
         if(fDynamicStreamingMemPercentage < 0.01f || fDynamicStreamingMemPercentage > 0.99f) bDynStreamingMem = false;
         else
         {
-            int valllue = cfg->GetInt("DynamicStreamingMem_MaxMBs", 1024, "Gameplay");
+            int valllue = cfg->GetInt("DynamicStreamingMem_MaxMBs", 2048, "Gameplay");
             if(valllue < 32) valllue = 32;
             else if(valllue > 4096) valllue = 4096;
 
@@ -1076,6 +1076,79 @@
     {
         HOOKPLT(SetupDNPipeline, pGTASA + 0x83E968);
     }
+
+    // Fix widget's holding radius
+    if(cfg->GetBool("WidgetHoldingMaxShift", true, "Gameplay"))
+    {
+        WidgetUpdateHold_BackTo = pGTASA + 0x371F54;
+        aml->Redirect(pGTASA + 0x371F44, (uintptr_t)WidgetUpdateHold_Inject);
+    }
+
+    // Fix cutscene FOV (disabled by default right now, causes the camera being too close on ultrawide screens)
+    if(cfg->GetBool("FixCutsceneFOV", false, "Visual"))
+    {
+        HOOKPLT(SetFOV, pGTASA + 0x846898);
+    }
+
+    // Disable call to FxSystem_c::GetCompositeMatrix in CAEFireAudioEntity::UpdateParameters 
+    // that was causing a crash - spent ages debugging, the crash happens if you create 40 or 
+    // so vehicles that catch fire (upside down) then delete them, repeating a few times.
+    // (MTA:SA)
+    if(cfg->GetBool("GetCompositeMatrixFixPossibleCrash", true, "Gameplay"))
+    {
+        aml->PlaceNOP4(pGTASA + 0x470EF8, 6);
+    }
+
+    // Buff streaming
+    if(cfg->GetBool("BuffStreamingMem", true, "Gameplay"))
+    {
+        int wantsMB = cfg->GetInt("BuffStreamingMem_CountMB", 384, "Gameplay");
+        if(wantsMB >= 20)
+        {
+            aml->PlaceNOP4(pGTASA + 0x55774C, 1);
+            aml->PlaceNOP4(pGTASA + 0x55EE54, 1);
+            aml->PlaceNOP4(pGTASA + 0x55EE6C, 1);
+            if(*ms_memoryAvailable < wantsMB*1024*1024)
+            {
+                *ms_memoryAvailable = wantsMB * 1024 * 1024;
+            }
+        }
+    }
+
+    // RE3: Correct clouds rotating speed
+    if(cfg->GetBool("Re3_CloudsRotationHighFPS", true, "Visual"))
+    {
+        HOOKPLT(CloudsUpdate_Re3, pGTASA + 0x840968);
+    }
+
+    // RE3: Free the space for an object in a pool by deleting temp objects if there is no space
+    if(cfg->GetBool("Re3_FreePlaceInObjectPool", true, "Gameplay"))
+    {
+        HOOKPLT(Object_New, pGTASA + 0x83FA78);
+    }
+    
+    // Re-implement idle camera like on PC/PS2
+    /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))
+    {
+        InitIdleCam(gIdleCam);
+
+        ProcessCamFollowPed_BackTo1 = pGTASA + 0x3C4C52 + 0x1; // reset idle cam // fix
+        ProcessCamFollowPed_BackTo2 = pGTASA + 0x3C4B84 + 0x1; // skip after patch 1 // fix
+        ProcessCamFollowPed_BackTo3 = pGTASA + 0x3C4BBE + 0x1; // skip after patch 2 // fix
+        aml->Redirect(pGTASA + 0x3C4B7C + 0x1, (uintptr_t)ProcessCamFollowPed_IdleCam1); // fix
+        aml->Redirect(pGTASA + 0x3C4BB2 + 0x1, (uintptr_t)ProcessCamFollowPed_IdleCam2); // fix
+
+        aml->PlaceNOP4(pGTASA + 0x49EF10, 1);
+        HOOK(CamProcess_IdleCam, pGTASA + 0x49EEBC);
+        HOOKPLT(DrawAllWidgets, pGTASA + 0x83D9A0);
+
+        // Speed 3.0f is like on PC: 1,5 minutes
+        // Some weird glitch exists i dont wanna deal with...
+        float idleCamSpeed = cfg->GetFloat("IdleCameraStartSpeed", 3.0f, "Gameplay");
+        if(idleCamSpeed < 0.34f) idleCamSpeed = 0.34f; // min 10 seconds
+        else if(idleCamSpeed > 20.0f) idleCamSpeed = 20.0f; // max 10 minutes
+        gIdleCam->timeControlsIdleForIdleToKickIn = idleCamSpeed * 90000.0f;
+    }*/
 
     
 

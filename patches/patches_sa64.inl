@@ -1422,6 +1422,152 @@ DECL_HOOK(RpAtomic*, SetupDNPipeline, RpAtomic* pAtomic)
     return SetupDNPipeline(pAtomic);
 }
 
+// Fix widget's holding radius
+uintptr_t WidgetUpdateHold_BackTo;
+extern "C" float WidgetUpdateHold_Patch()
+{
+    return 10.0f * ((float)(RsGlobal->maximumHeight) / 480.0f);
+}
+__attribute__((optnone)) __attribute__((naked)) void WidgetUpdateHold_Inject(void)
+{
+    asm volatile(
+        "STR S0, [SP, #-16]!\n"
+        "BL WidgetUpdateHold_Patch\n"
+        "FMOV S8, S0\n");
+    asm volatile(
+        "MOV X17, %0"
+    :: "r" (WidgetUpdateHold_BackTo));
+
+    asm volatile(
+        "LDR S0, [SP], #16\n"
+        // Original code
+        "LDRSW X0, [X19, #0x84]\n"
+        "LSL X8, X0, #3\n"
+        "LDR S1, [X20, X8]\n"
+        "FSUB S0, S0, S1\n"
+
+        "BR X17\n");
+}
+
+// FOV
+DECL_HOOKv(SetFOV, float factor, bool unused)
+{
+    if(TheCamera->m_WideScreenOn)
+    {
+        *ms_fFOV = factor;
+    }
+    else
+    {
+        SetFOV(factor, unused);
+    }
+}
+
+// RE3: Correct clouds rotating speed
+DECL_HOOKv(CloudsUpdate_Re3)
+{
+    float s = sinf(TheCamera->m_fOrientation - 0.85f);
+
+    *CloudsRotation += *WeatherWind * s * 0.0025f * GetTimeStepMagic();
+    *CloudsIndividualRotation += (*WeatherWind * *ms_fTimeStep + 0.3f * GetTimeStepMagic()) * 60.0f;
+}
+
+// Free objects pool
+DECL_HOOK(CObject*, Object_New, uint64_t size)
+{
+    auto objPool = (*pObjectPool);
+    auto obj = objPool->New();
+    if (!obj)
+    {
+        int size = objPool->GetSize();
+        for (int i = 0; i < size; ++i)
+        {
+            auto existing = objPool->GetAt(i);
+            if (existing && existing->ObjectCreatedBy == OBJECT_TEMPORARY)
+            {
+                int32_t handle = objPool->GetIndex(existing);
+                WorldRemoveEntity(existing);
+                delete existing;
+                obj = objPool->New(handle);
+                return obj;
+            }
+        }
+    }
+    return obj;
+}
+
+// Re-implement idle camera like on PC/PS2 // fix
+/*void ProcessIdleCam_CutPart()
+{
+    if (gIdleCam->idleTickerFrames <= gIdleCam->timeControlsIdleForIdleToKickIn) return;
+
+    gIdleCam->pCam = &TheCamera->m_apCams[TheCamera->m_nCurrentActiveCam];
+    if (gIdleCam->lastFrameProcessed < *m_FrameCounter - 1)
+    {
+        *_bf_12c |= 1;
+        ResetIdleCam(gIdleCam, false);
+        gIdleCam->timeIdleCamStarted = *m_snTimeInMilliseconds;
+        SetIdleCamTarget(gIdleCam, FindPlayerPed(-1));
+        gIdleCam->bForceAZoomOut = true;
+    }
+    gIdleCam->lastFrameProcessed = *m_FrameCounter;
+    RunIdleCam(gIdleCam);
+    *gbCineyCamProcessedOnFrame = gIdleCam->lastFrameProcessed;
+}
+uintptr_t ProcessCamFollowPed_BackTo1, ProcessCamFollowPed_BackTo2, ProcessCamFollowPed_BackTo3;
+extern "C" uintptr_t ProcessCamFollowPed_IdleCam1_Patch(int flag, CCam *thisCam)
+{
+    if(flag) return ProcessCamFollowPed_BackTo1;
+    
+    thisCam->ResetStatics = 0;
+    ProcessIdleCam(gIdleCam);
+    ProcessIdleCam_CutPart();
+
+    return ProcessCamFollowPed_BackTo2;
+}
+extern "C" uintptr_t ProcessCamFollowPed_IdleCam2_Patch(CCam *thisCam)
+{
+    thisCam->ResetStatics = 0;
+    ProcessIdleCam(gIdleCam);
+    ProcessIdleCam_CutPart();
+
+    return ProcessCamFollowPed_BackTo3;
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessCamFollowPed_IdleCam1(void)
+{
+    asm volatile(
+        "LDR R0, [SP, #0x4C]\n"
+        "MOV R1, R10\n"
+        "PUSH {R2-R3}\n"
+        "BL ProcessCamFollowPed_IdleCam1_Patch\n"
+        "POP {R2-R3}\n"
+        "MOVS R1, #0\n"
+        "MOV PC, R0\n");
+}
+__attribute__((optnone)) __attribute__((naked)) void ProcessCamFollowPed_IdleCam2(void)
+{
+    asm volatile(
+        "MOV R0, R10\n"
+        "PUSH {R1-R3}\n"
+        "BL ProcessCamFollowPed_IdleCam2_Patch\n"
+        "POP {R1-R3}\n"
+        "VLDR S0, [R8, #0x48]\n"
+        "VLDR S2, [R8, #0x4C]\n"
+        "VMUL.F32 S0, S0, S0\n"
+        "MOV PC, R0\n");
+}
+DECL_HOOKv(CamProcess_IdleCam, CCam* self)
+{
+    if(gIdleCam->idleTickerFrames <= gIdleCam->timeControlsIdleForIdleToKickIn)
+    {
+        *_bf_12c &= ~1;
+    }
+    CamProcess_IdleCam(self);
+}
+DECL_HOOKv(DrawAllWidgets, bool noEffects)
+{
+    if(*gbCineyCamProcessedOnFrame != *m_FrameCounter) DrawAllWidgets(noEffects);
+}*/
+
 
 
 

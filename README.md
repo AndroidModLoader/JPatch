@@ -97,6 +97,12 @@
  - SilentPatch: Fix the logic behind exploding cars losing wheels
  - Allow more wheels to be exploded instead of only ONE RANDOM
  - SilentPatch: Disable building pipeline for skinned objects (like parachute)
+ - A little mistake by WarDrum related to holding a finger on widgets (thanks AliAssassiN!)
+ - Fixed cutscene FOV (disabled by default, incomplete, black borders are better?)
+ - A fix for possible crash from GetCompositeMatrix (might be useless)
+ - Streaming memory is buffed now
+ - re3: Correct clouds rotating speed
+ - re3: Free the space for an object by deleting temporary objects from pool if not enough space
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -386,7 +392,6 @@
  - Always drawable wanted stars (disabled by default)
  - Fixed PED preloading (for Improved Streaming, disabled by default)
  - A count of max loading screens can be changed now (default is 7)
- - Fixed ped counting overflow for gang members calculating
  - Sprinting on any surface is allowed
  - Camera/Sniper zooming is faster and can be adjusted to be even faster!
  - Minimal FOV for Camera is adjustable (default is 70, set it to 90 or bigger if you need "fish eye" in a camera)
@@ -473,7 +478,7 @@
  
  **Since v1.1.1**
  - Dont burn player that are driving burning BMX
- - A fix for possible crash from GetCompositeMatrix (may be useless)
+ - A fix for possible crash from GetCompositeMatrix (might be useless)
  - Cinematic camera when double tapping the camera mode switch button
  - MTA: Increase intensity of vehicle tail light corona
  - MTA: Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it
@@ -484,7 +489,7 @@
  - Moved save pickup in Madd Dogg's Mansion
  - Moved a bribe to the broken bridge from SF building
  - Moved a rifle pickup outside of the SF Stadium wall
- - Fixed cutscene FOV (disabled by default, incomplete)
+ - Fixed cutscene FOV (disabled by default, incomplete, black borders are better?)
  - Fixed sky multitude (a glitch on high speeds)
  - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
  - Sand/Dust particles from bullets are limited because they are creating a lot of lag

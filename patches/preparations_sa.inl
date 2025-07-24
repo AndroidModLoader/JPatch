@@ -182,7 +182,7 @@
     // Buff streaming
     if(cfg->GetBool("BuffStreamingMem", true, "Gameplay"))
     {
-        int wantsMB = cfg->GetInt("BuffStreamingMem_CountMB", 512, "Gameplay");
+        int wantsMB = cfg->GetInt("BuffStreamingMem_CountMB", 256, "Gameplay");
         if(wantsMB >= 20)
         {
             aml->PlaceNOP(pGTASA + 0x46BE18, 1);
@@ -205,7 +205,7 @@
         {
             int valllue = cfg->GetInt("DynamicStreamingMem_MaxMBs", 1024, "Gameplay");
             if(valllue < 32) valllue = 32;
-            else if(valllue > 2048) valllue = 2048;
+            else if(valllue > 2040) valllue = 2040;
 
             nMaxStreamingMemForDynamic = 1024 * 1024 * valllue;
 
@@ -784,15 +784,6 @@
         aml->Redirect(pGTASA + 0x43ACEC + 0x1, (uintptr_t)LoadSplashes_Inject);
     }
     
-    // A mistake by R* that overwrites "total num of X peds"
-    if(cfg->GetBool("FixGangsCounterOverflow", true, "Gameplay"))
-    {
-        PedCountCalc_BackTo1 = pGTASA + 0x4D0CC2 + 0x1;
-        PedCountCalc_BackTo2 = pGTASA + 0x4D0D0A + 0x1;
-        aml->Redirect(pGTASA + 0x4D0CAE + 0x1, (uintptr_t)PedCountCalc_Inject1);
-        aml->Redirect(pGTASA + 0x4D0CF6 + 0x1, (uintptr_t)PedCountCalc_Inject2);
-    }
-    
     // Some kind of "Sprint Everywhere"
     if(cfg->GetBool("SprintOnAnySurface", true, "Gameplay"))
     {
@@ -1071,22 +1062,6 @@
     // HudColors
     if(cfg->GetBool("PCHudColors", true, "Visual"))
     {
-        // A function CWidgetVitalStats::Draw (0x2C84EC) has something that brings back normal colors!!!
-        // Temporary fix. I found an interesting connection between real colors and those:
-
-        // Color rendering is broken, wadahel !!!
-        /*aml->Write8(pGTASA + 0x2BDE14, HUD_COLOUR_LIGHT_GRAY); // Ammo
-        aml->Write8(pGTASA + 0x2BD102, HUD_COLOUR_WHITE); // Clock
-        aml->Write8(pGTASA + 0x2BD228, HUD_COLOUR_DARK_GREEN); // Money
-        aml->Write8(pGTASA + 0x2BD232, HUD_COLOUR_DARK_RED); // Money (negative)
-        aml->Write8(pGTASA + 0x2BD6C8, HUD_COLOUR_DARK_RED); // Health bar
-        aml->Write8(pGTASA + 0x2BD876, HUD_COLOUR_WHITE); // Armor bar
-        aml->Write8(pGTASA + 0x2BD9C4, (uint8_t)(magicColorVal * 172)); // Oxygen bar (red channel)
-        aml->Write8(pGTASA + 0x2BD9CA, (uint8_t)(magicColorVal * 203)); // Oxygen bar (green channel)
-        aml->Write8(pGTASA + 0x2BD9D0, (uint8_t)(magicColorVal * 241)); // Oxygen bar (blue channel)
-        HOOKBLX(DrawAmmo_PrintString, pGTASA + 0x2BDEFA + 0x1); // check this fn for bit more info*/
-
-        // An actual fix. Bruh.
         aml->PlaceRET(pGTASA + 0x1C07D0 + 0x1);
     }
 
