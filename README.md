@@ -103,6 +103,7 @@
  - Streaming memory is buffed now
  - re3: Correct clouds rotating speed
  - re3: Free the space for an object by deleting temporary objects from pool if not enough space
+ - FixRadar: Radar outline is not forced to be in pure black color
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -270,6 +271,7 @@
  - SilentPatch: Fix the logic behind exploding cars losing wheels
  - Allow more wheels to be exploded instead of only ONE RANDOM
  - SilentPatch: Disable building pipeline for skinned objects (like parachute)
+ - FixRadar: Radar outline is not forced to be in pure black color
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

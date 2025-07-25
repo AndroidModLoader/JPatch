@@ -1126,6 +1126,23 @@
     {
         HOOKPLT(Object_New, pGTASA + 0x83FA78);
     }
+
+    // FixRadar: Radar outline is not forced to be in pure black color
+    if(cfg->GetBool("FixRadarOutlineColor", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x51D450, ARMv8::MOVBits::Create(0xFF, 1, false));
+        aml->Write32(pGTASA + 0x51D454, ARMv8::MOVBits::Create(0xFF, 2, false));
+        aml->Write32(pGTASA + 0x51D468, ARMv8::MOVBits::Create(0xFF, 3, false));
+        aml->Write32(pGTASA + 0x51D4A0, ARMv8::MOVBits::Create(0xFF, 1, false));
+        aml->Write32(pGTASA + 0x51D4A4, ARMv8::MOVBits::Create(0xFF, 2, false));
+        aml->Write32(pGTASA + 0x51D4A8, ARMv8::MOVBits::Create(0xFF, 3, false));
+        aml->Write32(pGTASA + 0x51D4D4, ARMv8::MOVBits::Create(0xFF, 1, false));
+        aml->Write32(pGTASA + 0x51D4D8, ARMv8::MOVBits::Create(0xFF, 2, false));
+        aml->Write32(pGTASA + 0x51D4DC, ARMv8::MOVBits::Create(0xFF, 3, false));
+        aml->Write32(pGTASA + 0x51D504, ARMv8::MOVBits::Create(0xFF, 1, false));
+        aml->Write32(pGTASA + 0x51D508, ARMv8::MOVBits::Create(0xFF, 2, false));
+        aml->Write32(pGTASA + 0x51D50C, ARMv8::MOVBits::Create(0xFF, 3, false));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

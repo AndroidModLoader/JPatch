@@ -1457,6 +1457,23 @@
         HOOKPLT(SetupDNPipeline, pGTASA + 0x66EF80);
     }
 
+    // FixRadar: Radar outline is not forced to be in pure black color
+    if(cfg->GetBool("FixRadarOutlineColor", true, "Visual"))
+    {
+        aml->Write8(pGTASA + 0x437ED4, 0xFF);
+        aml->Write8(pGTASA + 0x437ED6, 0xFF);
+        aml->Write8(pGTASA + 0x437EE2, 0xFF);
+        aml->Write8(pGTASA + 0x437F1E, 0xFF);
+        aml->Write8(pGTASA + 0x437F20, 0xFF);
+        aml->Write8(pGTASA + 0x437F24, 0xFF);
+        aml->Write8(pGTASA + 0x437F4E, 0xFF);
+        aml->Write8(pGTASA + 0x437F50, 0xFF);
+        aml->Write8(pGTASA + 0x437F54, 0xFF);
+        aml->Write8(pGTASA + 0x437F7A, 0xFF);
+        aml->Write8(pGTASA + 0x437F7C, 0xFF);
+        aml->Write8(pGTASA + 0x437F7E, 0xFF);
+    }
+
 
 
 
