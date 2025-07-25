@@ -1486,7 +1486,7 @@ DECL_HOOK(CObject*, Object_New, uint64_t size)
             {
                 int32_t handle = objPool->GetIndex(existing);
                 WorldRemoveEntity(existing);
-                delete existing;
+                existing->Destruct2();
                 obj = objPool->New(handle);
                 return obj;
             }
