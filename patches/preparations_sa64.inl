@@ -262,7 +262,7 @@
     // Peepo: Fix traffic lights
     if(cfg->GetBool("FixTrafficLights", true, "Visual"))
     {
-        HOOK(TrFix_RenderEffects, aml->GetSym(hGTASA, "_Z13RenderEffectsv"));
+        HOOK(TrFix_RenderShinyTexts, aml->GetSym(hGTASA, "_ZN11CShinyTexts6RenderEv"));
         HOOK(TrFix_InitGame2nd, aml->GetSym(hGTASA, "_ZN5CGame5Init2EPKc"));
     }
     

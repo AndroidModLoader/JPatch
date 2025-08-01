@@ -446,10 +446,10 @@ DECL_HOOKb(DoorClosing_PadTarget, void* pad)
 }
 
 // Peepo: Fix traffic lights
-DECL_HOOKv(TrFix_RenderEffects)
+DECL_HOOKv(TrFix_RenderShinyTexts)
 {
-    TrFix_RenderEffects();
     BrightLightsRender();
+    TrFix_RenderShinyTexts();
 }
 DECL_HOOKv(TrFix_InitGame2nd, const char* a1)
 {
