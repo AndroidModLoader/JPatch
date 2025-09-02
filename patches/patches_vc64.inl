@@ -244,13 +244,13 @@ DECL_HOOKv(InitShadows)
 
 #define MAX_STATIC_SHADOWS (0xFF)
 uintptr_t StoreStaticShadow_BackTo;
-extern "C" uint32_t StoreStaticShadow_Patch()
+extern "C" int StoreStaticShadow_Patch()
 {
-    for(uint32_t i = 0; i < MAX_STATIC_SHADOWS; ++i)
+    for(int i = 0; i < MAX_STATIC_SHADOWS; ++i)
     {
         if(aStaticShadows_NEW[i].m_pPolyBunch == NULL) return i;
     }
-    return 1;
+    return -1;
 }
 __attribute__((optnone)) __attribute__((naked)) void StoreStaticShadow_Inject(void)
 {

@@ -11,6 +11,7 @@
 ### ***GTA:VC v1.12***
 **Since v1.8.2**
  - A small optimisation for hashing functions (slightly speed ups loading)
+ - **A fix for 1.12 crash**
 
 **Since v1.8.1**
  - Fixing drunk camera on high FPS
