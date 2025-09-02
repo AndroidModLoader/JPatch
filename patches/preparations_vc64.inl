@@ -297,3 +297,11 @@
         HOOKPLT(HashStringOpt, pGTAVC + 0x5756D8);
         HOOKPLT(HashStringNoCaseOpt, pGTAVC + 0x572060);
     }
+
+    // A fix for 1.12 crash
+    if(cfg->GetBool("Fix112Crash", true, "Gameplay"))
+    {
+        aml->Write32(pGTAVC + 0x3A9A7C, 0x8B090108);
+        aml->Write32(pGTAVC + 0x3A9A8C, 0x8B090108);
+        aml->Write32(pGTAVC + 0x3A9A9C, 0xAA0903E9);
+    }
