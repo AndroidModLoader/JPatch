@@ -1143,6 +1143,12 @@
         aml->Write32(pGTASA + 0x51D508, ARMv8::MOVBits::Create(0xFF, 2, false));
         aml->Write32(pGTASA + 0x51D50C, ARMv8::MOVBits::Create(0xFF, 3, false));
     }
+
+    // Fixing vehicles speed at high FPS
+    if(cfg->GetBool("FixVehiclesSpeedHighFPS", true, "Gameplay"))
+    {
+        HOOK(FlyAIHeliInCertainDirection, aml->GetSym(hGTASA, "_ZN8CCarCtrl27FlyAIHeliInCertainDirectionEP5CHeliffb"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

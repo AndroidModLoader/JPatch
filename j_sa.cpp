@@ -128,6 +128,14 @@ inline void* TryLoadAlphaFunc(const char* szlib)
     if(!sym) sym = dlsym(lib, "glAlphaFunc");
     return sym;
 }
+inline void* TryLoadGLFunc(const char* szlib, const char* fn)
+{
+    void* lib = dlopen(szlib, RTLD_LAZY);
+    if(!lib) return NULL;
+
+    void* sym = dlsym(lib, "fn");
+    return sym;
+}
 
 void (*BrightLightsInit)();
 void (*BrightLightsRender)();
@@ -240,6 +248,7 @@ void (*DrawSprite2D_Simple)(CSprite2d*, const CRect*, const CRGBA*);
 void (*FxInterpInfo32GetVal)(FxInterpInfo32_c *, float *values, float t);
 float (*RwV3dLength)(CVector*);
 void (*FlushSpriteBuffer)();
+void (*glFlush)();
 
 inline int GetSectorForCoord(int coord)
 {

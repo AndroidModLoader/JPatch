@@ -1495,6 +1495,15 @@ DECL_HOOK(CObject*, Object_New, uint64_t size)
     return obj;
 }
 
+// Fixing vehicles speed at high FPS
+DECL_HOOKv(FlyAIHeliInCertainDirection, CHeli* self, float Orientation, float Distance, bool bSlowDownAtTarget)
+{
+    auto bak = self->m_AutoPilot.CruiseSpeed;
+    self->m_AutoPilot.CruiseSpeed = bak * GetTimeStepInvMagic();
+    FlyAIHeliInCertainDirection(self, Orientation, Distance, bSlowDownAtTarget);
+    self->m_AutoPilot.CruiseSpeed = bak;
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {
