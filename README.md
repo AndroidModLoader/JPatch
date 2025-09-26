@@ -106,6 +106,7 @@
  - re3: Free the space for an object by deleting temporary objects from pool if not enough space
  - FixRadar: Radar outline is not forced to be in pure black color
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
+ - SilentPatch: Fixing hierarchy typos in vehicle models
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -275,6 +276,7 @@
  - SilentPatch: Disable building pipeline for skinned objects (like parachute)
  - FixRadar: Radar outline is not forced to be in pure black color
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
+ - SilentPatch: Fixing hierarchy typos in vehicle models
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -337,7 +339,6 @@
 
 **Since v1.5**
  - BengbuGuards: Second siren is now working
- - BengbuGuards: An animation fix for boats
  - BengbuGuards: Player's plane won't disappear after it explodes
  - CJ is no longer breathing with his ass underwater
  - Directional sunlight on entities (vehicles, peds)

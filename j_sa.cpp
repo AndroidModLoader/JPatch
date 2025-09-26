@@ -42,6 +42,20 @@ union ScriptVariables
     void*    p;
 };
 
+struct HierarchyTypoPair
+{
+    HierarchyTypoPair(const char* a, const char* b) : org(a), alias(b) {}
+    const char* org;
+    const char* alias;
+};
+static std::vector<HierarchyTypoPair*> g_vecHierarchyTypos;
+struct HierarchySearchStruct
+{
+    const char* str;
+    RwFrame* frame;
+};
+typedef RwFrame *(*HierarchyCallback)(RwFrame *, HierarchySearchStruct *);
+
 // fMagic = 1.6666667:
 // ARM64: Closest is 1.665 at 0x739EF4
 
@@ -154,7 +168,7 @@ void (*RestoreCamera)(CCamera*);
 CVehicle* (*FindPlayerVehicle)(int playerId, bool unk);
 CPlayerPed* (*FindPlayerPed)(int playerId);
 void (*PhysicalApplyForce)(CPhysical* self, CVector force, CVector point, bool updateTurnSpeed);
-char* (*GetFrameNodeName)(RwFrame*);
+const char* (*GetFrameNodeName)(RwFrame*);
 int (*SpriteCalcScreenCoors)(const RwV3d& posn, RwV3d* out, float* w, float* h, bool checkMaxVisible, bool checkMinVisible);
 void (*WorldRemoveEntity)(CEntity*);
 void (*SetFontColor)(CRGBA* clr);
@@ -249,6 +263,8 @@ void (*FxInterpInfo32GetVal)(FxInterpInfo32_c *, float *values, float t);
 float (*RwV3dLength)(CVector*);
 void (*FlushSpriteBuffer)();
 void (*glFlush)();
+u_native (*GetFrameHierarchyId)(RwFrame*);
+RwFrame* (*RwFrameForAllChildren)(RwFrame *frame, HierarchyCallback callBack, void *data);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -445,6 +461,8 @@ void JPatch()
     SET_TO(FxInterpInfo32GetVal,    aml->GetSym(hGTASA, "_ZN16FxInterpInfo32_c6GetValEPff"));
     SET_TO(RwV3dLength,             aml->GetSym(hGTASA, "_Z11RwV3dLengthPK5RwV3d"));
     SET_TO(FlushSpriteBuffer,       aml->GetSym(hGTASA, "_ZN7CSprite17FlushSpriteBufferEv"));
+    SET_TO(GetFrameHierarchyId,     aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins19GetFrameHierarchyIdEP7RwFrame"));
+    SET_TO(RwFrameForAllChildren,   aml->GetSym(hGTASA, "_Z21RwFrameForAllChildrenP7RwFramePFS0_S0_PvES1_"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

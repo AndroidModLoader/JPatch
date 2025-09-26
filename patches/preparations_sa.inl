@@ -971,11 +971,11 @@
     }
 
     // BengbuGuards' idea #2
-    if(cfg->GetBool("BoatRotatingRadarFix", true, "Visual"))
-    {
-        //HOOKBLX(ProcessHierarchy_BoatRadar, pGTASA + 0x387246 + 0x1);
-        aml->Write8(pGTASA + 0x6107D9, 0x00); // Animation name: boat_moving_hi -> boat_moving
-    }
+    //if(cfg->GetBool("BoatRotatingRadarFix", true, "Visual"))
+    //{
+    //    //HOOKBLX(ProcessHierarchy_BoatRadar, pGTASA + 0x387246 + 0x1);
+    //    aml->Write8(pGTASA + 0x6107D9, 0x00); // Animation name: boat_moving_hi -> boat_moving
+    //}
 
     // Fix airbubbles from the jaw (CJ is breathing with his ass, lololololol)
     if(cfg->GetBool("AirBubblesFromJaw", true, "Visual"))
@@ -1478,6 +1478,55 @@
     if(cfg->GetBool("BikeFrontEnteringFix", true, "Visual"))
     {
         aml->Write32(pGTASA + 0x50A8B8, 0x0A40EE33);
+    }
+
+    // SilentPatch: Fixing hierarchy typos in vehicle models
+    if(cfg->GetBool("FixVehicleHierarchyTypos", true, "Visual"))
+    {
+        g_vecHierarchyTypos.clear();
+        HOOK(FindFrameFromNameWithoutIdCB, aml->GetSym(hGTASA, "_ZN15CClumpModelInfo28FindFrameFromNameWithoutIdCBEP7RwFramePv"));
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_BoatRadar", true, "Visual"))
+        {
+            static HierarchyTypoPair boatRadarHierarchy("boat_moving_hi", "boat_moving");
+            g_vecHierarchyTypos.push_back(&boatRadarHierarchy);
+        }
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_Dodo", true, "Visual"))
+        {
+            static HierarchyTypoPair dodoHierarchy("elevator_r", "elevator");
+            g_vecHierarchyTypos.push_back(&dodoHierarchy);
+        }
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_UranusTaillight", true, "Visual"))
+        {
+            static HierarchyTypoPair uranus1Hierarchy("taillights", "tailights");
+            static HierarchyTypoPair uranus2Hierarchy("taillights2", "tailights2");
+            g_vecHierarchyTypos.push_back(&uranus1Hierarchy);
+            g_vecHierarchyTypos.push_back(&uranus2Hierarchy);
+        }
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_Dumper", true, "Visual"))
+        {
+            static HierarchyTypoPair dumper1Hierarchy("transmission_f", "transmision_f");
+            static HierarchyTypoPair dumper2Hierarchy("transmission_r", "transmision_r");
+            g_vecHierarchyTypos.push_back(&dumper1Hierarchy);
+            g_vecHierarchyTypos.push_back(&dumper2Hierarchy);
+        }
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_DFT30", true, "Visual"))
+        {
+            static HierarchyTypoPair dft30Hierarchy("wheel_lm_dummy", "wheel_lm");
+            g_vecHierarchyTypos.push_back(&dft30Hierarchy);
+        }
+
+        if(cfg->GetBool("FixVehicleHierarchyTypos_Sweeper", true, "Visual"))
+        {
+            static HierarchyTypoPair sweeper1Hierarchy("misc_a", "misca");
+            static HierarchyTypoPair sweeper2Hierarchy("misc_b", "miscb");
+            g_vecHierarchyTypos.push_back(&sweeper1Hierarchy);
+            g_vecHierarchyTypos.push_back(&sweeper2Hierarchy);
+        }
     }
 
 

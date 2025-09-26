@@ -2484,6 +2484,36 @@ DECL_HOOK(RpAtomic*, SetupDNPipeline, RpAtomic* pAtomic)
     return SetupDNPipeline(pAtomic);
 }
 
+// SilentPatch: Fixing hierarchy typos in vehicle models
+inline bool IsRequiredFrame(const char* name, const char* required)
+{
+    if(strcasecmp(name, required) == 0) return true;
+    for(HierarchyTypoPair* pair : g_vecHierarchyTypos)
+    {
+        if(strcasecmp(name, pair->alias) == 0)
+        {
+            //logger->Info("Looking for %s = %s (alias %s)", required, name, pair->alias);
+            if(strcasecmp(pair->org, required) == 0) return true;
+        }
+    }
+    return false;
+}
+DECL_HOOK(RwFrame*, FindFrameFromNameWithoutIdCB, RwFrame *pFrame, HierarchySearchStruct *pData)
+{
+    const char* frameName = GetFrameNodeName(pFrame);
+    if(!GetFrameHierarchyId(pFrame) && IsRequiredFrame(pData->str, frameName))
+    {
+        pData->frame = pFrame;
+        return NULL; // Found it! Stop the loop.
+    }
+    else
+    {
+        RwFrameForAllChildren(pFrame, HookOf_FindFrameFromNameWithoutIdCB, pData);
+        if(pData->frame) return NULL; // Found it! Stop the loop.
+    }
+    return pFrame; // Continue looking through other frames
+}
+
 
 
 
