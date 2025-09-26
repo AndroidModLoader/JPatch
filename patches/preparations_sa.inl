@@ -1474,6 +1474,12 @@
         aml->Write8(pGTASA + 0x437F7E, 0xFF);
     }
 
+    // B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
+    if(cfg->GetBool("BikeFrontEnteringFix", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x50A8B8, 0x0A40EE33);
+    }
+
 
 
 

@@ -1149,6 +1149,12 @@
     {
         HOOK(FlyAIHeliInCertainDirection, aml->GetSym(hGTASA, "_ZN8CCarCtrl27FlyAIHeliInCertainDirectionEP5CHeliffb"));
     }
+
+    // B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
+    if(cfg->GetBool("BikeFrontEnteringFix", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x61AE04, 0x1E2238A7);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))
