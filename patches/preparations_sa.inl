@@ -1529,6 +1529,13 @@
         }
     }
 
+    // Game is checking if HP is < 1.0 but it may be lower!
+    if(cfg->GetBool("AllowJetpackWith1HP", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x530DC4, 0x8A00EEB4);
+        aml->Write16(pGTASA + 0x530DD8, 0xDC1E);
+    }
+
 
 
 

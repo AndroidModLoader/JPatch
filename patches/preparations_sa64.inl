@@ -418,7 +418,8 @@
     // Game is checking if HP is < 1.0 but it may be lower!
     if(cfg->GetBool("AllowCrouchWith1HP", true, "Gameplay"))
     {
-        aml->Write32(pGTASA + 0x660DC8, 0x1E281001);
+        aml->Write32(pGTASA + 0x660DC8, 0x1E2703E1);
+        aml->Write32(pGTASA + 0x660DD0, 0x5400022C);
     }
     
     // Vehicle sun glare
@@ -1203,6 +1204,13 @@
             g_vecHierarchyTypos.push_back(&sweeper1Hierarchy);
             g_vecHierarchyTypos.push_back(&sweeper2Hierarchy);
         }
+    }
+
+    // Game is checking if HP is < 1.0 but it may be lower!
+    if(cfg->GetBool("AllowJetpackWith1HP", true, "Gameplay"))
+    {
+        aml->Write32(pGTASA + 0x64AD50, 0x1E2703E8);
+        aml->Write32(pGTASA + 0x64AD58, 0x5400066C);
     }
     
     // Re-implement idle camera like on PC/PS2

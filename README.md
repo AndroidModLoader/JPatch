@@ -107,6 +107,7 @@
  - FixRadar: Radar outline is not forced to be in pure black color
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
  - SilentPatch: Fixing hierarchy typos in vehicle models
+ - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -188,7 +189,7 @@
  - BengbuGuards: Second siren is now working
  - Weapon spread fix
  - Disable a flag to allow shadows to be drawed on all surfaces
- - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
+ - Fix a little mistake that doesnt let player to crouch if he's from 0.0 to 1.0 HP
  - Vehicle sun glare
  - No minimap in interiors
  - Fixed green textures (moved from SkyGFX Mobile)
@@ -277,6 +278,7 @@
  - FixRadar: Radar outline is not forced to be in pure black color
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
  - SilentPatch: Fixing hierarchy typos in vehicle models
+ - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -379,7 +381,7 @@
  - MTA: Fixed a glitch with projectiles (see https://github.com/multitheftauto/mtasa-blue/issues/1123)
  - MTA: Fix slippery floor (improved in v1.4.3)
  - Allow license plates to render on all vehicles
- - Fix a little mistake that doesnt let player to crouch if he's ~1 HP
+ - Fix a little mistake that doesnt let player to crouch if he's from 0.0 to 1.0 HP
  - Show muzzle flash for the last bullet
  - Disable a flag to allow shadows to be drawed on all surfaces
  - Weapon spread fix
