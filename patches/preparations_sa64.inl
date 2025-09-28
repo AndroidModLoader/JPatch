@@ -1218,6 +1218,12 @@
     {
         HOOKPLT(PlanePreRender, pGTASA + 0x83C9F8);
     }
+
+    // B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
+    if(cfg->GetBool("FixVanRearDoorsEnterAnim", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x617E78, 0x7100351F);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

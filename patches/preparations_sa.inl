@@ -1542,6 +1542,12 @@
         HOOKPLT(PlanePreRender, pGTASA + 0x66DDDC);
     }
 
+    // B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
+    if(cfg->GetBool("FixVanRearDoorsEnterAnim", true, "Visual"))
+    {
+        aml->Write16(pGTASA + 0x617E78, 0x280D);
+    }
+
 
 
 
