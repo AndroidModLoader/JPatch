@@ -108,6 +108,7 @@
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
  - SilentPatch: Fixing hierarchy typos in vehicle models
  - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
+ - SilentPatch: Extra animations for planes
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -279,6 +280,7 @@
  - B1ack_Wh1te: Entering the bike from the front no more misplaces CJ on the Z axis
  - SilentPatch: Fixing hierarchy typos in vehicle models
  - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
+ - SilentPatch: Extra animations for planes
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

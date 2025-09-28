@@ -1534,6 +1534,34 @@ DECL_HOOK(RwFrame*, FindFrameFromNameWithoutIdCB, RwFrame *pFrame, HierarchySear
     return pFrame; // Continue looking through other frames
 }
 
+// SilentPatch: Extra animations for planes
+inline void CopyCarNodeRotation(CAutomobile* a, int nodeSrc, int nodeDst)
+{
+    if(!a || !a->m_aCarNodes[nodeSrc] || !a->m_aCarNodes[nodeDst]) return;
+
+    RwMatrix* src = &a->m_aCarNodes[nodeSrc]->modelling;
+    RwMatrix* dst = &a->m_aCarNodes[nodeDst]->modelling;
+
+    dst->at = src->at;
+    dst->right = src->right;
+    dst->up = src->up;
+    dst->flags &= 0xFFFDFFFC; // RwMatrixUpdate
+}
+DECL_HOOKv(PlanePreRender, CPlane* self)
+{
+    PlanePreRender(self);
+
+    if(self->m_nModelIndex == 511)
+    {
+        CopyCarNodeRotation(self, 18, 21);
+    }
+    else if(self->m_nModelIndex == 513)
+    {
+        CopyCarNodeRotation(self, 19, 23);
+        CopyCarNodeRotation(self, 20, 24);
+    }
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {

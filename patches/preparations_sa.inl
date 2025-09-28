@@ -1536,6 +1536,12 @@
         aml->Write16(pGTASA + 0x530DD8, 0xDC1E);
     }
 
+    // SilentPatch: Extra animations for planes
+    if(cfg->GetBool("ExtraPlaneAnimations", true, "Visual"))
+    {
+        HOOKPLT(PlanePreRender, pGTASA + 0x66DDDC);
+    }
+
 
 
 

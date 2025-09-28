@@ -1212,6 +1212,12 @@
         aml->Write32(pGTASA + 0x64AD50, 0x1E2703E8);
         aml->Write32(pGTASA + 0x64AD58, 0x5400066C);
     }
+
+    // SilentPatch: Extra animations for planes
+    if(cfg->GetBool("ExtraPlaneAnimations", true, "Visual"))
+    {
+        HOOKPLT(PlanePreRender, pGTASA + 0x83C9F8);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))
