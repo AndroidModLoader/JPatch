@@ -110,6 +110,7 @@
  - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
  - SilentPatch: Extra animations for planes
  - B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
+ - MTA: Extra air resistance's rotation for entities on high FPS
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -283,6 +284,7 @@
  - Fix a little mistake that doesnt let player to use jetpack if he's from 0.0 to 1.0 HP
  - SilentPatch: Extra animations for planes
  - B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
+ - MTA: Extra air resistance's rotation for entities on high FPS
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

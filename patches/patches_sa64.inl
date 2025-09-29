@@ -1562,6 +1562,31 @@ DECL_HOOKv(PlanePreRender, CPlane* self)
     }
 }
 
+// MTA: Extra air resistance's rotation for entities (primarily vehicles?)
+DECL_HOOKv(ApplyAirResistance_FPS, CVehicle* self)
+{
+    if(self->m_fAirResistance <= 0.1f || self->m_nType == ENTITY_TYPE_VEHICLE)
+    {
+        float resistance = self->m_fAirResistance * self->m_vecMoveSpeed.Magnitude();
+        if(DoExtraAirResistanceForPlayer() && self->m_nType == ENTITY_TYPE_VEHICLE)
+        {
+            if(self->m_nVehicleSubType == 0 || self->m_nVehicleSubType == 9)
+            {
+                resistance *= *m_fAirResistanceMult;
+            }
+        }
+        self->m_vecMoveSpeed *= powf(1.0f - resistance, GetTimeStep());
+        //self->m_vecTurnSpeed *= 0.99f; // original
+        self->m_vecTurnSpeed *= powf(0.99f, GetTimeStepMagic()); // FIX_BUGS
+    }
+    else
+    {
+        float resistance = powf(self->m_fAirResistance, GetTimeStep());
+        self->m_vecMoveSpeed *= resistance;
+        self->m_vecTurnSpeed *= resistance;
+    }
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {

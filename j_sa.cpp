@@ -126,6 +126,7 @@ GlobalSceneTag              *Scene;
 void                        *TheText;
 RQRenderTarget              **SelectedRQTarget, **backTarget, **oldTarget;
 CSprite2d                   *HudSprites;
+float                       *m_fAirResistanceMult;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -265,6 +266,7 @@ void (*FlushSpriteBuffer)();
 void (*glFlush)();
 u_native (*GetFrameHierarchyId)(RwFrame*);
 RwFrame* (*RwFrameForAllChildren)(RwFrame *frame, HierarchyCallback callBack, void *data);
+bool (*DoExtraAirResistanceForPlayer)();
 
 inline int GetSectorForCoord(int coord)
 {
@@ -463,6 +465,7 @@ void JPatch()
     SET_TO(FlushSpriteBuffer,       aml->GetSym(hGTASA, "_ZN7CSprite17FlushSpriteBufferEv"));
     SET_TO(GetFrameHierarchyId,     aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins19GetFrameHierarchyIdEP7RwFrame"));
     SET_TO(RwFrameForAllChildren,   aml->GetSym(hGTASA, "_Z21RwFrameForAllChildrenP7RwFramePFS0_S0_PvES1_"));
+    SET_TO(DoExtraAirResistanceForPlayer, aml->GetSym(hGTASA, "_ZN10CCullZones29DoExtraAirResistanceForPlayerEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -555,6 +558,7 @@ void JPatch()
     SET_TO(oldTarget,               aml->GetSym(hGTASA, "oldTarget"));
     SET_TO(HudSprites,              aml->GetSym(hGTASA, "_ZN4CHud7SpritesE"));
     SET_TO(DrunkRotation,           pGTASA + BYBIT(0x952EF0, 0xBBB950));
+    SET_TO(m_fAirResistanceMult,    aml->GetSym(hGTASA, "_ZN8CVehicle20m_fAirResistanceMultE"));
     // Variables End //
 
     // We need it for future fixes.

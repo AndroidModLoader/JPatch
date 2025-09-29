@@ -1548,6 +1548,12 @@
         aml->Write16(pGTASA + 0x617E78, 0x280D);
     }
 
+    // MTA: Extra air resistance's rotation for entities (primarily vehicles?)
+    if(cfg->GetBool("FixHighFPSAirResistance", true, "Gameplay"))
+    {
+        HOOK(ApplyAirResistance_FPS, aml->GetSym(hGTASA, "_ZN9CPhysical18ApplyAirResistanceEv"));
+    }
+
 
 
 
