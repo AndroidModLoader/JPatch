@@ -136,6 +136,9 @@
         aml->Write32(pGTASA + 0x278E50, 0x8B090108);
         aml->Write32(pGTASA + 0x278E60, 0x8B090108);
         aml->Write32(pGTASA + 0x278E70, 0xAA0903E9);
+        aml->Write32(pGTASA + 0x278B90, 0xF9441308);
+        aml->Write32(pGTASA + 0x278B94, 0xF9401A69);
+        aml->Write32(pGTASA + 0x278B9C, 0xCB090101);
     }
 
     // Fix enter-vehicle tasks
