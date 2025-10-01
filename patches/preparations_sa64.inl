@@ -1233,6 +1233,14 @@
     {
         HOOK(ApplyAirResistance_FPS, aml->GetSym(hGTASA, "_ZN9CPhysical18ApplyAirResistanceEv"));
     }
+
+    // SilentPatch: Fixed weapons rendering when looking through the windows
+    if(cfg->GetBool("SP_FixWeaponsRendering", true, "Visual"))
+    {
+        PedRenderWeapons_BackTo = pGTASA + 0x59D520;
+        aml->Redirect(pGTASA + 0x59D4DC, (uintptr_t)PedRenderWeapons_Inject);
+        HOOK(SP_RenderWeaponPedsForPC, aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins21RenderWeaponPedsForPCEv"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

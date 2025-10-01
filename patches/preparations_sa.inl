@@ -1554,6 +1554,14 @@
         HOOK(ApplyAirResistance_FPS, aml->GetSym(hGTASA, "_ZN9CPhysical18ApplyAirResistanceEv"));
     }
 
+    // SilentPatch: Fixed weapons rendering when looking through the windows
+    if(cfg->GetBool("SP_FixWeaponsRendering", true, "Visual"))
+    {
+        PedRenderWeapons_BackTo = pGTASA + 0x4A6AF2 + 0x1;
+        aml->Redirect(pGTASA + 0x4A6AC4 + 0x1, (uintptr_t)PedRenderWeapons_Inject);
+        HOOK(SP_RenderWeaponPedsForPC, aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins21RenderWeaponPedsForPCEv"));
+    }
+
 
 
 

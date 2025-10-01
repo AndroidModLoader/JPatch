@@ -127,6 +127,7 @@ void                        *TheText;
 RQRenderTarget              **SelectedRQTarget, **backTarget, **oldTarget;
 CSprite2d                   *HudSprites;
 float                       *m_fAirResistanceMult;
+CLinkList<CPed*>            *ms_weaponPedsForPC;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -267,6 +268,18 @@ void (*glFlush)();
 u_native (*GetFrameHierarchyId)(RwFrame*);
 RwFrame* (*RwFrameForAllChildren)(RwFrame *frame, HierarchyCallback callBack, void *data);
 bool (*DoExtraAirResistanceForPlayer)();
+RpHAnimHierarchy* (*GetAnimHierarchyFromSkinClump)(RpClump*);
+int (*RpHAnimIDGetIndex)(RpHAnimHierarchy *hierarchy, int ID);
+RwMatrix* (*RpHAnimHierarchyGetMatrixArray)(RpHAnimHierarchy*);
+RwFrame* (*RwFrameUpdateObjects)(RwFrame*);
+RpClump* (*RpClumpRender)(RpClump*);
+RwMatrix* (*RwMatrixTranslate)(RwMatrix *matrix, const RwV3d *translation, RwOpCombineType combineOp);
+RwMatrix* (*RwMatrixRotate)(RwMatrix *matrix, const RwV3d *axis, RwReal angle, RwOpCombineType combineOp);
+void (*SetGunFlashAlpha)(CPed *, bool bLHand);
+RpAtomic* (*RpAtomicRender)(RpAtomic*);
+void (*ResetGunFlashAlpha)(CPed*);
+CWeaponInfo* (*GetWeaponInfo)(eWeaponType WeaponType, int8 nSkillLevel);
+int8 (*GetWeaponSkill)(CPed*);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -466,6 +479,18 @@ void JPatch()
     SET_TO(GetFrameHierarchyId,     aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins19GetFrameHierarchyIdEP7RwFrame"));
     SET_TO(RwFrameForAllChildren,   aml->GetSym(hGTASA, "_Z21RwFrameForAllChildrenP7RwFramePFS0_S0_PvES1_"));
     SET_TO(DoExtraAirResistanceForPlayer, aml->GetSym(hGTASA, "_ZN10CCullZones29DoExtraAirResistanceForPlayerEv"));
+    SET_TO(GetAnimHierarchyFromSkinClump, aml->GetSym(hGTASA, "_Z29GetAnimHierarchyFromSkinClumpP7RpClump"));
+    SET_TO(RpHAnimIDGetIndex,       aml->GetSym(hGTASA, "_Z17RpHAnimIDGetIndexP16RpHAnimHierarchyi"));
+    SET_TO(RpHAnimHierarchyGetMatrixArray, aml->GetSym(hGTASA, "_Z30RpHAnimHierarchyGetMatrixArrayP16RpHAnimHierarchy"));
+    SET_TO(RwFrameUpdateObjects,    aml->GetSym(hGTASA, "_Z20RwFrameUpdateObjectsP7RwFrame"));
+    SET_TO(RpClumpRender,           aml->GetSym(hGTASA, "_Z13RpClumpRenderP7RpClump"));
+    SET_TO(RwMatrixTranslate,       aml->GetSym(hGTASA, "_Z17RwMatrixTranslateP11RwMatrixTagPK5RwV3d15RwOpCombineType"));
+    SET_TO(RwMatrixRotate,          aml->GetSym(hGTASA, "_Z14RwMatrixRotateP11RwMatrixTagPK5RwV3df15RwOpCombineType"));
+    SET_TO(SetGunFlashAlpha,        aml->GetSym(hGTASA, "_ZN4CPed16SetGunFlashAlphaEb"));
+    SET_TO(RpAtomicRender,          aml->GetSym(hGTASA, "_Z27AtomicDefaultRenderCallBackP8RpAtomic"));
+    SET_TO(ResetGunFlashAlpha,      aml->GetSym(hGTASA, "_ZN4CPed18ResetGunFlashAlphaEv"));
+    SET_TO(GetWeaponInfo,           aml->GetSym(hGTASA, "_ZN11CWeaponInfo13GetWeaponInfoE11eWeaponTypea"));
+    SET_TO(GetWeaponSkill,          aml->GetSym(hGTASA, "_ZN4CPed14GetWeaponSkillEv"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -559,6 +584,7 @@ void JPatch()
     SET_TO(HudSprites,              aml->GetSym(hGTASA, "_ZN4CHud7SpritesE"));
     SET_TO(DrunkRotation,           pGTASA + BYBIT(0x952EF0, 0xBBB950));
     SET_TO(m_fAirResistanceMult,    aml->GetSym(hGTASA, "_ZN8CVehicle20m_fAirResistanceMultE"));
+    SET_TO(ms_weaponPedsForPC,      aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins18ms_weaponPedsForPCE"));
     // Variables End //
 
     // We need it for future fixes.

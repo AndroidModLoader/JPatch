@@ -1587,6 +1587,114 @@ DECL_HOOKv(ApplyAirResistance_FPS, CVehicle* self)
     }
 }
 
+// SilentPatch: Fixed weapons rendering when looking through the windows
+static const RwV3d g_vecParachuteTranslation = { 0.1f, -0.15f, 0.0f };
+static const RwV3d g_vecParachuteRotation    = { 0.0f,  1.0f,  0.0f };
+static const RwV3d g_vecSecHandTranslation   = { 0.04f,-0.05f, 0.0f };
+static const RwV3d g_vecSecHandRotation      = { 1.0f,  0.0f,  0.0f };
+RwObject* GetFirstRwObject(RwObject* object, void* data)
+{
+    *(RwObject**)data = object;
+    return NULL;
+} 
+inline RwObject* GetFirstObject(RwFrame* pFrame)
+{
+    RwObject* pObject = NULL;
+    RwFrameForAllObjects(pFrame, GetFirstRwObject, &pObject);
+    return pObject;
+}
+inline void RenderSingleWeapon(CPed* ped, bool bLHand, bool bWeapon, RwFrame* m_pWeaponFlashFrame)
+{
+    RwFrameUpdateObjects((RwFrame*)(ped->m_pWeaponClump->object.parent));
+
+    if(bWeapon) RpClumpRender(ped->m_pWeaponClump);
+    if(m_pWeaponFlashFrame)
+    {
+        int zwrite;
+        RwRenderStateGet(rwRENDERSTATEZWRITEENABLE, &zwrite);
+        RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
+
+        SetGunFlashAlpha(ped, bLHand);
+        RpAtomicRender((RpAtomic*)GetFirstObject(m_pWeaponFlashFrame));
+
+        RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)(intptr_t)zwrite);
+    }
+}
+inline void RenderPedWeapons(CPed* ped, bool bWeapon, bool bMuzzleFlash)
+{
+    if(!ped->m_pWeaponClump) return;
+
+    RpHAnimHierarchy* pAnimHierarchy = GetAnimHierarchyFromSkinClump(ped->m_pRwClump);
+    bool              bHasParachute = (ped->m_WeaponSlots[ped->m_nCurrentWeapon].m_eWeaponType == WEAPON_PARACHUTE);
+    RwFrame*          pFrame = (RwFrame*)(ped->m_pWeaponClump->object.parent);
+
+    // Attach weapon model to the bone
+    pFrame->modelling = RpHAnimHierarchyGetMatrixArray(pAnimHierarchy)[ RpHAnimIDGetIndex(pAnimHierarchy, bHasParachute ? 3 : 24) ];
+    if(bHasParachute)
+    {
+        RwMatrixTranslate(&pFrame->modelling, &g_vecParachuteTranslation, rwCOMBINEPRECONCAT);
+        RwMatrixRotate(&pFrame->modelling, &g_vecParachuteRotation, 90.0f, rwCOMBINEPRECONCAT);
+    }
+
+    // Render the weapon in the right hand
+    RenderSingleWeapon(ped, false, bWeapon, bMuzzleFlash ? ped->m_pWeaponFlashFrame : NULL);
+
+    // Render the weapon in the left hand (if exists)
+    CWeaponInfo* info = GetWeaponInfo(ped->m_WeaponSlots[ped->m_nCurrentWeapon].m_eWeaponType, GetWeaponSkill(ped));
+    bool isDoubleHanded = info && (*(unsigned int*)((uintptr_t)info + 0x18) & 0x800);
+    if(isDoubleHanded)
+    {
+        pFrame->modelling = RpHAnimHierarchyGetMatrixArray(pAnimHierarchy)[ RpHAnimIDGetIndex(pAnimHierarchy, 34) ];
+        RwMatrixRotate(&pFrame->modelling, &g_vecSecHandRotation, 180.0f, rwCOMBINEPRECONCAT);
+        RwMatrixTranslate(&pFrame->modelling, &g_vecSecHandTranslation, rwCOMBINEPRECONCAT);
+        RenderSingleWeapon(ped, true, bWeapon, bMuzzleFlash ? ped->m_pWeaponFlashFrame : NULL);
+    }
+
+    if(bMuzzleFlash)
+    {
+        ResetGunFlashAlpha(ped);
+    }
+}
+uintptr_t PedRenderWeapons_BackTo;
+extern "C" void PedRenderWeapons(CPed* self)
+{
+    RenderPedWeapons(self, true, true);
+    ms_weaponPedsForPC->Insert(self);
+}
+__attribute__((optnone)) __attribute__((naked)) void PedRenderWeapons_Inject(void)
+{
+    asm("STR X1, [SP, #-16]!");
+    asm("MOV X0, X19");
+    asm volatile("BL PedRenderWeapons");
+    asm volatile("MOV X16, %0" :: "r"(PedRenderWeapons_BackTo));
+    asm("LDR X1, [SP], #16\nBR X16");
+}
+DECL_HOOKv(SP_RenderWeaponPedsForPC)
+{
+    int va, zwrite, fog;
+    RwRenderStateGet(rwRENDERSTATEVERTEXALPHAENABLE, &va);
+    RwRenderStateGet(rwRENDERSTATEZWRITEENABLE, &zwrite);
+    RwRenderStateGet(rwRENDERSTATEFOGENABLE, &fog);
+
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEFOGENABLE, (void*)true);
+    //RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
+    //RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
+
+    for(auto link = ms_weaponPedsForPC->usedListTail.prev; link != &ms_weaponPedsForPC->usedListHead; link = link->prev)
+    {
+        CPed* ped = link->data;
+        const bool bLightingSetup = ped->SetupLighting();
+        RenderPedWeapons(ped, false, true);
+        ped->RemoveLighting(bLightingSetup);
+    }
+
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)(intptr_t)va);
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)(intptr_t)zwrite);
+    RwRenderStateSet(rwRENDERSTATEFOGENABLE, (void*)(intptr_t)fog);
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {
@@ -1682,7 +1790,7 @@ DECL_HOOK(RwImage*, Patch_psGrabScreen, RwCamera* camera)
     if(newImage)
     {
         RwImageAllocatePixels(newImage);
-		RwImageSetFromRaster(newImage, camera->framebuf);
+        RwImageSetFromRaster(newImage, camera->framebuf);
     }
     return newImage;
 }
