@@ -1248,6 +1248,14 @@
         RunOverSay_BackTo = pGTASA + 0x5A649C;
         aml->Redirect(pGTASA + 0x5A648C, (uintptr_t)RunOverSay_Inject);
     }
+
+    // Bob El Aventurero: Fix CJ clones spawning
+    if(cfg->GetBool("FixCJClonesSpawning", true, "Gameplay"))
+    {
+        // Just disabling it
+        aml->Write32(pGTASA + 0x3EEDC0, 0x3100013F);
+        aml->Write32(pGTASA + 0x3EEDC4, 0x540025AD);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))
