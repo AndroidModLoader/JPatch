@@ -112,6 +112,7 @@
  - B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
  - MTA: Extra air resistance's rotation for entities on high FPS
  - SilentPatch: Fixed weapons rendering when looking through the windows
+ - SilentPatch: Passengers comment driving over peds
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -287,6 +288,7 @@
  - B1ack_Wh1te: Fix the rear van doors not being properly special cased in GetPositionToOpenCarDoor
  - MTA: Extra air resistance's rotation for entities on high FPS
  - SilentPatch: Fixed weapons rendering when looking through the windows
+ - SilentPatch: Passengers comment driving over peds
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

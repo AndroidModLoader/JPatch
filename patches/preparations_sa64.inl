@@ -1241,6 +1241,13 @@
         aml->Redirect(pGTASA + 0x59D4DC, (uintptr_t)PedRenderWeapons_Inject);
         HOOK(SP_RenderWeaponPedsForPC, aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins21RenderWeaponPedsForPCEv"));
     }
+
+    // SilentPatch: Passengers comment driving over peds
+    if(cfg->GetBool("SP_PassengersCommentRunOver", true, "Gameplay"))
+    {
+        RunOverSay_BackTo = pGTASA + 0x5A649C;
+        aml->Redirect(pGTASA + 0x5A648C, (uintptr_t)RunOverSay_Inject);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

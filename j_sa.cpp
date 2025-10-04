@@ -280,6 +280,8 @@ RpAtomic* (*RpAtomicRender)(RpAtomic*);
 void (*ResetGunFlashAlpha)(CPed*);
 CWeaponInfo* (*GetWeaponInfo)(eWeaponType WeaponType, int8 nSkillLevel);
 int8 (*GetWeaponSkill)(CPed*);
+CColModel* (*GetColModel)(CEntity*);
+void (*PedSay)(CPed*, UInt16 Phrase, UInt32 StartTimeDelay, float Probability, Bool8 bOverideSilence, Bool8 bForceAudible, Bool8 bFrontEnd);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -491,6 +493,8 @@ void JPatch()
     SET_TO(ResetGunFlashAlpha,      aml->GetSym(hGTASA, "_ZN4CPed18ResetGunFlashAlphaEv"));
     SET_TO(GetWeaponInfo,           aml->GetSym(hGTASA, "_ZN11CWeaponInfo13GetWeaponInfoE11eWeaponTypea"));
     SET_TO(GetWeaponSkill,          aml->GetSym(hGTASA, "_ZN4CPed14GetWeaponSkillEv"));
+    SET_TO(GetColModel,             aml->GetSym(hGTASA, "_ZN7CEntity11GetColModelEv"));
+    SET_TO(PedSay,                  aml->GetSym(hGTASA, "_ZN4CPed3SayEtjfhhh"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

@@ -1562,6 +1562,13 @@
         HOOK(SP_RenderWeaponPedsForPC, aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins21RenderWeaponPedsForPCEv"));
     }
 
+    // SilentPatch: Passengers comment driving over peds
+    if(cfg->GetBool("SP_PassengersCommentRunOver", true, "Gameplay"))
+    {
+        RunOverSay_BackTo = pGTASA + 0x4AD47E + 0x1;
+        aml->Redirect(pGTASA + 0x4AD474 + 0x1, (uintptr_t)RunOverSay_Inject);
+    }
+
 
 
 

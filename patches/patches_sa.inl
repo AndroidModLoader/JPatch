@@ -2678,6 +2678,44 @@ DECL_HOOKv(SP_RenderWeaponPedsForPC)
     RwRenderStateSet(rwRENDERSTATEFOGENABLE, (void*)(intptr_t)fog);
 }
 
+// SilentPatch: Passengers comment driving over peds
+inline CPed* PickRandomPassenger(CVehicle* vehicle)
+{
+    if(vehicle && vehicle->m_nNumPassengers > 0)
+    {
+        const int randInt = rand() % 8;
+        for(int i = 0; i < 8; ++i)
+        {
+            int idx = (i + randInt) % 8;
+            if(vehicle->m_pPassenger[idx] != NULL)
+            {
+                return vehicle->m_pPassenger[idx];
+            }
+        }
+    }
+    return NULL;
+}
+uintptr_t RunOverSay_BackTo;
+extern "C" CColModel* RunOverSay(CVehicle* self)
+{
+    if(FindPlayerVehicle(-1, false) == self)
+    {
+        CPed* ped = PickRandomPassenger(self);
+        if(ped) PedSay(ped, 36, 0, 1.0f, false, false, false);
+    }
+    return GetColModel(self);
+}
+__attribute__((optnone)) __attribute__((naked)) void RunOverSay_Inject(void)
+{
+    asm("PUSH {R0-R3,R5}");
+    asm("MOV R0, R4");
+    asm("BL RunOverSay");
+    asm volatile("MOV R12, %0" :: "r"(RunOverSay_BackTo));
+    asm("POP {R0-R3,R5}");
+    asm("LDR R1, [R4, #0x5A4]");
+    asm("MOV PC, R12");
+}
+
 
 
 

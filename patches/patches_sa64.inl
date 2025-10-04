@@ -1695,6 +1695,44 @@ DECL_HOOKv(SP_RenderWeaponPedsForPC)
     RwRenderStateSet(rwRENDERSTATEFOGENABLE, (void*)(intptr_t)fog);
 }
 
+// SilentPatch: Passengers comment driving over peds
+inline CPed* PickRandomPassenger(CVehicle* vehicle)
+{
+    if(vehicle && vehicle->m_nNumPassengers > 0)
+    {
+        const int randInt = rand() % 8;
+        for(int i = 0; i < 8; ++i)
+        {
+            int idx = (i + randInt) % 8;
+            if(vehicle->m_pPassenger[idx] != NULL)
+            {
+                return vehicle->m_pPassenger[idx];
+            }
+        }
+    }
+    return NULL;
+}
+uintptr_t RunOverSay_BackTo;
+extern "C" CColModel* RunOverSay(CVehicle* self)
+{
+    if(FindPlayerVehicle(-1, false) == self)
+    {
+        CPed* ped = PickRandomPassenger(self);
+        if(ped) PedSay(ped, 36, 0, 1.0f, false, false, false);
+    }
+    return GetColModel(self);
+}
+__attribute__((optnone)) __attribute__((naked)) void RunOverSay_Inject(void)
+{
+    asm("STR X22, [SP, #-16]!");
+    asm("MOV X0, X19");
+    asm("BL RunOverSay");
+    asm volatile("MOV X16, %0" :: "r"(RunOverSay_BackTo));
+    asm("LDR W8, [X19, #0x738]");
+    asm("CMP W8, #6");
+    asm("LDR X22, [SP], #16\nBR X16");
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {
