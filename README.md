@@ -9,7 +9,7 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
-**Since v1.8.2**
+**Since v1.9**
  - A small optimisation for hashing functions (slightly speed ups loading)
  - **A fix for 1.12 crash**
 
@@ -48,7 +48,7 @@
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
 
-**Since v1.8.2**
+**Since v1.9**
  - A small optimisation for hashing functions (slightly speed ups loading)
 
  **Since v1.8.1**
@@ -88,7 +88,7 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
-**Since v1.8.2**
+**Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
  - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
@@ -270,7 +270,7 @@
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
 
-**Since v1.8.2**
+**Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
  - SilentPatch: Fixed an AI issue where enemies became too accurate after the player had been in the car earlier
