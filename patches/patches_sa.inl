@@ -2718,6 +2718,15 @@ __attribute__((optnone)) __attribute__((naked)) void RunOverSay_Inject(void)
     asm("MOV PC, R12");
 }
 
+// SilentPatch: Streaming memory bug fix
+DECL_HOOKp(SP_CreateClumpInstance, CClumpModelInfo* self)
+{
+    aml->Write16(pGTASA + 0x1EB390, 0xE01B);
+    void* ret = SP_CreateClumpInstance(self);
+    aml->Write16(pGTASA + 0x1EB390, 0x4816);
+    return ret;
+}
+
 
 
 

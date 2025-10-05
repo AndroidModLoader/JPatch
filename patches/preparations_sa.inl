@@ -1569,6 +1569,12 @@
         aml->Redirect(pGTASA + 0x4AD474 + 0x1, (uintptr_t)RunOverSay_Inject);
     }
 
+    // SilentPatch: Streaming memory bug fix
+    if(cfg->GetBool("SP_StreamingMemoryBug", true, "Visual"))
+    {
+        HOOK(SP_CreateClumpInstance, aml->GetSym(hGTASA, "_ZN15CClumpModelInfo14CreateInstanceEv"));
+    }
+
 
 
 

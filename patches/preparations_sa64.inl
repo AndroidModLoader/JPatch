@@ -1256,6 +1256,12 @@
         aml->Write32(pGTASA + 0x3EEDC0, 0x3100013F);
         aml->Write32(pGTASA + 0x3EEDC4, 0x540025AD);
     }
+
+    // SilentPatch: Streaming memory bug fix
+    if(cfg->GetBool("SP_StreamingMemoryBug", true, "Visual"))
+    {
+        HOOK(SP_CreateClumpInstance, aml->GetSym(hGTASA, "_ZN15CClumpModelInfo14CreateInstanceEv"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

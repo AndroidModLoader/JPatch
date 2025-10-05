@@ -1733,6 +1733,15 @@ __attribute__((optnone)) __attribute__((naked)) void RunOverSay_Inject(void)
     asm("LDR X22, [SP], #16\nBR X16");
 }
 
+// SilentPatch: Streaming memory bug fix
+DECL_HOOKp(SP_CreateClumpInstance, CClumpModelInfo* self)
+{
+    aml->Write32(pGTASA + 0x288500, 0x14000016);
+    void* ret = SP_CreateClumpInstance(self);
+    aml->Write32(pGTASA + 0x288500, 0xF0002E29);
+    return ret;
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {
