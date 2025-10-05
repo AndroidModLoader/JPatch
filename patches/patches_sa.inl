@@ -2707,11 +2707,13 @@ extern "C" CColModel* RunOverSay(CVehicle* self)
 }
 __attribute__((optnone)) __attribute__((naked)) void RunOverSay_Inject(void)
 {
-    asm("PUSH {R0-R3,R5}");
+    asm("PUSH {R1-R3,R5,R11}");
     asm("MOV R0, R4");
     asm("BL RunOverSay");
+    asm("MOV R11, R0");
     asm volatile("MOV R12, %0" :: "r"(RunOverSay_BackTo));
-    asm("POP {R0-R3,R5}");
+    asm("MOV R0, R11");
+    asm("POP {R1-R3,R5,R11}");
     asm("LDR R1, [R4, #0x5A4]");
     asm("MOV PC, R12");
 }
