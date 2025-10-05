@@ -247,11 +247,13 @@ DECL_HOOKv(StoreShadowForVehicle, uint32_t nId, uint8_t ShadowType, void *pTextu
 }
 
 // Static shadows
+static CPolyBunch bunchezTail[BUNCHTAILS_EX];
 DECL_HOOKv(InitShadows)
 {
-    static CPolyBunch bunchezTail[BUNCHTAILS_EX];
-    
     InitShadows();
+    memset(aStaticShadows_NEW, 0, sizeof(aStaticShadows_NEW));
+    memset(bunchezTail, 0, sizeof(bunchezTail));
+    
     for(int i = 0; i < BUNCHTAILS_EX-1; ++i)
     {
         bunchezTail[i].m_pNext = &bunchezTail[i+1];

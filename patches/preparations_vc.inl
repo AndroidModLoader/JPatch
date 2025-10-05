@@ -206,8 +206,8 @@
     // Allows the game to render even more light shadows on the ground
     if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
-        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
-        aml->Write(pGTAVC + 0x394750, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0};
+        aml->WriteAddr(pGTAVC + 0x394750, (uintptr_t)aStaticShadows_NEW);
 
         // Static Shadows:
         // CShadows::StoreStaticShadow

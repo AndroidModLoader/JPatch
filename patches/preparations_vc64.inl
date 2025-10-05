@@ -203,10 +203,10 @@
     }
 
     // Allows the game to render even more light shadows on the ground
-    if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
+    /*if(cfg->GetBool("BuffStaticShadowsCount", true, "Gameplay"))
     {
-        aStaticShadows_NEW = new CStaticShadow[MAX_STATIC_SHADOWS + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (MAX_STATIC_SHADOWS + 1));
-        aml->Write(pGTAVC + 0x576FF0, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        aStaticShadows_NEW = new CStaticShadow[MAX_STATIC_SHADOWS + 1] {0};
+        aml->WriteAddr(pGTAVC + 0x576FF0, (uintptr_t)aStaticShadows_NEW);
 
         // Static Shadows:
         // CShadows::StoreStaticShadow
@@ -219,11 +219,17 @@
 
         HOOKPLT(InitShadows, pGTAVC + 0x574740);
 
-        StoreStaticShadow_BackTo = pGTAVC + 0x2D76B8;
-        aml->Redirect(pGTAVC + 0x2D7538, (uintptr_t)StoreStaticShadow_Inject);
-        aml->Write32(pGTAVC + 0x2D76B8, 0x3100051F);
-        aml->Write32(pGTAVC + 0x2D76BC, 0x54001780);
-    }
+        aml->Write32(pGTAVC + 0x2D753C, 0x580000B1);
+        aml->Write32(pGTAVC + 0x2D7540, 0x2A0903F0);
+        aml->Write32(pGTAVC + 0x2D7544, 0xD63F0220);
+        aml->Write32(pGTAVC + 0x2D7548, 0x2A1003E9);
+        aml->Write32(pGTAVC + 0x2D754C, 0x14000003);
+        aml->WriteAddr(pGTAVC + 0x2D7550, (uintptr_t)&StoreStaticShadow_GetFreeSlot);
+        aml->Write32(pGTAVC + 0x2D7558, 0x3100041F);
+        aml->Write32(pGTAVC + 0x2D755C, 0x2A0003E8);
+        aml->Write32(pGTAVC + 0x2D7560, 0x54002240);
+        aml->Write32(pGTAVC + 0x2D7564, 0x140000F5);
+    }*/
 
     // Bigger max count of peds
     if(cfg->GetBool("BuffMaxPedsCount", true, "Gameplay"))

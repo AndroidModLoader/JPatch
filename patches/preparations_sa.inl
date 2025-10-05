@@ -557,8 +557,8 @@
         // Static shadows?
         asShadowsStored_NEW = new CRegisteredShadow[0xFF + 1]; memset(asShadowsStored_NEW, 0, sizeof(CRegisteredShadow) * (0xFF + 1));
         aStaticShadows_NEW = new CStaticShadow[0xFF + 1] {0}; memset(aStaticShadows_NEW, 0, sizeof(CStaticShadow) * (0xFF + 1));
-        aml->Write(pGTASA + 0x677BEC, (uintptr_t)&asShadowsStored_NEW, sizeof(void*));
-        aml->Write(pGTASA + 0x6798EC, (uintptr_t)&aStaticShadows_NEW, sizeof(void*));
+        aml->WriteAddr(pGTASA + 0x677BEC, (uintptr_t)asShadowsStored_NEW);
+        aml->WriteAddr(pGTASA + 0x6798EC, (uintptr_t)aStaticShadows_NEW);
         
         // Registered Shadows:
         // CShadows::StoreShadowToBeRendered

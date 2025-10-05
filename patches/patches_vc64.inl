@@ -229,11 +229,13 @@ DECL_HOOKv(StoreStaticShadow_LS, uint64_t nId, uint8 ShadowType, RwTexture *pTex
 }
 
 // Static shadows
+#define MAX_STATIC_SHADOWS (0xFF)
+static CPolyBunch bunchezTail[BUNCHTAILS_EX];
 DECL_HOOKv(InitShadows)
-{
-    static CPolyBunch bunchezTail[BUNCHTAILS_EX];
-    
+{    
     InitShadows();
+    memset(aStaticShadows_NEW, 0, sizeof(aStaticShadows_NEW));
+    memset(bunchezTail, 0, sizeof(bunchezTail));
     for(int i = 0; i < BUNCHTAILS_EX-1; ++i)
     {
         bunchezTail[i].m_pNext = &bunchezTail[i+1];
@@ -241,33 +243,13 @@ DECL_HOOKv(InitShadows)
     bunchezTail[BUNCHTAILS_EX-1].m_pNext = NULL;
     aPolyBunches[380-1].m_pNext = &bunchezTail[0]; // GTA:VC has 380 instead of 360 in SA?! LOL, DOWNGRADE
 }
-
-#define MAX_STATIC_SHADOWS (0xFF)
-uintptr_t StoreStaticShadow_BackTo;
-extern "C" int StoreStaticShadow_Patch()
+int StoreStaticShadow_GetFreeSlot()
 {
-    for(int i = 0; i < MAX_STATIC_SHADOWS; ++i)
-    {
-        if(aStaticShadows_NEW[i].m_pPolyBunch == NULL) return i;
-    }
-    return -1;
-}
-__attribute__((optnone)) __attribute__((naked)) void StoreStaticShadow_Inject(void)
-{
-    asm volatile(
-        "STR X0, [SP, #-16]!\n"
-        //"STR X8, [SP, #-16]!\n"
-        "BL StoreStaticShadow_Patch\n"
-        "MOV W8, W0\n");
-
-    asm volatile(
-        "MOV X11, %0"
-    :: "r" (StoreStaticShadow_BackTo));
-
-    asm volatile(
-        //"LDR X8, [SP], #16\n"
-        "LDR X0, [SP], #16\n"
-        "BR X11\n");
+    //for(int i = 0; i < MAX_STATIC_SHADOWS; ++i)
+    //{
+    //    if(aStaticShadows_NEW[i].m_pPolyBunch == NULL) return i;
+    //}
+    return 80;
 }
 
 // Bigger distance for light shadows
