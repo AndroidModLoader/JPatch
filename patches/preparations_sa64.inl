@@ -1262,6 +1262,12 @@
     {
         HOOK(SP_CreateClumpInstance, aml->GetSym(hGTASA, "_ZN15CClumpModelInfo14CreateInstanceEv"));
     }
+
+    // Peds are catching fire when they're in a source
+    if(cfg->GetBool("PedsCatchingInFire", true, "Gameplay"))
+    {
+        HOOK(ProcessSingleFireBlob, aml->GetSym(hGTASA, "_ZN5CFire11ProcessFireEv"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

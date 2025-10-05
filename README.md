@@ -115,6 +115,7 @@
  - SilentPatch: Passengers comment driving over peds
  - Bob El Aventurero: Fix CJ clones spawning
  - SilentPatch: Streaming memory bug fix
+ - Peds are catching fire when they're in a source
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -292,6 +293,7 @@
  - SilentPatch: Fixed weapons rendering when looking through the windows
  - SilentPatch: Passengers comment driving over peds
  - SilentPatch: Streaming memory bug fix
+ - Peds are catching fire when they're in a source
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

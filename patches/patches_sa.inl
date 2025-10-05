@@ -2727,6 +2727,37 @@ DECL_HOOKp(SP_CreateClumpInstance, CClumpModelInfo* self)
     return ret;
 }
 
+// Peds are catching fire when they're in a source
+DECL_HOOKv(ProcessSingleFireBlob, uintptr_t self)
+{
+    if((rand() % 4) == 0)
+    {
+        CEntity* entityOnFire = *(CEntity**)(self + 0x10);
+        if(!entityOnFire)
+        {
+            CPed* target;
+            CPed* playa = FindPlayerPed(-1);
+            auto pedpool = (*pPedPool);
+            const int peds = pedpool->m_nSize;
+            for(int i = 0; i < peds; ++i)
+            {
+                if((target = pedpool->GetAt(i)) != NULL && target != playa && !target->IsInAnyVehicle() && target->m_fHealth > 0.0f)
+                {
+                    CVector& pos = *(CVector*)(self + 0x4);
+                    CVector& pedpos = target->GetPosition();
+
+                    if((pos - pedpos).MagnitudeSqr() < 1.2f)
+                    {
+                        StartPedFire(gFireManager, target, *(CPed**)(self + 0x14), 0.8f, true, 5000, 100);
+                    }
+                }
+            }
+        }
+    }
+
+    ProcessSingleFireBlob(self);
+}
+
 
 
 

@@ -108,6 +108,7 @@ CWidget                     **m_pWidgets;
 ScriptVariables*            ScriptParams;
 CLinkList<AlphaObjectInfo>  *m_alphaList;
 CPool<CCutsceneObject>      **pObjectPool;
+CPool<CCopPed>              **pPedPool;
 CZoneInfo                   **m_pCurrZoneInfo;
 CWeaponInfo                 *aWeaponInfo;
 CPolyBunch                  *aPolyBunches;
@@ -128,6 +129,7 @@ RQRenderTarget              **SelectedRQTarget, **backTarget, **oldTarget;
 CSprite2d                   *HudSprites;
 float                       *m_fAirResistanceMult;
 CLinkList<CPed*>            *ms_weaponPedsForPC;
+uintptr_t                   gFireManager;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -282,6 +284,7 @@ CWeaponInfo* (*GetWeaponInfo)(eWeaponType WeaponType, int8 nSkillLevel);
 int8 (*GetWeaponSkill)(CPed*);
 CColModel* (*GetColModel)(CEntity*);
 void (*PedSay)(CPed*, UInt16 Phrase, UInt32 StartTimeDelay, float Probability, Bool8 bOverideSilence, Bool8 bForceAudible, Bool8 bFrontEnd);
+void (*StartPedFire)(uintptr_t, CPed *pBurningEntity, CPed *pStartedFireEntity, float fFireSize, bool8 bExtinguishEnabled, UInt32 ArgBurnTime, Int8 NumGenerationsAllowed);
 
 inline int GetSectorForCoord(int coord)
 {
@@ -495,6 +498,7 @@ void JPatch()
     SET_TO(GetWeaponSkill,          aml->GetSym(hGTASA, "_ZN4CPed14GetWeaponSkillEv"));
     SET_TO(GetColModel,             aml->GetSym(hGTASA, "_ZN7CEntity11GetColModelEv"));
     SET_TO(PedSay,                  aml->GetSym(hGTASA, "_ZN4CPed3SayEtjfhhh"));
+    SET_TO(StartPedFire,            aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
@@ -589,6 +593,7 @@ void JPatch()
     SET_TO(DrunkRotation,           pGTASA + BYBIT(0x952EF0, 0xBBB950));
     SET_TO(m_fAirResistanceMult,    aml->GetSym(hGTASA, "_ZN8CVehicle20m_fAirResistanceMultE"));
     SET_TO(ms_weaponPedsForPC,      aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins18ms_weaponPedsForPCE"));
+    SET_TO(gFireManager,            aml->GetSym(hGTASA, "gFireManager"));
     // Variables End //
 
     // We need it for future fixes.
@@ -609,6 +614,7 @@ void JPatch_GameStart()
     SET_TO(m_pWidgets,               *(void**)(pGTASA + BYBIT(0x67947C, 0x850910))); // Patched CTouchInterface::m_pWidgets will work now!
     SET_TO(ScriptParams,             *(void**)(pGTASA + BYBIT(0x676F7C, 0x84BF38))); // Patched ScriptParams will work now!
     SET_TO(pObjectPool,              *(void**)(pGTASA + BYBIT(0x676BBC, 0x84B7C0))); // Patched pObjectPool will work now!
+    SET_TO(pPedPool,                 *(void**)(pGTASA + BYBIT(0x676C90, 0x84B968))); // Patched pPedPool will work now!
     SET_TO(ms_modelInfoPtrs,         *(void**)(pGTASA + BYBIT(0x6796D4, 0x850DB8))); // Patched ms_modelInfoPtrs will work now!
 }
 

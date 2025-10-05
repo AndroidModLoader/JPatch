@@ -149,14 +149,14 @@ __attribute__((optnone)) __attribute__((naked)) void RenderWater_Inject(void)
     asm volatile(
         "AND W8, W8, #0xFFF\n"
         "UCVTF S3, W8\n"
-        "FMOV W0, S10\n"
+        "STP S0, S1, [SP, #-16]!\n"
+        "STP S2, S3, [SP, #-16]!\n"
+        "FMOV S0, S10\n"
 
-        "STR S0, [SP, #-16]!\n"
-        "STR S1, [SP, #-16]!\n"
         "BL RenderWater_Patch\n"
         "FMOV S10, S0\n"
-        "LDR S1, [SP], #16\n"
-        "LDR S0, [SP], #16\n"
+        "LDP S2, S3, [SP], #16\n"
+        "LDP S0, S1, [SP], #16\n"
 
         "FMADD S12, S10, S0, S1\n"
         "LDP S0, S1, [X19, #0x4]");
