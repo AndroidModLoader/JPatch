@@ -62,6 +62,9 @@ typedef RwFrame *(*HierarchyCallback)(RwFrame *, HierarchySearchStruct *);
 static constexpr float ar43 = 4.0f / 3.0f;
 static constexpr float fMagic = 50.0f / 30.0f;
 static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger.
+static constexpr float PHOENIX_FLUTTER_PERIOD = 70.0f;
+static constexpr float PHOENIX_FLUTTER_AMP = 0.13f;
+static constexpr float SWEEPER_BRUSH_SPEED = 0.3f;
 
 float fEmergencyVehiclesFix;
 CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600
@@ -285,7 +288,12 @@ int8 (*GetWeaponSkill)(CPed*);
 CColModel* (*GetColModel)(CEntity*);
 void (*PedSay)(CPed*, UInt16 Phrase, UInt32 StartTimeDelay, float Probability, Bool8 bOverideSilence, Bool8 bForceAudible, Bool8 bFrontEnd);
 void (*StartPedFire)(uintptr_t, CPed *pBurningEntity, CPed *pStartedFireEntity, float fFireSize, bool8 bExtinguishEnabled, UInt32 ArgBurnTime, Int8 NumGenerationsAllowed);
+RwFrame* (*GetFrameFromId)(RpClump *pClump, int32 id);
 
+
+/////////////////////////////////////////////////////////////////////////////
+////////////////////////////    Shared Funcs    /////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 inline int GetSectorForCoord(int coord)
 {
     return floor(0.02f * coord + 60.0f);
@@ -294,7 +302,6 @@ inline int GetSectorForCoord(float coord)
 {
     return floor(0.02f * coord + 60.0f);
 }
-
 inline void TransformFromObjectSpace(CEntity* self, CVector& outPos, const CVector& offset)
 {
     if(self->m_matrix)
@@ -323,6 +330,30 @@ inline void BumpStreamingMemory(int megabytes)
     {
         *ms_memoryAvailable = nMaxStreamingMemForDynamic;
     }
+}
+inline void SetComponentRotation(CAutomobile* self, RwFrame* component, int axis, float angle, bool absolute)
+{
+    if(!component) return;
+
+    CMatrix& matrix = (CMatrix&)component->modelling;
+    if(absolute)
+    {
+             if(axis == 0) matrix.SetRotateXOnly(angle);
+        else if(axis == 1) matrix.SetRotateYOnly(angle);
+        else if(axis == 2) matrix.SetRotateZOnly(angle);
+    }
+    else
+    {
+        const CVector pos = matrix.pos;
+        matrix.pos = CVector { 0.0f, 0.0f, 0.0f };
+
+             if(axis == 0) matrix.RotateX(angle);
+        else if(axis == 1) matrix.RotateY(angle);
+        else if(axis == 2) matrix.RotateZ(angle);
+
+        matrix.pos = pos;
+    }
+    component->modelling.flags &= 0xFFFDFFFC; // RwMatrixUpdate
 }
 
 // Global Hooks (no need to enable patches)
@@ -499,6 +530,7 @@ void JPatch()
     SET_TO(GetColModel,             aml->GetSym(hGTASA, "_ZN7CEntity11GetColModelEv"));
     SET_TO(PedSay,                  aml->GetSym(hGTASA, "_ZN4CPed3SayEtjfhhh"));
     SET_TO(StartPedFire,            aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
+    SET_TO(GetFrameFromId,          aml->GetSym(hGTASA, "_ZN15CClumpModelInfo14GetFrameFromIdEP7RpClumpi"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));

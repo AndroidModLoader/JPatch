@@ -1268,6 +1268,15 @@
     {
         HOOK(ProcessSingleFireBlob, aml->GetSym(hGTASA, "_ZN5CFire11ProcessFireEv"));
     }
+
+    // SilentPatch: Additional vehicle animations
+    if(cfg->GetBool("SP_VehicleAnimations", true, "Visual"))
+    {
+        bAnimation_Phoenix = cfg->GetBool("SP_VehicleAnimations_Phoenix", true, "Visual");
+        bAnimation_Sweeper = cfg->GetBool("SP_VehicleAnimations_Sweeper", true, "Visual");
+        bAnimation_Newsvan = cfg->GetBool("SP_VehicleAnimations_Newsvan", true, "Visual");
+        HOOK(SP_PreRenderVehicle, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

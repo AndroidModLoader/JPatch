@@ -2758,6 +2758,96 @@ DECL_HOOKv(ProcessSingleFireBlob, uintptr_t self)
     ProcessSingleFireBlob(self);
 }
 
+// SilentPatch: Additional vehicle animations
+bool bAnimation_Phoenix = false, bAnimation_Sweeper = false, bAnimation_Newsvan = false;
+inline void PhoenixHoodAnimation(CAutomobile* self)
+{
+    RwFrame* node = self->m_aCarNodes[20];
+    if(!node || !self->vehicleFlags.bEngineOn) return;
+
+    // Reset to the original
+    RpClump* pOrigClump = ms_modelInfoPtrs[self->m_nModelIndex]->m_pRwClump;
+    if(pOrigClump)
+    {
+        RwFrame* origFrame = GetFrameFromId(pOrigClump, 20);
+        if(origFrame) node->modelling = origFrame->modelling;
+    }
+
+    // Animate
+    float finalAngle = 0.0f;
+    if(fabsf(self->m_fGasPedal) > 0.0f)
+    {
+        if(self->PropRotate < 1.3f)
+        {
+            finalAngle = self->PropRotate = fminf(1.3f, self->PropRotate + 0.1f * GetTimeStep());
+        }
+        else
+        {
+            finalAngle = self->PropRotate + PHOENIX_FLUTTER_AMP * sinf((*m_snTimeInMilliseconds % 10000) / PHOENIX_FLUTTER_PERIOD);
+        }
+    }
+    else
+    {
+        if(self->PropRotate > 0.0f)
+        {
+            finalAngle = self->PropRotate = fmaxf(0.0f, self->PropRotate - 0.05f * GetTimeStep());
+        }
+    }
+    SetComponentRotation(self, node, 0, finalAngle, false);
+}
+inline void SweeperBrushAnimation(CAutomobile* self)
+{
+    if(!self->vehicleFlags.bEngineOn) return;
+
+    eEntityStatus status = self->m_nStatus;
+    if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
+    {
+        const float angle = GetTimeStep() * SWEEPER_BRUSH_SPEED;
+        SetComponentRotation(self, self->m_aCarNodes[20], 2, angle, false);
+        SetComponentRotation(self, self->m_aCarNodes[21], 2, -angle, false);
+    }
+}
+inline void NewsvanRadarAnimation(CAutomobile* self)
+{
+    eEntityStatus status = self->m_nStatus;
+    if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
+    {
+        self->GunOrientation += 0.05f * GetTimeStep();
+        if(self->GunOrientation > 2.0f * M_PI) self->GunOrientation -= 2.0f * M_PI;
+        SetComponentRotation(self, self->m_aCarNodes[20], 2, self->GunOrientation, true);
+    }
+}
+DECL_HOOKv(SP_PreRenderVehicle, CAutomobile* self)
+{
+    SP_PreRenderVehicle(self);
+
+    switch(self->m_nModelIndex)
+    {
+        default: break;
+
+        case 603: // phoenix
+        {
+            if(!bAnimation_Phoenix) break;
+            PhoenixHoodAnimation(self);
+            break;
+        }
+        
+        case 574: // sweeper
+        {
+            if(!bAnimation_Sweeper) break;
+            //SweeperBrushAnimation(self);
+            break;
+        }
+        
+        case 582: // newsvan
+        {
+            if(!bAnimation_Newsvan) break;
+            NewsvanRadarAnimation(self);
+            break;
+        }
+    }
+}
+
 
 
 
