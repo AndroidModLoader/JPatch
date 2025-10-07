@@ -1677,10 +1677,11 @@ DECL_HOOKv(SP_RenderWeaponPedsForPC)
     RwRenderStateGet(rwRENDERSTATEFOGENABLE, &fog);
 
     RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
     RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
     RwRenderStateSet(rwRENDERSTATEFOGENABLE, (void*)true);
-    //RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
-    //RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
+    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
+    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
 
     for(auto link = ms_weaponPedsForPC->usedListTail.prev; link != &ms_weaponPedsForPC->usedListHead; link = link->prev)
     {
