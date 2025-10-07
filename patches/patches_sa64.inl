@@ -1658,7 +1658,7 @@ inline void RenderPedWeapons(CPed* ped, bool bWeapon, bool bMuzzleFlash)
 uintptr_t PedRenderWeapons_BackTo;
 extern "C" void PedRenderWeapons(CPed* self)
 {
-    RenderPedWeapons(self, true, true);
+    RenderPedWeapons(self, true, false);
     ms_weaponPedsForPC->Insert(self);
 }
 __attribute__((optnone)) __attribute__((naked)) void PedRenderWeapons_Inject(void)
