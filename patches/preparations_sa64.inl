@@ -1277,6 +1277,12 @@
         bAnimation_Newsvan = cfg->GetBool("SP_VehicleAnimations_Newsvan", true, "Visual");
         HOOK(SP_PreRenderVehicle, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
     }
+
+    // Fixed fading in entities at max reflection settings (fixes Rhino wheels and not only)
+    if(cfg->GetBool("FixFadingInEntsRender", true, "Visual"))
+    {
+        aml->Write32(pGTASA + 0x4D8764, 0x5400004E);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

@@ -116,6 +116,7 @@
  - Bob El Aventurero: Fix CJ clones spawning
  - SilentPatch: Streaming memory bug fix
  - Peds are catching fire when they're in a source
+ - Fixed fading in entities at max reflection settings (fixes Rhino wheels and not only)
 
 **Since v1.8.1**
  - SilentPatch: Impound garages
@@ -294,6 +295,7 @@
  - SilentPatch: Passengers comment driving over peds
  - SilentPatch: Streaming memory bug fix
  - Peds are catching fire when they're in a source
+ - Fixed fading in entities at max reflection settings (fixes Rhino wheels and not only)
 
 **Since v1.8.1**
  - SilentPatch: Impound garages

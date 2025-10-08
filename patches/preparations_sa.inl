@@ -1590,6 +1590,12 @@
         HOOK(SP_PreRenderVehicle, aml->GetSym(hGTASA, "_ZN11CAutomobile9PreRenderEv"));
     }
 
+    // Fixed fading in entities at max reflection settings (fixes Rhino wheels and not only)
+    if(cfg->GetBool("FixFadingInEntsRender", true, "Visual"))
+    {
+        aml->Write16(pGTASA + 0x3F61C8, 0xBF00);
+    }
+
 
 
 
