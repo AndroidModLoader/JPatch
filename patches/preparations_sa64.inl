@@ -837,7 +837,6 @@
     if(cfg->GetBool("BringBackTripSkip", true, "Gameplay"))
     {
         skiptripChangeTex = cfg->GetBool("BringBackSkipButton_Texture", skiptripChangeTex, "Gameplay");
-        SET_TO(bDisplayedSkipTripMessage, pGTASA + 0xC20E90);
         HOOKB(UpdateSkip_SkipCanBeActivated, pGTASA + 0x3CEA24);
         HOOKPLT(DrawHud_SkipTrip, pGTASA + 0x848C48);
     }

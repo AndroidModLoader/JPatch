@@ -438,10 +438,6 @@ DECL_HOOKv(PlayerInfoProcess_Cinematic, CPlayerInfo* info, int playerNum)
 
 // SWAT
 uintptr_t GetCarGunFired1_BackTo1, GetCarGunFired1_BackTo2, GetCarGunFired2_BackTo1, GetCarGunFired2_BackTo2;
-inline bool CanVehicleIdShoot(uint16_t mid)
-{
-    return (mid == 407 || mid == 601 || mid == 430);
-}
 extern "C" uintptr_t GetCarGunFired_Patch1(void)
 {
     CVehicle* veh = FindPlayerVehicle(-1, false);
@@ -1022,11 +1018,6 @@ DECL_HOOKv(AddLight_LightPoles, unsigned char a1, CVector a2, CVector a3, float 
 
 // Green-ish detail texture
 #define GREEN_TEXTURE_ID 14
-inline void* GetDetailTexturePtr(int texId)
-{
-    return *(void**)((uintptr_t)(&(detailTextures->data[texId - 1]->raster->parent)) + *RasterExtOffset);
-}
-
 DECL_HOOKv(emu_TextureSetDetailTexture, void* texture, unsigned int tilingScale)
 {
     if(texture == NULL)
@@ -1968,43 +1959,6 @@ DECL_HOOKv(ObjectRender_VehicleParts, CObject* self)
 }
 
 // Enter-Vehicle tasks
-inline bool IsEnterVehicleTask(eTaskType type)
-{
-    switch(type)
-    {
-        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER:
-        case TASK_COMPLEX_ENTER_CAR_AS_DRIVER:
-        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER_TIMED:
-        case TASK_COMPLEX_ENTER_CAR_AS_DRIVER_TIMED:
-        case TASK_COMPLEX_ENTER_BOAT_AS_DRIVER:
-        case TASK_COMPLEX_ENTER_ANY_CAR_AS_DRIVER:
-        case TASK_COMPLEX_ENTER_CAR_AS_PASSENGER_WAIT:
-        case TASK_COMPLEX_ENTER_LEADER_CAR_AS_PASSENGER:
-        case TASK_GROUP_ENTER_CAR:
-        case TASK_GROUP_ENTER_CAR_AND_PERFORM_SEQUENCE:
-        case TASK_SIMPLE_CAR_GET_IN:
-        case TASK_COMPLEX_SWIM_AND_CLIMB_OUT:
-            return true;
-
-        default: return false;
-    }
-}
-inline bool IsExitVehicleTask(eTaskType type)
-{
-    switch(type)
-    {
-        case TASK_COMPLEX_LEAVE_CAR:
-        case TASK_COMPLEX_LEAVE_CAR_AND_DIE:
-        case TASK_COMPLEX_LEAVE_CAR_AND_FLEE:
-        case TASK_COMPLEX_LEAVE_CAR_AND_WANDER:
-        case TASK_COMPLEX_LEAVE_ANY_CAR:
-        case TASK_COMPLEX_LEAVE_BOAT:
-        case TASK_COMPLEX_LEAVE_CAR_AS_PASSENGER_WAIT:
-            return true;
-
-        default: return false;
-    }
-}
 DECL_HOOKb(Patch_ExitVehicleJustDown, void* pad, bool bCheckTouch, CVehicle *pVehicle, bool bEntering, CVector *vecVehicle)
 {
     if(Patch_ExitVehicleJustDown(pad, bCheckTouch, pVehicle, bEntering, vecVehicle))
@@ -2106,44 +2060,6 @@ DECL_HOOKv(RenderEffects_WaterCannons)
 }
 
 // Cant skip drive
-bool *bDisplayedSkipTripMessage;
-bool skiptripChangeTex = true;
-RwTexture* origWidgetBak = NULL;
-inline bool SkipButtonActivated()
-{
-    //CPad* pad = GetPad(0);
-    CWidget* widget = m_pWidgets[WIDGET_SKIP_CUTSCENE];
-    if(widget)
-    {
-        if(!origWidgetBak && skiptripChangeTex)
-        {
-            origWidgetBak = widget->widgetSprite.m_pTexture;
-            widget->widgetSprite.m_pTexture = HudSprites[5].m_pTexture;
-        }
-        bool ret = TouchInterfaceIsReleased(WIDGET_SKIP_CUTSCENE, NULL, 3);
-        if(ret && origWidgetBak)
-        {
-            widget->widgetSprite.m_pTexture = origWidgetBak;
-            origWidgetBak = NULL;
-        }
-        return ret;
-    }
-    return false;
-}
-inline void DrawTripSkipIcon()
-{
-    if(!HudSprites[5].m_pTexture) return;
-
-    CRect drawRect;
-
-    drawRect.left = RsGlobal->maximumHeight * 0.02f;
-    drawRect.bottom = RsGlobal->maximumHeight * 0.95f;
-
-    drawRect.right = drawRect.left + RsGlobal->maximumHeight * 0.12f;
-    drawRect.top = drawRect.top - RsGlobal->maximumHeight * 0.12f;
-
-    DrawSprite2D_Simple(&HudSprites[5], &drawRect, &rgbaWhite);
-}
 DECL_HOOKb(UpdateSkip_SkipCanBeActivated)
 {
     if(UpdateSkip_SkipCanBeActivated() && SkipButtonActivated())
@@ -2307,10 +2223,6 @@ bool g_bOpenTopQuadBike = false;
 bool g_bOpenTopBoats = false;
 bool g_bOpenTopVortex = false;
 bool g_bOpenTopKart = false;
-inline bool IsOpenTopBoat(uint16_t model)
-{
-    return (model == 472 || model == 472 || model == 493 || model == 484 || model == 452 || model == 446);
-}
 DECL_HOOKb(IsOpenTopAutomobile, CVehicle* self)
 {
     if(g_bOpenTopQuadBike && self->m_nVehicleSubType == VEHICLE_TYPE_QUAD)
@@ -2410,35 +2322,6 @@ DECL_HOOKv(GetCorrectPedModelIndexForEmergencyServiceType, void* script, int typ
 }
 
 // SilentPatch: Fix the logic behind exploding cars losing wheels
-static bool bWheelAtomicVisible = false;
-extern DECL_HOOKv(FixWheelVisibility_SpawnFlyingComponent, CAutomobile* self, int idx, int type);
-RwObject* CheckWheelVisibility(RwObject* obj, void* data)
-{
-    if((obj->flags & 0x4) != 0)
-    {
-        bWheelAtomicVisible = true;
-        return NULL;
-    }
-    return obj;
-}
-RwObject* HideWheelFrame(RwObject* obj, void* data)
-{
-    obj->flags = 0;
-    return obj;
-}
-inline void TryToSpawnAndHideWheelFrame(CAutomobile* self, int nodeId)
-{
-    RwFrame* node = self->m_CarNodes[nodeId];
-    if(!node) return;
-
-    bWheelAtomicVisible = false;
-    RwFrameForAllObjects(node, CheckWheelVisibility, NULL);
-    if(bWheelAtomicVisible)
-    {
-        FixWheelVisibility_SpawnFlyingComponent(self, nodeId, 1);
-        RwFrameForAllObjects(node, HideWheelFrame, NULL);
-    }
-}
 DECL_HOOKv(FixWheelVisibility_SpawnFlyingComponent, CAutomobile* self, int idx, int type)
 {
     if(idx != 5 && type != 1) return FixWheelVisibility_SpawnFlyingComponent(self, idx, type);
@@ -2485,19 +2368,6 @@ DECL_HOOK(RpAtomic*, SetupDNPipeline, RpAtomic* pAtomic)
 }
 
 // SilentPatch: Fixing hierarchy typos in vehicle models
-inline bool IsRequiredFrame(const char* name, const char* required)
-{
-    if(strcasecmp(name, required) == 0) return true;
-    for(HierarchyTypoPair* pair : g_vecHierarchyTypos)
-    {
-        if(strcasecmp(name, pair->alias) == 0)
-        {
-            //logger->Info("Looking for %s = %s (alias %s)", required, name, pair->alias);
-            if(strcasecmp(pair->org, required) == 0) return true;
-        }
-    }
-    return false;
-}
 DECL_HOOK(RwFrame*, FindFrameFromNameWithoutIdCB, RwFrame *pFrame, HierarchySearchStruct *pData)
 {
     const char* frameName = GetFrameNodeName(pFrame);
@@ -2515,18 +2385,6 @@ DECL_HOOK(RwFrame*, FindFrameFromNameWithoutIdCB, RwFrame *pFrame, HierarchySear
 }
 
 // SilentPatch: Extra animations for planes
-inline void CopyCarNodeRotation(CAutomobile* a, int nodeSrc, int nodeDst)
-{
-    if(!a || !a->m_CarNodes[nodeSrc] || !a->m_CarNodes[nodeDst]) return;
-
-    RwMatrix* src = &a->m_CarNodes[nodeSrc]->modelling;
-    RwMatrix* dst = &a->m_CarNodes[nodeDst]->modelling;
-
-    dst->at = src->at;
-    dst->right = src->right;
-    dst->up = src->up;
-    dst->flags &= 0xFFFDFFFC; // RwMatrixUpdate
-}
 DECL_HOOKv(PlanePreRender, CPlane* self)
 {
     PlanePreRender(self);
@@ -2572,34 +2430,6 @@ static const RwV3d g_vecParachuteTranslation = { 0.1f, -0.15f, 0.0f };
 static const RwV3d g_vecParachuteRotation    = { 0.0f,  1.0f,  0.0f };
 static const RwV3d g_vecSecHandTranslation   = { 0.04f,-0.05f, 0.0f };
 static const RwV3d g_vecSecHandRotation      = { 1.0f,  0.0f,  0.0f };
-RwObject* GetFirstRwObject(RwObject* object, void* data)
-{
-    *(RwObject**)data = object;
-    return NULL;
-} 
-inline RwObject* GetFirstObject(RwFrame* pFrame)
-{
-    RwObject* pObject = NULL;
-    RwFrameForAllObjects(pFrame, GetFirstRwObject, &pObject);
-    return pObject;
-}
-inline void RenderSingleWeapon(CPed* ped, bool bLHand, bool bWeapon, RwFrame* m_pWeaponFlashFrame)
-{
-    RwFrameUpdateObjects((RwFrame*)(ped->m_pWeaponClump->object.parent));
-
-    if(bWeapon) RpClumpRender(ped->m_pWeaponClump);
-    if(m_pWeaponFlashFrame)
-    {
-        int zwrite;
-        RwRenderStateGet(rwRENDERSTATEZWRITEENABLE, &zwrite);
-        RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)false);
-
-        SetGunFlashAlpha(ped, bLHand);
-        RpAtomicRender((RpAtomic*)GetFirstObject(m_pWeaponFlashFrame));
-
-        RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)(intptr_t)zwrite);
-    }
-}
 inline void RenderPedWeapons(CPed* ped, bool bWeapon, bool bMuzzleFlash)
 {
     if(!ped->m_pWeaponClump) return;
@@ -2680,22 +2510,6 @@ DECL_HOOKv(SP_RenderWeaponPedsForPC)
 }
 
 // SilentPatch: Passengers comment driving over peds
-inline CPed* PickRandomPassenger(CVehicle* vehicle)
-{
-    if(vehicle && vehicle->m_nNumPassengers > 0)
-    {
-        const int randInt = rand() % 8;
-        for(int i = 0; i < 8; ++i)
-        {
-            int idx = (i + randInt) % 8;
-            if(vehicle->m_pPassenger[idx] != NULL)
-            {
-                return vehicle->m_pPassenger[idx];
-            }
-        }
-    }
-    return NULL;
-}
 uintptr_t RunOverSay_BackTo;
 extern "C" CColModel* RunOverSay(CVehicle* self)
 {
@@ -2761,63 +2575,6 @@ DECL_HOOKv(ProcessSingleFireBlob, uintptr_t self)
 
 // SilentPatch: Additional vehicle animations
 bool bAnimation_Phoenix = false, bAnimation_Sweeper = false, bAnimation_Newsvan = false;
-inline void PhoenixHoodAnimation(CAutomobile* self)
-{
-    RwFrame* node = self->m_aCarNodes[20];
-    if(!node || !self->vehicleFlags.bEngineOn) return;
-
-    // Reset to the original
-    RpClump* pOrigClump = ms_modelInfoPtrs[self->m_nModelIndex]->m_pRwClump;
-    if(pOrigClump)
-    {
-        RwFrame* origFrame = GetFrameFromId(pOrigClump, 20);
-        if(origFrame) node->modelling = origFrame->modelling;
-    }
-
-    // Animate
-    float finalAngle = 0.0f;
-    if(fabsf(self->m_fGasPedal) > 0.0f)
-    {
-        if(self->PropRotate < 1.3f)
-        {
-            finalAngle = self->PropRotate = fminf(1.3f, self->PropRotate + 0.1f * GetTimeStep());
-        }
-        else
-        {
-            finalAngle = self->PropRotate + PHOENIX_FLUTTER_AMP * sinf((*m_snTimeInMilliseconds % 10000) / PHOENIX_FLUTTER_PERIOD);
-        }
-    }
-    else
-    {
-        if(self->PropRotate > 0.0f)
-        {
-            finalAngle = self->PropRotate = fmaxf(0.0f, self->PropRotate - 0.05f * GetTimeStep());
-        }
-    }
-    SetComponentRotation(self, node, 0, finalAngle, false);
-}
-inline void SweeperBrushAnimation(CAutomobile* self)
-{
-    if(!self->vehicleFlags.bEngineOn) return;
-
-    eEntityStatus status = self->m_nStatus;
-    if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
-    {
-        const float angle = SWEEPER_BRUSH_SPEED * GetTimeStep();
-        SetComponentRotation(self, self->m_aCarNodes[20], 2, angle, false);
-        SetComponentRotation(self, self->m_aCarNodes[21], 2, -angle, false);
-    }
-}
-inline void NewsvanRadarAnimation(CAutomobile* self)
-{
-    eEntityStatus status = self->m_nStatus;
-    if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
-    {
-        self->GunOrientation += NEWSVAN_RADAR_SPEED * GetTimeStep();
-        if(self->GunOrientation > 2.0f * M_PI) self->GunOrientation -= 2.0f * M_PI;
-        SetComponentRotation(self, self->m_aCarNodes[20], 2, self->GunOrientation, true);
-    }
-}
 DECL_HOOKv(SP_PreRenderVehicle, CAutomobile* self)
 {
     SP_PreRenderVehicle(self);
@@ -2865,9 +2622,11 @@ DECL_HOOKv(FlickCarCompletely_Windows, CDamageManager* self, bool keepWheels)
 
 
 
-
-
-
+/* Broken below */
+/* Broken below */
+/* Broken below */
+/* Broken below */
+/* Broken below */
 
 // Mobile has 2x times less directional light sources. Lets fix this, it's not 2013 anymore
 // !!! SHADER !!!
@@ -2934,44 +2693,6 @@ DECL_HOOKv(RemoveExtraDirectionalLights, RpWorld* world)
         TOGGLELIGHT(pNewExtraDirectionals[i]);
     }
 }
-
-
-
-inline void FixTheColorFunc(CRGBA *color)
-{
-    color->r = (uint8_t)(magicColorVal * color->r);
-    color->g = (uint8_t)(magicColorVal * color->g);
-    color->b = (uint8_t)(magicColorVal * color->b);
-}
-DECL_HOOKv(ColorFix_DrawBarChart, CRect *rect, CRGBA *color)
-{
-    FixTheColorFunc(color);
-    ColorFix_DrawBarChart(rect, color);
-}
-DECL_HOOKv(ColorFix_SetFontColor, CRGBA *color)
-{
-    FixTheColorFunc(color);
-    ColorFix_SetFontColor(color);
-}
-
-DECL_HOOKv(InitGameEngine)
-{
-    InitGameEngine();
-
-    for(int i = 0; i < HUD_COLOUR_COUNT; ++i)
-    {
-        FixTheColorFunc(&HudColour[i]);
-    }
-}
-
-
-
-
-/* Broken below */
-/* Broken below */
-/* Broken below */
-/* Broken below */
-/* Broken below */
 
 // Camera/sniper zooming patch
 uintptr_t CamZoomProc_BackTo, FixSniperZoomingDistance_BackTo, FixSniperZoomingDistance2_BackTo;
