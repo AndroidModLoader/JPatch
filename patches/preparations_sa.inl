@@ -1596,6 +1596,12 @@
         aml->Write32(pGTASA + 0x3F61CA, 0xBF00BF00);
     }
 
+    // When the car explodes glass should now broke
+    if(cfg->GetBool("CarExplosionBreaksGlass", true, "Visual"))
+    {
+        HOOK(FlickCarCompletely_Windows, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
+    }
+
 
 
 

@@ -1283,6 +1283,12 @@
     {
         aml->Write32(pGTASA + 0x4D8764, 0x5400004E);
     }
+
+    // When the car explodes glass should now broke
+    if(cfg->GetBool("CarExplosionBreaksGlass", true, "Visual"))
+    {
+        HOOK(FlickCarCompletely_Windows, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

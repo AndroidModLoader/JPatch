@@ -1864,6 +1864,17 @@ DECL_HOOKv(SP_PreRenderVehicle, CAutomobile* self)
     }
 }
 
+// When the car explodes glass should now broke
+DECL_HOOKv(FlickCarCompletely_Windows, CDamageManager* self, bool keepWheels)
+{
+    FlickCarCompletely_Windows(self, keepWheels);
+    if(!keepWheels)
+    {
+        CAutomobile* veh = (CAutomobile*)( (uintptr_t)self - 0x758 );
+        SetPanelDamage(veh, WINDSCREEN_PANEL, true);
+    }
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {
