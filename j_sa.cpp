@@ -65,6 +65,7 @@ static constexpr int nMaxScriptSprites = 384; // Changing it wont make it bigger
 static constexpr float PHOENIX_FLUTTER_PERIOD = 70.0f;
 static constexpr float PHOENIX_FLUTTER_AMP = 0.13f;
 static constexpr float SWEEPER_BRUSH_SPEED = 0.3f;
+static constexpr float NEWSVAN_RADAR_SPEED = 0.05f;
 
 float fEmergencyVehiclesFix;
 CSprite2d** pNewScriptSprites = new CSprite2d*[nMaxScriptSprites] {NULL}; // 384*4=1536 0x600

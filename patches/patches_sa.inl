@@ -2803,7 +2803,7 @@ inline void SweeperBrushAnimation(CAutomobile* self)
     eEntityStatus status = self->m_nStatus;
     if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
     {
-        const float angle = GetTimeStep() * SWEEPER_BRUSH_SPEED;
+        const float angle = SWEEPER_BRUSH_SPEED * GetTimeStep();
         SetComponentRotation(self, self->m_aCarNodes[20], 2, angle, false);
         SetComponentRotation(self, self->m_aCarNodes[21], 2, -angle, false);
     }
@@ -2813,7 +2813,7 @@ inline void NewsvanRadarAnimation(CAutomobile* self)
     eEntityStatus status = self->m_nStatus;
     if(status == STATUS_PLAYER || status == STATUS_SIMPLE || status == STATUS_PHYSICS)
     {
-        self->GunOrientation += 0.05f * GetTimeStep();
+        self->GunOrientation += NEWSVAN_RADAR_SPEED * GetTimeStep();
         if(self->GunOrientation > 2.0f * M_PI) self->GunOrientation -= 2.0f * M_PI;
         SetComponentRotation(self, self->m_aCarNodes[20], 2, self->GunOrientation, true);
     }
@@ -2836,7 +2836,7 @@ DECL_HOOKv(SP_PreRenderVehicle, CAutomobile* self)
         case 574: // sweeper
         {
             if(!bAnimation_Sweeper) break;
-            //SweeperBrushAnimation(self);
+            SweeperBrushAnimation(self);
             break;
         }
         
