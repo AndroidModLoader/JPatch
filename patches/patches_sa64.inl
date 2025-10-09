@@ -1633,7 +1633,7 @@ DECL_HOOKv(FlickCarCompletely_Windows, CDamageManager* self, bool keepWheels)
     if(!keepWheels)
     {
         CAutomobile* veh = (CAutomobile*)( (uintptr_t)self - 0x758 );
-        SetPanelDamage(veh, WINDSCREEN_PANEL, true);
+        PopPanel(veh, 18, WINDSCREEN_PANEL, false);
     }
 }
 

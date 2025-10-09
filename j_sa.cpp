@@ -303,7 +303,7 @@ CColModel* (*GetColModel)(CEntity*);
 void (*PedSay)(CPed*, UInt16 Phrase, UInt32 StartTimeDelay, float Probability, Bool8 bOverideSilence, Bool8 bForceAudible, Bool8 bFrontEnd);
 void (*StartPedFire)(uintptr_t, CPed *pBurningEntity, CPed *pStartedFireEntity, float fFireSize, bool8 bExtinguishEnabled, UInt32 ArgBurnTime, Int8 NumGenerationsAllowed);
 RwFrame* (*GetFrameFromId)(RpClump *pClump, int32 id);
-void (*SetPanelDamage)(CAutomobile *veh, ePanels PanelID, bool bDontSpawnStuff);
+void (*PopPanel)(CAutomobile *veh, int index, ePanels PanelID, bool bDontSpawnStuff);
 
 /////////////////////////////////////////////////////////////////////////////
 ////////////////////////////    Shared Funcs    /////////////////////////////
@@ -773,7 +773,7 @@ void JPatch()
     SET_TO(PedSay,                  aml->GetSym(hGTASA, "_ZN4CPed3SayEtjfhhh"));
     SET_TO(StartPedFire,            aml->GetSym(hGTASA, "_ZN12CFireManager9StartFireEP7CEntityS1_fhja"));
     SET_TO(GetFrameFromId,          aml->GetSym(hGTASA, "_ZN15CClumpModelInfo14GetFrameFromIdEP7RpClumpi"));
-    SET_TO(SetPanelDamage,          aml->GetSym(hGTASA, "_ZN11CAutomobile14SetPanelDamageE7ePanelsb"));
+    SET_TO(PopPanel,                aml->GetSym(hGTASA, "_ZN11CAutomobile8PopPanelEi7ePanelsb"));
     #ifdef AML32
         SET_TO(RpLightCreate,           aml->GetSym(hGTASA, "_Z13RpLightCreatei"));
         SET_TO(RpLightSetColor,         aml->GetSym(hGTASA, "_Z15RpLightSetColorP7RpLightPK10RwRGBAReal"));
