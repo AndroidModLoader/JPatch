@@ -1453,7 +1453,7 @@
     // SilentPatch: Disable building pipeline for skinned objects (like parachute)
     if(cfg->GetBool("SP_FixSkinnedObjectsPipeline", true, "Visual"))
     {
-        HOOKPLT(SetupDNPipeline, pGTASA + 0x66EF80);
+        HOOKPLT(SetupDNPipeline, pGTASA + 0x675178);
     }
 
     // FixRadar: Radar outline is not forced to be in pure black color

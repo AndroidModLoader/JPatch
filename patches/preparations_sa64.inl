@@ -1077,7 +1077,7 @@
     // SilentPatch: Disable building pipeline for skinned objects (like parachute)
     if(cfg->GetBool("SP_FixSkinnedObjectsPipeline", true, "Visual"))
     {
-        HOOKPLT(SetupDNPipeline, pGTASA + 0x83E968);
+        HOOKPLT(SetupDNPipeline, pGTASA + 0x848858);
     }
 
     // Fix widget's holding radius
