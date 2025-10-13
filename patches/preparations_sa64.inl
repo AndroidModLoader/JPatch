@@ -1288,6 +1288,14 @@
     {
         HOOK(FlickCarCompletely_Windows, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
     }
+
+    // Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+    if(cfg->GetBool("FixColoredVehicleLights", true, "Gameplay"))
+    {
+        LightsTextureCheck_Continue = pGTASA + 0x4600F8;
+        LightsTextureCheck_Failed = pGTASA + 0x4600B8;
+        aml->Redirect(pGTASA + 0x4600A4, (uintptr_t)LightsTextureCheck_Inject);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))

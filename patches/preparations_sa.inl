@@ -1601,6 +1601,14 @@
         HOOK(FlickCarCompletely_Windows, aml->GetSym(hGTASA, "_ZN14CDamageManager17FuckCarCompletelyEb"));
     }
 
+    // Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+    if(cfg->GetBool("FixColoredVehicleLights", true, "Gameplay"))
+    {
+        LightsTextureCheck_Continue = pGTASA + 0x38890C;
+        LightsTextureCheck_Failed = pGTASA + 0x3888E4;
+        aml->Redirect(pGTASA + 0x3888D8, (uintptr_t)LightsTextureCheck_Inject);
+    }
+
 
 
 

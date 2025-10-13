@@ -2617,6 +2617,29 @@ DECL_HOOKv(FlickCarCompletely_Windows, CDamageManager* self, bool keepWheels)
     }
 }
 
+// Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+uintptr_t LightsTextureCheck_Continue, LightsTextureCheck_Failed;
+extern "C" uintptr_t LightsTextureCheck(RwTexture* checkTex)
+{
+    if(checkTex == *ms_pLightsTexture)
+    {
+        return LightsTextureCheck_Continue;
+    }
+    if(checkTex && !strcmp(checkTex->name, (*ms_pLightsTexture)->name)) // FIX_BUGS
+    {
+        return LightsTextureCheck_Continue;
+    }
+    return LightsTextureCheck_Failed;
+}
+__attribute__((optnone)) __attribute__((naked)) void LightsTextureCheck_Inject(void)
+{
+    asm("MOV R0, R6");
+    asm("PUSH {R4-R11}");
+    asm("BL LightsTextureCheck");
+    asm("POP {R4-R11}");
+    asm("MOV PC, R0");
+}
+
 
 
 

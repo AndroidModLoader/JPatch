@@ -1637,6 +1637,28 @@ DECL_HOOKv(FlickCarCompletely_Windows, CDamageManager* self, bool keepWheels)
     }
 }
 
+// Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+uintptr_t LightsTextureCheck_Continue, LightsTextureCheck_Failed;
+extern "C" uintptr_t LightsTextureCheck(RwTexture* checkTex)
+{
+    if(checkTex == *ms_pLightsTexture)
+    {
+        return LightsTextureCheck_Continue;
+    }
+    if(checkTex && !strcmp(checkTex->name, (*ms_pLightsTexture)->name)) // FIX_BUGS
+    {
+        return LightsTextureCheck_Continue;
+    }
+    return LightsTextureCheck_Failed;
+}
+__attribute__((optnone)) __attribute__((naked)) void LightsTextureCheck_Inject(void)
+{
+    asm("STR X22, [SP, #-16]!");
+    asm("MOV X0, X24");
+    asm("BL LightsTextureCheck");
+    asm("LDR X22, [SP], #16\nBR X0");
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {

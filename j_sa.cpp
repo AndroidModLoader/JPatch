@@ -147,6 +147,7 @@ float                       *m_fAirResistanceMult;
 CLinkList<CPed*>            *ms_weaponPedsForPC;
 uintptr_t                   gFireManager;
 bool                        *bDisplayedSkipTripMessage;
+RwTexture                   **ms_pLightsTexture;
 
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////     Funcs     ///////////////////////////////
@@ -870,6 +871,7 @@ void JPatch()
     SET_TO(ms_weaponPedsForPC,      aml->GetSym(hGTASA, "_ZN18CVisibilityPlugins18ms_weaponPedsForPCE"));
     SET_TO(gFireManager,            aml->GetSym(hGTASA, "gFireManager"));
     SET_TO(bDisplayedSkipTripMessage, pGTASA + BYBIT(0x99205C, 0xC20E90));
+    SET_TO(ms_pLightsTexture,       aml->GetSym(hGTASA, "_ZN17CVehicleModelInfo17ms_pLightsTextureE"));
     // Variables End //
 
     // We need it for future fixes.

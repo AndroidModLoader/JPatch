@@ -88,6 +88,9 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.9.1**
+ - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
  - Fixed crazy vehicle shaking (swinging chassis) on high FPS
@@ -273,6 +276,9 @@
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
+
+**Since v1.9.1**
+ - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
