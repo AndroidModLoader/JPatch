@@ -2640,6 +2640,25 @@ __attribute__((optnone)) __attribute__((naked)) void LightsTextureCheck_Inject(v
     asm("MOV PC, R0");
 }
 
+// Fixes vehicle's turning speed at high FPS
+uintptr_t VehicleTurnSpeed_BackTo;
+extern "C" float VehicleTurnSpeed()
+{
+    return 3000.0f * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void VehicleTurnSpeed_Inject(void)
+{
+    asm("PUSH {R0-R4}");
+    asm("BL VehicleTurnSpeed");
+    asm("VMOV S0, R0");
+    asm volatile("MOV R12, %0" :: "r"(VehicleTurnSpeed_BackTo));
+    asm("PUSH {R0-R4}");
+    
+    asm("ADD.W R0, R11, #0x498");
+    asm("VLDR S2, [R11, #0x94]");
+    asm("MOV PC, R12");
+}
+
 
 
 

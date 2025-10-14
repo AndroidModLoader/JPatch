@@ -90,6 +90,7 @@
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+ - Fixes vehicle's turning speed at high FPS
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
@@ -279,6 +280,7 @@
 
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
+ - Fixes vehicle's turning speed at high FPS
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)

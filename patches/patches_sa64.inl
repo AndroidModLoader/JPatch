@@ -1659,6 +1659,30 @@ __attribute__((optnone)) __attribute__((naked)) void LightsTextureCheck_Inject(v
     asm("LDR X22, [SP], #16\nBR X0");
 }
 
+// Fixes vehicle's turning speed at high FPS
+uintptr_t VehicleTurnSpeed_BackTo;
+extern "C" float VehicleTurnSpeed(float baseSpeed)
+{
+    return baseSpeed * GetTimeStepMagic();
+}
+__attribute__((optnone)) __attribute__((naked)) void VehicleTurnSpeed_Inject(void)
+{
+    asm("STR S0, [SP, #-16]!");
+    asm("STR X8, [SP, #-16]!");
+    asm("FMOV S0, S1");
+    asm("BL VehicleTurnSpeed");
+    asm("FDIV S1, S0, S7");
+    asm("LDR X8, [SP], #16");
+    asm("LDR S0, [SP], #16");
+    
+    asm("LDR S2, [X19, #0x600]");
+    asm("FMOV S3, #1.0");
+    asm("LDP S4, S5, [X8]");
+    asm("LDR S6, [X8, #8]");
+    asm volatile("MOV X0, %0" :: "r"(VehicleTurnSpeed_BackTo));
+    asm("BR X0");
+}
+
 // Re-implement idle camera like on PC/PS2 // fix
 /*void ProcessIdleCam_CutPart()
 {

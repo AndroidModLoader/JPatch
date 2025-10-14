@@ -1609,6 +1609,13 @@
         aml->Redirect(pGTASA + 0x3888D8, (uintptr_t)LightsTextureCheck_Inject);
     }
 
+    // Fixes vehicle's turning speed at high FPS
+    if(cfg->GetBool("FixVehicleTurningHighFPS", true, "Visual"))
+    {
+        VehicleTurnSpeed_BackTo = pGTASA + 0x556B92 + 0x1;
+        aml->Redirect(pGTASA + 0x556B86 + 0x1, (uintptr_t)VehicleTurnSpeed_Inject);
+    }
+
 
 
 

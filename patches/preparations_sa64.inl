@@ -1296,6 +1296,13 @@
         LightsTextureCheck_Failed = pGTASA + 0x4600B8;
         aml->Redirect(pGTASA + 0x4600A4, (uintptr_t)LightsTextureCheck_Inject);
     }
+
+    // Fixes vehicle's turning speed at high FPS
+    if(cfg->GetBool("FixVehicleTurningHighFPS", true, "Visual"))
+    {
+        VehicleTurnSpeed_BackTo = pGTASA + 0x677358;
+        aml->Redirect(pGTASA + 0x677344, (uintptr_t)VehicleTurnSpeed_Inject);
+    }
     
     // Re-implement idle camera like on PC/PS2
     /*if(cfg->GetBool("IdleCamera", true, "Gameplay"))
