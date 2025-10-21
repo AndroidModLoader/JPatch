@@ -2371,7 +2371,7 @@ DECL_HOOK(RpAtomic*, SetupDNPipeline, RpAtomic* pAtomic)
 DECL_HOOK(RwFrame*, FindFrameFromNameWithoutIdCB, RwFrame *pFrame, HierarchySearchStruct *pData)
 {
     const char* frameName = GetFrameNodeName(pFrame);
-    if(!GetFrameHierarchyId(pFrame) && IsRequiredFrame(pData->str, frameName))
+    if(!GetFrameHierarchyId(pFrame) && IsRequiredFrame(frameName, pData->str))
     {
         pData->frame = pFrame;
         return NULL; // Found it! Stop the loop.
