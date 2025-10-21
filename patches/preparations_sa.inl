@@ -1604,9 +1604,9 @@
     // Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
     if(cfg->GetBool("FixColoredVehicleLights", true, "Gameplay"))
     {
-        LightsTextureCheck_Continue = pGTASA + 0x38890C;
-        LightsTextureCheck_Failed = pGTASA + 0x3888E4;
-        aml->Redirect(pGTASA + 0x3888D8, (uintptr_t)LightsTextureCheck_Inject);
+        LightsTextureCheck_Continue = pGTASA + 0x38890C + 0x1;
+        LightsTextureCheck_Failed = pGTASA + 0x3888E4 + 0x1;
+        aml->Redirect(pGTASA + 0x3888D8 + 0x1, (uintptr_t)LightsTextureCheck_Inject);
     }
 
     // Fixes vehicle's turning speed at high FPS
