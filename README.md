@@ -1,10 +1,7 @@
-[![AML Mod Compiler](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml)
-
 <img width="360" height="111" alt="image" src="https://github.com/user-attachments/assets/065c5cd1-e14e-4a26-93b1-dc0541b8abb4" />
 
 # What am i?
  I am a little mod that wants to fix your game!
- Need a preview version of upcoming changes? Get it there: https://github.com/AndroidModLoader/JPatch/actions
 
  Currently i can fix those things:
 
@@ -99,6 +96,7 @@
  - Fixes vehicle's turning speed at high FPS
  - Along with ForceDXT, ForceETC and ForcePVR been added
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
+ - Fully fixed UV animations (UVAnim)
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
