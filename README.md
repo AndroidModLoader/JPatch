@@ -1,6 +1,6 @@
 [![AML Mod Compiler](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/AndroidModLoader/JPatch/actions/workflows/main.yml)
 
-![jpatch_mini](https://github.com/AndroidModLoader/JPatch/assets/8864329/5e273283-baad-4f2c-8697-f75040991f64)
+<img width="360" height="111" alt="image" src="https://github.com/user-attachments/assets/065c5cd1-e14e-4a26-93b1-dc0541b8abb4" />
 
 # What am i?
  I am a little mod that wants to fix your game!
