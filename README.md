@@ -97,6 +97,8 @@
  - Along with ForceDXT, ForceETC and ForcePVR been added
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
  - Fully fixed UV animations (UVAnim)
+ - Stop criminals screaming when they run away from cops
+ - **AFK/Idle camera!**
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
@@ -289,6 +291,7 @@
  - Fixes vehicle's turning speed at high FPS
  - Along with ForceDXT, ForceETC and ForcePVR been added
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
+ - Stop criminals screaming when they run away from cops
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
