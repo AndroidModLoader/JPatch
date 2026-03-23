@@ -99,6 +99,7 @@
  - Fully fixed UV animations (UVAnim)
  - Stop criminals screaming when they run away from cops
  - **AFK/Idle camera!**
+ - Fixed broken characters sizes in menu with FPS enabled
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
@@ -292,6 +293,7 @@
  - Along with ForceDXT, ForceETC and ForcePVR been added
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
  - Stop criminals screaming when they run away from cops
+ - Fixed broken characters sizes in menu with FPS enabled
 
 **Since v1.9**
  - A small optimisation for textures loading speed (hashing function)
