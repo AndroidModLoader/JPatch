@@ -91,6 +91,12 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.9.3**
+ - An ability to freely move camera while moving (customised for walk/drive, 0 to completely disable following)
+ - An ability to use 4 fingers!
+ - An ability to aim using gyroscope
+ - Some settings now support SAUtils
+
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
  - Fixes vehicle's turning speed at high FPS
@@ -286,6 +292,11 @@
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
+ - 
+**Since v1.9.3**
+ - An ability to use 4 fingers!
+ - An ability to aim using gyroscope
+ - Some settings now support SAUtils
 
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
