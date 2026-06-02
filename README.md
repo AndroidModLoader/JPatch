@@ -91,11 +91,14 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
-**Since v1.9.3**
- - An ability to freely move camera while moving (customised for walk/drive, 0 to completely disable following)
+**Since v1.10.0**
+ - "Select Steering mode" doesnt appear every new game!
+ - A bit smoother Boat control
  - An ability to use 4 fingers!
  - An ability to aim using gyroscope
  - Some settings now support SAUtils
+ - SilentPatch: Revert leftover GTA III code making Securicars very fragile against the player
+ - SilentPatch: Drugged up GSF members will now correctly play a dialogue line refusing to join CJ's gang when the player tries to recruit them
 
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
@@ -292,11 +295,15 @@
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
- - 
-**Since v1.9.3**
+ - An ability to freely move camera while moving (customised for walk/drive, 0 to completely disable following)
+
+**Since v1.10.0**
+ - "Select Steering mode" doesnt appear every new game!
  - An ability to use 4 fingers!
  - An ability to aim using gyroscope
  - Some settings now support SAUtils
+ - SilentPatch: Revert leftover GTA III code making Securicars very fragile against the player
+ - SilentPatch: Drugged up GSF members will now correctly play a dialogue line refusing to join CJ's gang when the player tries to recruit them
 
 **Since v1.9.1**
  - Fixing colored vehicle lights when we have vehiclelights texture in multiple TexDBs
