@@ -6,6 +6,9 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
+**Since v1.10.1**
+ - An ability to use 4 fingers!
+
 **Since v1.9.1**
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
  
@@ -47,6 +50,9 @@
  - Fix fighting range
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
+
+**Since v1.10.1**
+ - An ability to use 4 fingers!
 
 **Since v1.9.1**
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
