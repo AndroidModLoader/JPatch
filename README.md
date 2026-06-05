@@ -97,6 +97,9 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.10.1**
+ - Since SocialClub was buried, it was also removed from the game
+
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
  - A bit smoother Boat control
@@ -302,6 +305,9 @@
    - Need to fix a framebuffer at the end of the rendering stage
  - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
  - An ability to freely move camera while moving (customised for walk/drive, 0 to completely disable following)
+
+**Since v1.10.1**
+ - Since SocialClub was buried, it was also removed from the game
 
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
