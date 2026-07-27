@@ -50,7 +50,7 @@
  - Fix fighting range
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
-
+ 
 **Since v1.10.1**
  - An ability to use 4 fingers!
 
@@ -99,6 +99,9 @@
 ### ***GTA:SA v2.10 (64-bit)***
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
+ - PC-like camera that does not move behind you all the time!
+ - Fixed an issue where bushes would suddenly switch to dark mode
+ - A support for HiRes roadsign font textures
 
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
@@ -308,7 +311,9 @@
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
-
+ - PC-like camera that does not move behind you all the time!
+ - Fixed an issue where bushes would suddenly switch to dark mode
+ 
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
  - An ability to use 4 fingers!
