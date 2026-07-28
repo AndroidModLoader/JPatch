@@ -8,6 +8,7 @@
 ### ***GTA:VC v1.12***
 **Since v1.10.1**
  - An ability to use 4 fingers!
+ - Increased rendering buffer size
 
 **Since v1.9.1**
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
@@ -53,6 +54,7 @@
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
+ - Increased rendering buffer size
 
 **Since v1.9.1**
  - mrx.enginner: Fix Xclipse using DXT (without even supporting it)
@@ -102,6 +104,11 @@
  - PC-like camera that does not move behind you all the time!
  - Fixed an issue where bushes would suddenly switch to dark mode
  - A support for HiRes roadsign font textures
+ - An ability to walk while first-person aiming is active (like on PC: camera, sniper rifle)
+ - Fix camera zoom is not that big
+ - Improved Inversed Kinematics for character's feet
+ - Increased rendering buffer size
+ - Entities are now fading out before disappearing like on PC!
 
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
@@ -300,19 +307,22 @@
  
 ### ***GTA:SA v2.00***
 **Planned/TODO (not ready or broken now)**
- - Fix camera zoom is not that big (aspect ratio?)
  - FoodEatingFix by JuniorDjjr
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
- - Fixed a glitch with bushes/trees switching their color to black at some camera angles (camnorm issue)
- - An ability to freely move camera while moving (customised for walk/drive, 0 to completely disable following)
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
  - PC-like camera that does not move behind you all the time!
  - Fixed an issue where bushes would suddenly switch to dark mode
+ - A support for HiRes roadsign font textures
+ - An ability to walk while first-person aiming is active (like on PC: camera, sniper rifle)
+ - Fix camera zoom is not that big
+ - Improved Inversed Kinematics for character's feet
+ - Increased rendering buffer size
+ - Entities are now fading out before disappearing like on PC!
  
 **Since v1.10.0**
  - "Select Steering mode" doesnt appear every new game!
