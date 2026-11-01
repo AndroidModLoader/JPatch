@@ -99,6 +99,14 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
+**Since v1.10.3**
+ - rx: Rhino now has fully functional lights
+ - SilentPatch: two-players mode fixes
+ - SilentPatch: restore weather ped replies
+ - SilentPatch: Re-enable CJ's turf takeover cheer speech contexts
+ - SilentPatch: Re-enable speech contexts for girlfriends and shopkeepers
+ - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
+
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
  - PC-like camera that does not move behind you all the time!
@@ -312,6 +320,14 @@
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
    - Need to fix a framebuffer at the end of the rendering stage
+
+**Since v1.10.3**
+ - rx: Rhino now has fully functional lights
+ - SilentPatch: two-players mode fixes
+ - SilentPatch: restore weather ped replies
+ - SilentPatch: Re-enable CJ's turf takeover cheer speech contexts
+ - SilentPatch: Re-enable speech contexts for girlfriends and shopkeepers
+ - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
