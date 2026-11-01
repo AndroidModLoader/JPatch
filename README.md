@@ -6,6 +6,12 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
+**Since v1.10.3**
+ - Bringing back missing render states with the fog
+ - Bring back crouching
+ - Fixed simulation speed
+ - Bumped a limit of static shadows!
+ 
 **Since v1.10.1**
  - An ability to use 4 fingers!
  - Increased rendering buffer size
@@ -39,18 +45,21 @@
  - Corona sprites draw distance is 3 times bigger (partially, traffic lights do work)
  - Static light shadows (from traffic lights, poles and more) draw distance is 3 times bigger
  - Correct render flag for Dodo Banner (does it work?)
- - Bumped a limit of static shadows!
  - FX particles draw distance scaler (default is x2.5)
  - Now it's possible to remove ZERO's from money text
  - 44100Hz audio support without a mod "OpenAL Update"
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
- - The fog is back (the water shader is broken???)
  - Pushing vehicles on a high FPS (just doesnt work.)
  - Fix fighting range
  - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
+
+**Since v1.10.3**
+ - Bringing back missing render states with the fog
+ - Bring back crouching
+ - Fixed simulation speed
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
