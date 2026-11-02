@@ -127,6 +127,7 @@
  - SWAT peds are sliding down the heli rope instead of falling instantly
  - Fix heli rotor rotation speed on high FPS
  - Fix vehicle dampings on high FPS
+ - Gamepad map panning now should reach map edges on wider screens
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
@@ -351,6 +352,7 @@
  - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
  - Sounds, dialogues and radio are not restarting from the beginning after unpausing
  - Fix vehicle dampings on high FPS
+ - Gamepad map panning now should reach map edges on wider screens
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
