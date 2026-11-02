@@ -11,6 +11,11 @@
  - Bring back crouching
  - Fixed simulation speed
  - Bumped a limit of static shadows!
+ - Fixed physical objects push force
+ - Fixed vehicles turn damping on high FPS
+ - Game feels more alive by adding more NPCs
+ - "Please Rate The Game" window is removed
+ - Removed "Shop" from the game menu
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -51,15 +56,18 @@
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
- - Pushing vehicles on a high FPS (just doesnt work.)
  - Fix fighting range
- - Probably, fix sprint speed?
  - Not sure, maybe timer-related bugs in save files
 
 **Since v1.10.3**
  - Bringing back missing render states with the fog
  - Bring back crouching
  - Fixed simulation speed
+ - Fixed physical objects push force
+ - Fixed vehicles turn damping on high FPS
+ - Game feels more alive by adding more NPCs
+ - "Please Rate The Game" window is removed
+ - Removed "Shop" from the game menu
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -115,6 +123,10 @@
  - SilentPatch: Re-enable CJ's turf takeover cheer speech contexts
  - SilentPatch: Re-enable speech contexts for girlfriends and shopkeepers
  - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
+ - Sounds, dialogues and radio are not restarting from the beginning after unpausing
+ - SWAT peds are sliding down the heli rope instead of falling instantly
+ - Fix heli rotor rotation speed on high FPS
+ - Fix vehicle dampings on high FPS
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
@@ -337,6 +349,8 @@
  - SilentPatch: Re-enable CJ's turf takeover cheer speech contexts
  - SilentPatch: Re-enable speech contexts for girlfriends and shopkeepers
  - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
+ - Sounds, dialogues and radio are not restarting from the beginning after unpausing
+ - Fix vehicle dampings on high FPS
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
