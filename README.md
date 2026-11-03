@@ -16,6 +16,12 @@
  - Game feels more alive by adding more NPCs
  - "Please Rate The Game" window is removed
  - Removed "Shop" from the game menu
+ - **Fix broken models loading**: PC models are no more broken!
+ - Keep game's alpha testing active
+ - Fixed rare ped speech
+ - Melee attack scanner using all positions now
+ - Detached bonnet no longer use door physics
+ - Fix big gun's muzzle flash rotation
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -68,6 +74,12 @@
  - Game feels more alive by adding more NPCs
  - "Please Rate The Game" window is removed
  - Removed "Shop" from the game menu
+ - **Fix broken models loading**: PC models are no more broken!
+ - Keep game's alpha testing active
+ - Fixed rare ped speech
+ - Melee attack scanner using all positions now
+ - Detached bonnet no longer use door physics
+ - Fix big gun's muzzle flash rotation
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
