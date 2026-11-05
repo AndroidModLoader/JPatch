@@ -158,6 +158,8 @@
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
  - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
+ - Various CPU usage fixes
+ - Texture streaming should be slightly faster
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
@@ -388,6 +390,8 @@
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
  - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
+ - Various CPU usage fixes
+ - Texture streaming should be slightly faster
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
