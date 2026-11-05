@@ -6,7 +6,7 @@
  Currently i can fix those things:
 
 ### ***GTA:VC v1.12***
-**Since v1.10.3**
+**Since v1.11.0**
  - Bringing back missing render states with the fog
  - Bring back crouching
  - Fixed simulation speed
@@ -22,6 +22,13 @@
  - Melee attack scanner using all positions now
  - Detached bonnet no longer use door physics
  - Fix big gun's muzzle flash rotation
+ - Fixed buildings brightness
+ - Game no more boosts contrast!
+ - Restore pickup blinking
+ - Horizon background darkness fix
+ - Restored cinematic camera
+ - Restored pinch camera zooming
+ - Fix wheelie not working with buttons
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -65,7 +72,7 @@
  - Fix fighting range
  - Not sure, maybe timer-related bugs in save files
 
-**Since v1.10.3**
+**Since v1.11.0**
  - Bringing back missing render states with the fog
  - Bring back crouching
  - Fixed simulation speed
@@ -80,6 +87,10 @@
  - Melee attack scanner using all positions now
  - Detached bonnet no longer use door physics
  - Fix big gun's muzzle flash rotation
+ - Fixed buildings brightness
+ - Game no more boosts contrast!
+ - Restore pickup blinking
+ - Horizon background darkness fix
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -128,7 +139,7 @@
  - Fix traffic lights
 
 ### ***GTA:SA v2.10 (64-bit)***
-**Since v1.10.3**
+**Since v1.11.0**
  - rx: Rhino now has fully functional lights
  - SilentPatch: two-players mode fixes
  - SilentPatch: restore weather ped replies
@@ -140,6 +151,13 @@
  - Fix heli rotor rotation speed on high FPS
  - Fix vehicle dampings on high FPS
  - Gamepad map panning now should reach map edges on wider screens
+ - Slightly more peds around
+ - Camera photos are saved again (to the phone's Pictures/GTA San Andreas)
+ - Game performs a **BETTER** game saving. This might fix save files corruption
+ - Sprayable weapons now follow the camera pitch
+ - Lock-on feature is now possible with fists/melee weapons
+ - Game should now have a full mouse+keyboard support, `MouseFix`
+ - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
@@ -352,10 +370,8 @@
  - FoodEatingFix by JuniorDjjr
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
- - Bring back saveable camera photos (framebuffer-related problems! The image is like... rotated, scaled and repeated?!)
-   - Need to fix a framebuffer at the end of the rendering stage
 
-**Since v1.10.3**
+**Since v1.11.0**
  - rx: Rhino now has fully functional lights
  - SilentPatch: two-players mode fixes
  - SilentPatch: restore weather ped replies
@@ -365,6 +381,13 @@
  - Sounds, dialogues and radio are not restarting from the beginning after unpausing
  - Fix vehicle dampings on high FPS
  - Gamepad map panning now should reach map edges on wider screens
+ - Slightly more peds around
+ - Camera photos are saved again (to the phone's Pictures/GTA San Andreas)
+ - Game performs a **BETTER** game saving. This might fix save files corruption
+ - Sprayable weapons now follow the camera pitch
+ - Lock-on feature is now possible with fists/melee weapons
+ - Game should now have a full mouse+keyboard support, `MouseFix`
+ - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
