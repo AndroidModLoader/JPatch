@@ -157,9 +157,33 @@
  - Sprayable weapons now follow the camera pitch
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
- - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
+ - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
+ - Ported multiple fixes from v2.00:
+   - VitaPort: Fixed cheats hashtable
+   - Force the game's inner check always return that we have only touch (disabled by default)
+   - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
+   - ImprovedStreaming: preloading, memory freeing
+   - Helis/Planes can now fly higher
+   - Jetpack can now fly higher
+   - Smaller grenades collision
+   - Fixed bikes generator at driving school (for new save file!!!)
+   - Boat radio antenna animation
+   - MixSets: Crouch with any weapons
+   - Do not use bias in shaders, probably makes the game faster
+   - Car generators in an interior now work properly
+   - Fix for the wrong position (from the beta) of Bravura in a mission "You've Had Your Chips"
+   - Sprint button after aiming and dropping to the water is always visible
+   - MixSets: Hostile gangs
+   - Fixed peds are not speaking closer to the game end
+   - Bring back a missing shoot button on S.W.A.T.
+   - MTA: Disable setting the occupied's vehicles health to 75.0f when a burning ped enters it
+   - re3: Fix a little mistake by R\* in AskForObjectToBeRenderedInGlass
+   - Lower threads sleeping timer
+   - BengbuGuards: Player's plane won't disappear after it explodes
+   - MTA: Fix slippery floor
+   - Static shadows are moved to the ground a bit
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
@@ -389,7 +413,7 @@
  - Sprayable weapons now follow the camera pitch
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
- - Mixtape: user tracks on radio station 12 (Android/media/<package>/Mixtape)
+ - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
 
@@ -589,7 +613,7 @@
  - **Climb-dying glitch SHOULD be fixed**
  - Do not use bias in shaders, probably makes the game faster
  - Re-fixed emergency vehicles disappearing
- - Fixed bikes generator at driving school (for new players)
+ - Fixed bikes generator at driving school (for new save file!!!)
  - **Crosshair should be placed at the correct place**
  
  **Since v1.2.3**
