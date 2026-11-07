@@ -160,7 +160,12 @@
  - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
+ - Added mouse steering for aircrafts and regular vehicles
+ - Fix shadows appearing between sun and entity
+ - Objects do receive shadows now
+ - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - Ported multiple fixes from v2.00:
+   - Rotor blur *by Peepo*
    - VitaPort: Fixed cheats hashtable
    - Force the game's inner check always return that we have only touch (disabled by default)
    - SCM fix by JuniorDjrr for "IsPedDead" (broken sometimes?)
@@ -395,7 +400,6 @@
 **Planned/TODO (not ready or broken now)**
  - FoodEatingFix by JuniorDjjr
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
- - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
 
 **Since v1.11.0**
  - rx: Rhino now has fully functional lights
@@ -416,6 +420,10 @@
  - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
+ - Added mouse steering for aircrafts and regular vehicles
+ - Fix shadows appearing between sun and entity
+ - Objects do receive shadows now
+ - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
