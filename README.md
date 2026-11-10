@@ -167,6 +167,7 @@
  - Objects do receive shadows now
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - PC-like Hydra nozzles: no autopilot, toggled by a button
+ - Manual landing gears for planes
  - Ported multiple fixes from v2.00:
    - Rotor blur *by Peepo*
    - VitaPort: Fixed cheats hashtable
@@ -429,6 +430,7 @@
  - Objects do receive shadows now
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - PC-like Hydra nozzles: no autopilot, toggled by a button
+ - Manual landing gears for planes
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
