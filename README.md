@@ -29,6 +29,7 @@
  - Restored cinematic camera
  - Restored pinch camera zooming
  - Fix wheelie not working with buttons
+ - Fixes a little rotations that are skipped for entities
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -91,6 +92,7 @@
  - Game no more boosts contrast!
  - Restore pickup blinking
  - Horizon background darkness fix
+ - Fixes a little rotations that are skipped for entities
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -164,6 +166,7 @@
  - Fix shadows appearing between sun and entity
  - Objects do receive shadows now
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
+ - PC-like Hydra nozzles: no autopilot, toggled by a button
  - Ported multiple fixes from v2.00:
    - Rotor blur *by Peepo*
    - VitaPort: Fixed cheats hashtable
@@ -400,6 +403,7 @@
 **Planned/TODO (not ready or broken now)**
  - FoodEatingFix by JuniorDjjr
  - Doubled the directional light sources on models (to match the PC version) <- Shaders thingo :(
+ - Bring back normal BMX controls
 
 **Since v1.11.0**
  - rx: Rhino now has fully functional lights
@@ -424,6 +428,7 @@
  - Fix shadows appearing between sun and entity
  - Objects do receive shadows now
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
+ - PC-like Hydra nozzles: no autopilot, toggled by a button
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
