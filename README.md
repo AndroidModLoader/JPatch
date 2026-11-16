@@ -30,6 +30,8 @@
  - Restored pinch camera zooming
  - Fix wheelie not working with buttons
  - Fixes a little rotations that are skipped for entities
+ - Fix friction between peds
+ - Fix running melee attacks not hitting
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -70,7 +72,6 @@
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
- - Fix fighting range
  - Not sure, maybe timer-related bugs in save files
 
 **Since v1.11.0**
@@ -93,6 +94,8 @@
  - Restore pickup blinking
  - Horizon background darkness fix
  - Fixes a little rotations that are skipped for entities
+ - Fix friction between peds
+ - Fix running melee attacks not hitting
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -168,6 +171,8 @@
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - PC-like Hydra nozzles: no autopilot, toggled by a button
  - Manual landing gears for planes
+ - Shadow does not disappear in water
+ - Shadow does not disappear when entering a vehicle
  - Ported multiple fixes from v2.00:
    - Rotor blur *by Peepo*
    - VitaPort: Fixed cheats hashtable
@@ -431,6 +436,8 @@
  - Fix opcode 08F8 that still shows "Updated stats" pop-up no matter what
  - PC-like Hydra nozzles: no autopilot, toggled by a button
  - Manual landing gears for planes
+ - Shadow does not disappear in water
+ - Shadow does not disappear when entering a vehicle
 
 **Since v1.10.1**
  - Since SocialClub was buried, it was also removed from the game
