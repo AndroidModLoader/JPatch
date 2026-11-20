@@ -32,6 +32,20 @@
  - Fixes a little rotations that are skipped for entities
  - Fix friction between peds
  - Fix running melee attacks not hitting
+ - Fix cars and bikes losing grip after an unrelated skid, `FixWheelGripAfterSkid`
+ - Fix rockets accelerating too quickly at high FPS, `FixRocketAccelerationHighFPS`
+ - Fix boat steering, braking and reverse response at high FPS, `FixBoatInputsHighFPS`
+ - Fix planes leveling their wings too aggressively at high FPS, `FixPlaneRollStabilityHighFPS`
+ - SilentPatch: Play the equipped weapon's sound during drive-bys, `SP_FixDriveByWeaponSound`
+ - Preserve the equipped weapon's reload delay during drive-bys, `FixDriveByReload`
+ - SilentPatch: Give script-issued weapons one round when the script specifies zero, `SP_FixScriptWeaponAmmo`
+ - Restore tear gas damage to the player and mission characters and scale damage with elapsed time, `FixTearGasDamage`
+ - SilentPatch: Keep SWAT, FBI and Army roadblock officers using their issued weapons, `SP_FixRoadblockCopWeapons`
+ - SilentPatch: Use the target's elevation for vehicle pursuit routes, `SP_FixVehicleChaseHeight`
+ - Fix loose vehicle doors swinging and damping too quickly at high FPS, `FixDoorSwingHighFPS`
+ - Fix overheated engines losing health too quickly at high FPS, `FixEngineFireDamageHighFPS`
+ - SilentPatch: Keep wrecked vehicles from exploding again after the driver leaves, `SP_FixVehicleDoubleExplosion`
+ - SilentPatch: Reset emergency dispatch timers, post-rain effects, free resprays and mission ped ranges on game restart, `SP_FixGameRestartState`
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -69,6 +83,7 @@
  - FX particles draw distance scaler (default is x2.5)
  - Now it's possible to remove ZERO's from money text
  - 44100Hz audio support without a mod "OpenAL Update"
+ - Sound reflections and reverb near walls are back (PC "Dynamic Acoustic Modeling"), `AudioReverb`
  
 ### ***GTA:VC v1.09***
 **Planned/TODO (not ready or broken now)**
@@ -96,6 +111,20 @@
  - Fixes a little rotations that are skipped for entities
  - Fix friction between peds
  - Fix running melee attacks not hitting
+ - Fix cars and bikes losing grip after an unrelated skid, `FixWheelGripAfterSkid`
+ - Fix rockets accelerating too quickly at high FPS, `FixRocketAccelerationHighFPS`
+ - Fix boat steering, braking and reverse response at high FPS, `FixBoatInputsHighFPS`
+ - Fix planes leveling their wings too aggressively at high FPS, `FixPlaneRollStabilityHighFPS`
+ - SilentPatch: Play the equipped weapon's sound during drive-bys, `SP_FixDriveByWeaponSound`
+ - Preserve the equipped weapon's reload delay during drive-bys, `FixDriveByReload`
+ - SilentPatch: Give script-issued weapons one round when the script specifies zero, `SP_FixScriptWeaponAmmo`
+ - Restore tear gas damage to the player and mission characters and scale damage with elapsed time, `FixTearGasDamage`
+ - SilentPatch: Keep SWAT, FBI and Army roadblock officers using their issued weapons, `SP_FixRoadblockCopWeapons`
+ - SilentPatch: Use the target's elevation for vehicle pursuit routes, `SP_FixVehicleChaseHeight`
+ - Fix loose vehicle doors swinging and damping too quickly at high FPS, `FixDoorSwingHighFPS`
+ - Fix overheated engines losing health too quickly at high FPS, `FixEngineFireDamageHighFPS`
+ - SilentPatch: Keep wrecked vehicles from exploding again after the driver leaves, `SP_FixVehicleDoubleExplosion`
+ - SilentPatch: Reset emergency dispatch timers, post-rain effects, free resprays and mission ped ranges on game restart, `SP_FixGameRestartState`
  
 **Since v1.10.1**
  - An ability to use 4 fingers!
@@ -114,6 +143,7 @@
  - GLAlphaFunc mod is now included (fixing a crash on Huawei phones)
  - Now it's possible to remove ZERO's from money text
  - 44100Hz audio support without a mod "OpenAL Update"
+ - Sound reflections and reverb near walls are back (PC "Dynamic Acoustic Modeling"), `AudioReverb`
 
 **Since v1.7**
  - FX particles draw distance scaler (default is x2.5)
@@ -155,6 +185,28 @@
  - SWAT peds are sliding down the heli rope instead of falling instantly
  - Fix heli rotor rotation speed on high FPS
  - Fix vehicle dampings on high FPS
+ - Fix scripted searchlight movement on high FPS, `FixSearchlightHighFPS`
+ - Fix falling glass spinning too fast on high FPS, `FixFallingGlassHighFPS`
+ - Fix scripted object rotation on high FPS, `FixHighFPSOpcode034D`
+ - Fix boat brake and reverse response on high FPS, `FixBoatBrakeHighFPS`
+ - Fix mission clock drift on high FPS, `FixOnscreenTimerHighFPS`
+ - Fix gang war countdown drift on high FPS, `FixGangWarTimersHighFPS`
+ - Fix stunt jump camera timing on high FPS, `FixStuntJumpTimerHighFPS`
+ - Fix wheelie, stoppie and two-wheel record timing on high FPS, `FixStuntRecordTimersHighFPS`
+ - Preserve fractional drowning damage at high FPS, `FixDrowningDamageHighFPS`
+ - Fix overheated engines losing health too quickly at high FPS, `FixEngineFireDamageHighFPS`
+ - Fix knockdown recovery timing on high FPS, `FixKnockdownTimerHighFPS`
+ - Fix objects disappearing behind translucent vehicle meshes, `FixVehicleAlphaDepth`
+ - SilentPatch: Fix reverse throttle speeding up nitrous recharge, `SP_FixNitrousReverseRecharge`
+ - SilentPatch: Fix wrecked vehicles exploding again after the driver leaves, `SP_FixVehicleDoubleExplosion`
+ - SilentPatch: Stop biker cops shooting after the chase ends, `SP_FixBikerCopDriveBy`
+ - SilentPatch: Stop ambient police helicopters from making recruited gang members flee during missions, `SP_FixRiotHelicopterPanic`
+ - SilentPatch: Prevent softlocks in Sweet's Girl and Mountain Cloud Boys, `SP_FixMissionSoftlocks`
+ - SilentPatch: Keep recruited gang members' radar blips after gang wars, `SP_FixGangWarFriendlyBlips`
+ - Fix damage being applied to the wrong parts when vehicles collide, `FixCollisionDamagePiece`
+ - Fix missing burglary house markers and interior links, `FixBurglaryHouseMarkers`
+ - SilentPatch: Prevent unrelated vehicles from being impounded when a vehicle slot is reused, `FixImpoundGarages`
+ - SilentPatch: Restore vehicle bombs and their ownership from garages, `SP_FixStoredCarBombs`
  - Gamepad map panning now should reach map edges on wider screens
  - Slightly more peds around
  - Camera photos are saved again (to the phone's Pictures/GTA San Andreas)
@@ -163,6 +215,9 @@
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
  - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
+ - Reverb in interiors and underwater is back (PC audio zones), `AudioReverb`
+ - Radio bass EQ is back (car stereo upgrade, per-vehicle radio EQ), `RadioBassEQ`
+ - Engine at high FPS: engine force after gear shifts, rev sound and top gear engine note no longer run faster, `FixEngineHighFPS`
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
  - Added mouse steering for aircrafts and regular vehicles
@@ -403,7 +458,7 @@
  - Vertex Weights
  - Swimming speed
  - Fixed sky multitude (a glitch on high speeds)
- - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
+ - Fix rear lamps using the wrong damage state, including vehicles with a single tail light, `FixCarsBacklightLightState`
  
 ### ***GTA:SA v2.00***
 **Planned/TODO (not ready or broken now)**
@@ -420,6 +475,28 @@
  - SilentPatch: Set up taunts against Triads, Rifa, DNB, fixed LSV
  - Sounds, dialogues and radio are not restarting from the beginning after unpausing
  - Fix vehicle dampings on high FPS
+ - Fix scripted searchlight movement on high FPS, `FixSearchlightHighFPS`
+ - Fix falling glass spinning too fast on high FPS, `FixFallingGlassHighFPS`
+ - Fix scripted object rotation on high FPS, `FixHighFPSOpcode034D`
+ - Fix boat brake and reverse response on high FPS, `FixBoatBrakeHighFPS`
+ - Fix mission clock drift on high FPS, `FixOnscreenTimerHighFPS`
+ - Fix gang war countdown drift on high FPS, `FixGangWarTimersHighFPS`
+ - Fix stunt jump camera timing on high FPS, `FixStuntJumpTimerHighFPS`
+ - Fix wheelie, stoppie and two-wheel record timing on high FPS, `FixStuntRecordTimersHighFPS`
+ - Preserve fractional drowning damage at high FPS, `FixDrowningDamageHighFPS`
+ - Fix overheated engines losing health too quickly at high FPS, `FixEngineFireDamageHighFPS`
+ - Fix knockdown recovery timing on high FPS, `FixKnockdownTimerHighFPS`
+ - Fix objects disappearing behind translucent vehicle meshes, `FixVehicleAlphaDepth`
+ - SilentPatch: Fix reverse throttle speeding up nitrous recharge, `SP_FixNitrousReverseRecharge`
+ - SilentPatch: Fix wrecked vehicles exploding again after the driver leaves, `SP_FixVehicleDoubleExplosion`
+ - SilentPatch: Stop biker cops shooting after the chase ends, `SP_FixBikerCopDriveBy`
+ - SilentPatch: Stop ambient police helicopters from making recruited gang members flee during missions, `SP_FixRiotHelicopterPanic`
+ - SilentPatch: Prevent softlocks in Sweet's Girl and Mountain Cloud Boys, `SP_FixMissionSoftlocks`
+ - SilentPatch: Keep recruited gang members' radar blips after gang wars, `SP_FixGangWarFriendlyBlips`
+ - Fix damage being applied to the wrong parts when vehicles collide, `FixCollisionDamagePiece`
+ - Fix missing burglary house markers and interior links, `FixBurglaryHouseMarkers`
+ - SilentPatch: Prevent unrelated vehicles from being impounded when a vehicle slot is reused, `FixImpoundGarages`
+ - SilentPatch: Restore vehicle bombs and their ownership from garages, `SP_FixStoredCarBombs`
  - Gamepad map panning now should reach map edges on wider screens
  - Slightly more peds around
  - Camera photos are saved again (to the phone's Pictures/GTA San Andreas)
@@ -428,6 +505,9 @@
  - Lock-on feature is now possible with fists/melee weapons
  - Game should now have a full mouse+keyboard support, `MouseFix`
  - Mixtape: user tracks on radio station 12 (Android/media/`com.rockstargames.gtasa`/Mixtape)
+ - Reverb in interiors and underwater is back (PC audio zones), `AudioReverb`
+ - Radio bass EQ is back (car stereo upgrade, per-vehicle radio EQ), `RadioBassEQ`
+ - Engine at high FPS: engine force after gear shifts, rev sound and top gear engine note no longer run faster, `FixEngineHighFPS`
  - Various CPU usage fixes
  - Texture streaming should be slightly faster
  - Added mouse steering for aircrafts and regular vehicles
@@ -708,7 +788,7 @@
  - Moved a rifle pickup outside of the SF Stadium wall
  - Fixed cutscene FOV (disabled by default, incomplete, black borders are better?)
  - Fixed sky multitude (a glitch on high speeds)
- - Fixed vehicles backlight light state (should do vehicle tail light effect when ANY of the lights are broken)
+ - Fix rear lamps using the wrong damage state, including vehicles with a single tail light, `FixCarsBacklightLightState`
  - Sand/Dust particles from bullets are limited because they are creating a lot of lag
  - Fixed red marker cannot be placed on the right side of the screen
  
@@ -721,3 +801,17 @@
  - CJ can leave any vehicle at high speeds
  - CJ no more can drop JetPack while he's in air
  - Weapon penalty clean-up when CJ dies
+
+### Optimised CPU math
+
+These options default to `1` in supported games. Set an option to `0` under `[OptimiseCPUMath]` to disable it.
+They are used to optimise CPU usage. This results in a better performance **or** better battery usage.
+ - `OptimizeMatrixMultiplyNEON` speeds up RenderWare matrix multiplication during bone hierarchy updates and skin matrix preparation.
+ - `OptimizeSkinMatrixPackingNEON` packs bone matrices on the CPU before they are uploaded for GPU skinning.
+ - `OptimizeAnimKeyFrameApplyNEON` converts animation keyframes into local bone matrices using NEON.
+ - `OptimizeSphereCullingNEON` batches four camera frustum planes when an object passes the first two visibility checks.
+ - `OptimizeQuaternionBlendNEON` blends all four quaternion components at once during skeletal animation updates.
+ - `OptimizeAnimDecompressionNEON` expands compressed keyframes as they enter the animation cache. Available in San Andreas 2.00/2.10.
+ - `OptimizeWaterMaskNEON` rebuilds the visible water mask mesh in vertex batches during rendering. Available in Vice City 1.09/1.12.
+ - `OptimizeWaterWavesNEON` calculates wave height, normals and lighting for high-detail water vertices. Available in San Andreas 2.00/2.10 (when SkyGFX Mobile is absent).
+ - `OptimizeLineBoxNEON` speeds up line-of-sight and sphere-cast checks against collision boxes. Available in San Andreas 2.00/2.10.
